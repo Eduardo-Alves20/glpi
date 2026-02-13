@@ -1,0 +1,21 @@
+<section class="portal-usuario">
+  <header class="portal-usuario__header">
+    <h1>Meu perfil</h1>
+    <p>Dados de sessão e permissões do usuário autenticado.</p>
+  </header>
+
+  <section class="panel profile-grid">
+    <div>
+      <h2>Nome</h2>
+      <p><%= usuario?.nome || "-" %></p>
+    </div>
+    <div>
+      <h2>Usuário</h2>
+      <p><%= usuario?.usuario || "-" %></p>
+    </div>
+    <div>
+      <h2>Perfil</h2>
+      <p><%= usuario?.perfil || "-" %></p>
+    </div>
+  </section>
+</section>

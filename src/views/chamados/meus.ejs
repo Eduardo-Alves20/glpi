@@ -1,0 +1,16 @@
+<section class="portal-usuario">
+  <header class="portal-usuario__header">
+    <h1>Meus chamados</h1>
+    <p>Esta lista será conectada ao back-end nas próximas etapas.</p>
+  </header>
+
+  <section class="panel">
+    <% if (!chamados || chamados.length === 0) { %>
+      <div class="empty-state">
+        <h2>Nenhum chamado encontrado</h2>
+        <p>Você ainda não possui chamados registrados.</p>
+        <a class="portal-btn" href="/chamados/novo">Abrir primeiro chamado</a>
+      </div>
+    <% } %>
+  </section>
+</section>

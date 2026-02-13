@@ -1,29 +1,26 @@
+<section class="portal-usuario">
+  <header class="portal-usuario__header">
+    <h1>Bem-vindo, <%= nomeUsuario %>.</h1>
+    <p>Use os atalhos abaixo para abrir solicitações e acompanhar seus atendimentos.</p>
+  </header>
 
+  <section class="portal-cards" aria-label="Ações rápidas do usuário">
+    <article class="portal-card">
+      <h2>Meus chamados</h2>
+      <p>Acompanhe status, interações e histórico dos seus chamados.</p>
+      <a class="portal-btn" href="/chamados/meus">Acessar</a>
+    </article>
 
-  <main class="content">
-    <header class="content__header">
-      <h1>Bem-vindo, <%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %></h1>
-      <p>Área do usuário. Aqui você poderá abrir e acompanhar seus chamados.</p>
-    </header>
+    <article class="portal-card">
+      <h2>Abrir chamado</h2>
+      <p>Registre um novo problema ou solicitação para o time técnico.</p>
+      <a class="portal-btn" href="/chamados/novo">Abrir agora</a>
+    </article>
 
-    <section class="grid">
-      <div class="card">
-        <h2>Meus chamados</h2>
-        <p>Visualize chamados abertos, em atendimento e resolvidos.</p>
-        <a class="btn" href="/chamados/meus">Acessar</a>
-      </div>
-
-      <div class="card">
-        <h2>Abrir chamado</h2>
-        <p>Crie um novo chamado com descrição e anexos (em breve).</p>
-        <button class="btn btn--disabled" type="button" disabled>Em breve</button>
-      </div>
-
-      <div class="card">
-        <h2>Meu perfil</h2>
-        <p>Dados básicos e segurança da conta (em breve).</p>
-        <a class="btn" href="/conta/perfil">Acessar</a>
-      </div>
-    </section>
-  </main>
-</div>
+    <article class="portal-card">
+      <h2>Meu perfil</h2>
+      <p>Confira dados da sua conta e configurações básicas de acesso.</p>
+      <a class="portal-btn" href="/conta/perfil">Acessar</a>
+    </article>
+  </section>
+</section>
