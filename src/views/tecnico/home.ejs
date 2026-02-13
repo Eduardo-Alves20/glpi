@@ -1,0 +1,215 @@
+<%
+// admin/home.ejs (conteúdo apenas)
+// Layout (layout-app.ejs) é quem deve renderizar a sidebar e o <main class="app-main">.
+const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)");
+%>
+
+<section class="admin-home">
+  <header class="admin-home__header">
+    <div class="admin-home__headerText">
+      <h1>Olá, <%= nome %>!</h1>
+      <p>Aqui está um panorama rápido do GLPI.</p>
+    </div>
+
+    <div class="admin-home__headerActions">
+      <span class="admin-home__updated">
+        Atualizado em: <%= (new Date()).toLocaleString("pt-BR") %>
+      </span>
+      <a href="/admin" class="admin-home__btn admin-home__btn--secondary">Atualizar</a>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="admin-home__kpis" aria-label="Indicadores">
+    <article class="kpi">
+      <div class="kpi__title">Chamados abertos</div>
+      <div class="kpi__value"><%= kpis?.chamadosAbertos ?? 0 %></div>
+    </article>
+
+    <article class="kpi">
+      <div class="kpi__title">Chamados críticos</div>
+      <div class="kpi__value"><%= kpis?.chamadosCriticos ?? 0 %></div>
+    </article>
+
+    <article class="kpi">
+      <div class="kpi__title">Aguardando técnico</div>
+      <div class="kpi__value"><%= kpis?.aguardandoTecnico ?? 0 %></div>
+    </article>
+
+    <article class="kpi">
+      <div class="kpi__title">Criados hoje</div>
+      <div class="kpi__value"><%= kpis?.criadosHoje ?? 0 %></div>
+    </article>
+  </section>
+
+  <!-- Módulos -->
+  <section class="admin-home__modules" aria-label="Visões rápidas">
+    <!-- LOGS -->
+    <article class="module">
+      <header class="module__header">
+        <div>
+          <h2>
+            Logs recentes
+            <span class="badge"><%= (logs?.length ?? 0) %></span>
+          </h2>
+          <p>Atividades do sistema e ações administrativas</p>
+        </div>
+        <a class="admin-home__btn admin-home__btn--tertiary" href="/admin/logs">Ver</a>
+      </header>
+
+      <ul class="list">
+        <% if (!logs || logs.length === 0) { %>
+          <li class="list__empty">Nenhum log ainda.</li>
+        <% } else { %>
+          <% logs.slice(0, 5).forEach((l) => { %>
+            <li class="list__item">
+              <div class="list__title"><%= l.titulo %></div>
+              <div class="list__meta">
+                <span class="pill"><%= l.tipo %></span>
+                <span><%= l.quando %></span>
+              </div>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
+
+    <!-- CHAMADOS -->
+    <article class="module">
+      <header class="module__header">
+        <div>
+          <h2>Chamados</h2>
+          <p>Fila e últimos chamados abertos</p>
+        </div>
+        <a class="admin-home__btn admin-home__btn--tertiary" href="/admin/chamados">Ver</a>
+      </header>
+
+      <div class="miniKpis">
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.chamadosAbertos ?? 0 %></div>
+          <div class="mini__label">Abertos</div>
+        </div>
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.emAndamento ?? 0 %></div>
+          <div class="mini__label">Em andamento</div>
+        </div>
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.aguardandoUsuario ?? 0 %></div>
+          <div class="mini__label">Aguardando usuário</div>
+        </div>
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.vencendoSla ?? 0 %></div>
+          <div class="mini__label">Vencendo SLA</div>
+        </div>
+      </div>
+
+      <ul class="list">
+        <% if (!ultimosChamados || ultimosChamados.length === 0) { %>
+          <li class="list__empty">Nenhum chamado ainda.</li>
+        <% } else { %>
+          <% ultimosChamados.slice(0, 5).forEach((c) => { %>
+            <li class="list__item list__item--clickable">
+              <div class="list__title">#<%= c.numero %> — <%= c.titulo %></div>
+              <div class="list__meta">
+                <span class="pill"><%= c.status %></span>
+                <span><%= c.solicitante %></span>
+                <span><%= c.quando %></span>
+              </div>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
+
+    <!-- USUÁRIOS -->
+    <article class="module">
+      <header class="module__header">
+        <div>
+          <h2>Usuários</h2>
+          <p>Cadastros e perfis</p>
+        </div>
+        <a class="admin-home__btn admin-home__btn--tertiary" href="/admin/usuarios">Ver</a>
+      </header>
+
+      <div class="miniKpis">
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.totalUsuarios ?? 0 %></div>
+          <div class="mini__label">Total</div>
+        </div>
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.totalTecnicos ?? 0 %></div>
+          <div class="mini__label">Técnicos</div>
+        </div>
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.totalAdmins ?? 0 %></div>
+          <div class="mini__label">Admins</div>
+        </div>
+        <div class="mini">
+          <div class="mini__value"><%= kpis?.usuariosBloqueados ?? 0 %></div>
+          <div class="mini__label">Bloqueados</div>
+        </div>
+      </div>
+
+      <ul class="list">
+        <% if (!ultimosUsuarios || ultimosUsuarios.length === 0) { %>
+          <li class="list__empty">Nenhum usuário criado ainda.</li>
+        <% } else { %>
+          <% ultimosUsuarios.slice(0, 5).forEach((u) => { %>
+            <li class="list__item">
+              <div class="list__title"><%= u.nome %></div>
+              <div class="list__meta">
+                <span class="pill"><%= u.perfil %></span>
+                <span><%= u.quando %></span>
+              </div>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
+  </section>
+</section>
+
+<style>
+  /* CSS SCOPADO: só afeta a home do admin */
+  .admin-home { width: 100%; max-width: 1400px; margin: 0 auto; padding: 8px 0 24px; }
+  .admin-home__header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  .admin-home__headerText h1 { margin:0; font-size: 22px; }
+  .admin-home__headerText p { margin:6px 0 0; opacity:.8; }
+  .admin-home__headerActions { display:flex; gap:12px; align-items:center; }
+  .admin-home__updated { font-size: 13px; opacity: .75; }
+
+  .admin-home__btn { display:inline-flex; align-items:center; justify-content:center; border-radius:10px; padding:8px 14px; font-size:13px; text-decoration:none; border:1px solid transparent; cursor:pointer; }
+  .admin-home__btn--secondary { background:#f1f5f9; border-color:#d8e1ec; color:#0b3c6b; font-weight:600; }
+  .admin-home__btn--tertiary { background:transparent; color:#0b3c6b; font-weight:700; }
+
+  .admin-home__kpis { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:16px; margin-top:16px; }
+  .kpi { background:#fff; border:1px solid #e7ecf3; border-radius:12px; padding:16px 18px; box-shadow:0 6px 16px rgba(15,31,55,0.06); }
+  .kpi__title { font-size:12px; letter-spacing:.02em; text-transform:uppercase; opacity:.75; }
+  .kpi__value { margin-top:6px; font-size:28px; font-weight:800; color:#0b3c6b; }
+
+  .admin-home__modules { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:20px; margin-top:20px; }
+  .module { background:#fff; border:1px solid #e7ecf3; border-radius:14px; padding:18px 18px; box-shadow:0 10px 24px rgba(15,31,55,0.08); display:flex; flex-direction:column; gap:14px; }
+  .module__header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .module__header h2 { margin:0; font-size:18px; }
+  .module__header p { margin:4px 0 0; font-size:13px; opacity:.75; }
+
+  .badge { display:inline-block; margin-left:8px; padding:2px 8px; font-size:11px; border-radius:999px; background:#f1f5f9; border:1px solid #d8e1ec; color:#0b3c6b; }
+
+  .miniKpis { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+  .mini { background:#f9fbfd; border:1px solid #e7ecf3; border-radius:12px; padding:12px 14px; }
+  .mini__value { font-weight:800; font-size:18px; color:#0b3c6b; }
+  .mini__label { font-size:12px; opacity:.75; }
+
+  .list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .list__item { border:1px solid #f0f4f8; border-radius:12px; padding:10px 12px; background:#fff; }
+  .list__item--clickable { cursor:pointer; }
+  .list__title { font-weight:700; }
+  .list__meta { margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; font-size:12px; opacity:.75; }
+  .pill { font-size:11px; padding:2px 8px; border-radius:999px; background:#eaf2ff; color:#0b3c6b; text-transform:uppercase; }
+  .list__empty { border:1px dashed #d8e1ec; border-radius:12px; padding:12px; opacity:.75; font-style:italic; background:#f4f7fb; }
+
+  @media (max-width: 1100px) {
+    .admin-home__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-home__modules { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,109 @@
+<div class="app-shell">
+  <%- include("../partials/sidebar") %>
+
+<div class="container">
+  <div class="form-wrapper">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Novo usuário</h1>
+        <p class="page-subtitle">Cadastre um usuário e defina perfil e status de acesso.</p>
+      </div>
+      <div class="page-actions">
+        <a class="button secondary" href="/admin/usuarios">Voltar</a>
+      </div>
+    </div>
+
+    <% if (erros && erros.length) { %>
+      <div class="alert alert-error">
+        <strong>Verifique os campos:</strong>
+        <ul>
+          <% erros.forEach((e) => { %>
+            <li><%= e %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <form class="glpi-form" action="/admin/usuarios" method="POST" autocomplete="off">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="nome">Nome completo</label>
+          <input
+            id="nome"
+            name="nome"
+            type="text"
+            placeholder="Ex.: Eduardo Fernando Silva Alves"
+            value="<%= (valores && valores.nome) ? valores.nome : '' %>"
+            required
+            maxlength="120"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="usuario">Usuário (login)</label>
+          <input
+            id="usuario"
+            name="usuario"
+            type="text"
+            placeholder="Ex.: eduardo.alves"
+            value="<%= (valores && valores.usuario) ? valores.usuario : '' %>"
+            required
+            maxlength="40"
+          />
+          <small class="hint">Sem espaços. Use letras, números, ponto e underline.</small>
+        </div>
+
+        <div class="form-field">
+          <label for="email">E-mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="Ex.: eduardo@cge.rj.gov.br"
+            value="<%= (valores && valores.email) ? valores.email : '' %>"
+            required
+            maxlength="120"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="perfil">Perfil</label>
+          <select id="perfil" name="perfil" required>
+            <option value="">Selecione...</option>
+            <option value="admin" <%= (valores && valores.perfil === 'admin') ? 'selected' : '' %>>Administrador</option>
+            <option value="tecnico" <%= (valores && valores.perfil === 'tecnico') ? 'selected' : '' %>>Técnico</option>
+            <option value="usuario" <%= (valores && valores.perfil === 'usuario') ? 'selected' : '' %>>Usuário</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="status">Status</label>
+          <select id="status" name="status" required>
+            <option value="ativo" <%= (!valores || !valores.status || valores.status === 'ativo') ? 'selected' : '' %>>Ativo</option>
+            <option value="bloqueado" <%= (valores && valores.status === 'bloqueado') ? 'selected' : '' %>>Bloqueado</option>
+          </select>
+          <small class="hint">Usuários bloqueados não conseguem autenticar.</small>
+        </div>
+
+        <div class="form-field">
+          <label for="senhaTemporaria">Senha temporária</label>
+          <input
+            id="senhaTemporaria"
+            name="senhaTemporaria"
+            type="password"
+            placeholder="Defina uma senha temporária"
+            minlength="8"
+            maxlength="72"
+            required
+          />
+          <small class="hint">Depois a gente troca por fluxo de “primeiro acesso / reset”.</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="button" type="submit">Salvar</button>
+        <a class="button tertiary" href="/admin/usuarios">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" href="/assets/favicon.ico" />
+    <title><%= (typeof titulo !== "undefined" && titulo) ? titulo : "GLPI" %></title>
+
+    <script src="/js/main.js" defer></script>
+    <link rel="stylesheet" href="/styles/index.css" />
+
+    <% if (typeof cssExtra !== "undefined" && cssExtra) { %>
+      <link rel="stylesheet" href="<%= cssExtra %>" />
+    <% } %>
+  </head>
+
+  <body class="<%= (typeof bodyClass !== "undefined" && bodyClass) ? bodyClass : "" %>">
+    <%- body %>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+import { Router } from "express";
+import {
+  exigirLogin,
+  exigirPerfis,
+  exigirUsuarioAtivo,
+} from "../../compartilhado/middlewares/seguranca.js";
+import { acharPorId, listarRecentes } from "../../repos/usuariosRepo.js";
+
+import { adminHomeGet } from "../../controllers/admin/adminController.js";
+import {
+  usuariosIndexGet,
+  usuariosNovoGet,
+  usuariosCreatePost,
+} from "../../controllers/admin/usuariosController.js";
+
+export function criarAdminRotas({ auditoria } = {}) {
+  const router = Router();
+
+  const validarAtivo = exigirUsuarioAtivo(acharPorId);
+
+  // 🔒 “Gate” do admin: tudo abaixo disso exige admin
+  router.use(
+    "/admin",
+    exigirLogin,
+    validarAtivo,
+    exigirPerfis(["admin"], {
+      onNegado: auditoria?.registrarTentativaAcessoNegado,
+    }),
+  );
+
+  router.get("/admin", adminHomeGet);
+
+  router.get("/admin/usuarios", usuariosIndexGet);
+  router.get("/admin/usuarios/novo", usuariosNovoGet);
+  router.post("/admin/usuarios", usuariosCreatePost);
+
+  return router;
+}

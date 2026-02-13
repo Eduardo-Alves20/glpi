@@ -1,0 +1,49 @@
+
+<div class="app-shell">
+  <%- include("../partials/sidebar") %><div class="container">
+  <div class="form-wrapper">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Usuários</h1>
+        <p class="page-subtitle">Gerencie usuários cadastrados no GLPI.</p>
+      </div>
+      <div class="page-actions">
+        <a class="button" href="/admin/usuarios/novo">Novo usuário</a>
+      </div>
+    </div>
+
+    <% if (!usuarios || usuarios.length === 0) { %>
+      <div class="empty-state">
+        <p><strong>Nenhum usuário cadastrado ainda.</strong></p>
+        <p>Crie o primeiro usuário para testar o login pelo banco.</p>
+      </div>
+    <% } else { %>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Usuário</th>
+              <th>E-mail</th>
+              <th>Perfil</th>
+              <th>Status</th>
+              <th>Criado em</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% usuarios.forEach((u) => { %>
+              <tr>
+                <td><%= u.nome %></td>
+                <td><%= u.usuario %></td>
+                <td><%= u.email %></td>
+                <td><%= (u.perfil || '').toUpperCase() %></td>
+                <td><%= u.status %></td>
+                <td><%= u.criadoEm ? new Date(u.criadoEm).toLocaleString('pt-BR') : '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>

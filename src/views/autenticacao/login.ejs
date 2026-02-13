@@ -1,0 +1,47 @@
+<header>
+  <!-- TROQUE SOMENTE O NOME DO ARQUIVO DEPOIS -->
+  <!-- Ex: /assets/LOGO_CGE_COR_HORIZONTAL.png -->
+  <img src="/assets/LOGO_CGE_COR_HORIZONTAL.png" alt="CGE-RJ" title="CGE-RJ">
+ 
+
+</header>
+
+<div class="auth">
+  <form action="/auth" method="POST" class="auth-form">
+    <center>
+      <div class="titulo-sistema">GLPI</div>
+    </center>
+
+    <div class="alert" style="color: red">
+      <% if (mensagemErro) { %>
+        <%= mensagemErro %>
+      <% } %>
+    </div>
+
+    <label for="username">Usuário de Rede:</label>
+    <input type="text" name="username" id="username" placeholder="Insira seu usuário de rede..." required />
+
+    <label for="password">Senha:</label>
+    <input type="password" name="password" id="password" placeholder="Insira sua senha..." required />
+
+    <center>
+      <button type="submit" class="login-button">Entrar</button>
+    </center>
+  </form>
+
+  <div style="margin-top: 20px">
+    <center>
+      <span class="text-xs">VERSÃO 0.1</span>
+      <span class="text-xs text-grey-500">Ambiente de Desenvolvimento</span>
+    </center>
+  </div>
+</div>
+
+<script>
+  const form = document.querySelector(".auth-form");
+  const auth = document.querySelector(".auth");
+
+  form.addEventListener("submit", () => {
+    auth.classList.add("loading");
+  });
+</script>

@@ -1,0 +1,88 @@
+/* =========================
+   APP SHELL (sidebar + main)
+   ========================= */
+
+:root {
+  --sidebar-w: 280px;
+  --app-bg: #f3f6fb;
+}
+
+/* body da área logada */
+body.app-layout {
+  margin: 0;
+  background: var(--app-bg);
+}
+
+/* wrapper principal */
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* sidebar deve ocupar a 1ª coluna */
+.app-shell > .sidebar {
+  grid-column: 1;
+  min-height: 100vh;
+}
+
+/* main deve ocupar a 2ª coluna e crescer */
+.app-shell > .app-main {
+  grid-column: 2;
+  min-width: 0;           /* CRÍTICO p/ não “estourar” */
+  width: 100%;
+  padding: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--app-bg);
+}
+
+/* Se você usar container interno, ele centraliza sem “estreitar” demais */
+.app-main .container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* não deixar wrappers antigos limitarem largura */
+.app-main .form-wrapper,
+.app-main .home-dashboard,
+.app-main .content {
+  width: 100%;
+  max-width: none;
+}
+
+/* =========================
+   RESPONSIVO (mobile)
+   ========================= */
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell > .sidebar {
+    grid-column: 1;
+    min-height: auto;
+  }
+
+  .app-shell > .app-main {
+    grid-column: 1;
+    padding: 16px;
+  }
+}
+/* =========================
+   Admin dashboard: encostar no sidebar (não centralizar)
+   ========================= */
+
+/* qualquer container dentro do main NÃO deve centralizar */
+body.app-layout .app-main .container,
+body.app-layout .app-main .form-wrapper {
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+/* dá um respiro, mas mantendo colado no sidebar */
+body.app-layout .app-main {
+  padding-left: 24px; /* pode subir para 32px se quiser */
+}
