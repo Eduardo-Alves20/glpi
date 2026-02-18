@@ -30,7 +30,7 @@ body.app-layout {
 /* main deve ocupar a 2ª coluna e crescer */
 .app-shell > .app-main {
   grid-column: 2;
-  min-width: 0;           /* CRÍTICO p/ não “estourar” */
+  min-width: 0;          
   width: 100%;
   padding: 24px;
   overflow-x: hidden;
@@ -38,7 +38,7 @@ body.app-layout {
   background: var(--app-bg);
 }
 
-/* Se você usar container interno, ele centraliza sem “estreitar” demais */
+
 .app-main .container {
   width: 100%;
   max-width: 1400px;
@@ -82,7 +82,7 @@ body.app-layout .app-main .form-wrapper {
   margin: 0 !important;
 }
 
-/* dá um respiro, mas mantendo colado no sidebar */
+
 body.app-layout .app-main {
-  padding-left: 24px; /* pode subir para 32px se quiser */
+  padding-left: 24px; 
 }

@@ -1,0 +1,75 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: glpi_mongo
+    command:
+      [
+        "mongod",
+        "--replSet",
+        "rs0",
+        "--bind_ip_all",
+        "--port",
+        "27017",
+        "--auth",
+        "--keyFile",
+        "/etc/mongo-keyfile"
+      ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ealves
+      MONGO_INITDB_ROOT_PASSWORD: "ealves@"
+      MONGO_INITDB_DATABASE: admin
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo-keyfile:/etc/mongo-keyfile:ro
+    healthcheck:
+      # Healthcheck precisa autenticar, porque agora tem --auth
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet \"mongodb://ealves:ealves%40@localhost:27017/admin?authSource=admin&replicaSet=rs0\" --eval \"db.runCommand({ ping: 1 }).ok\" | grep 1 > /dev/null || exit 1"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+    restart: unless-stopped
+
+  mongo-init:
+    image: mongo:7.0
+    container_name: glpi_mongo_init
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./docker/mongo-init.js:/docker/mongo-init.js:ro
+    entrypoint: ["bash", "-lc"]
+    # Agora o init conecta autenticado (senha ealves@ => %40)
+    command: >
+      mongosh "mongodb://ealves:ealves%40@mongo:27017/admin?authSource=admin&replicaSet=rs0"
+      /docker/mongo-init.js
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: glpi_app
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      # Usa o usuário root e autentica no admin (authSource=admin) + replicaSet
+      MONGO_URI: "mongodb://ealves:ealves%40@mongo:27017/glpi_dev?authSource=admin&replicaSet=rs0"
+      MONGO_DB: "glpi_dev"
+      SESSION_SECRET: "asdkj1o3u091dkalsdn1092sd11asdfkad"
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

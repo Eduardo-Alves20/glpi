@@ -1,0 +1,116 @@
+.module-card--full {
+  grid-column: 1 / -1;
+}
+
+.alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 12px 0 18px;
+  border: 1px solid rgba(0,0,0,.08);
+}
+
+.alert.success {
+  background: rgba(40, 167, 69, 0.10);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-input, .form-textarea, select.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  outline: none;
+}
+
+.form-textarea { resize: vertical; }
+
+.is-invalid {
+  border-color: rgba(220, 53, 69, .75);
+}
+
+.form-error {
+  color: rgba(220, 53, 69, 1);
+  font-size: 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
+/* --- Botões (padronizar nesta tela) --- */
+.form-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-actions .button:hover {
+  filter: brightness(0.98);
+}
+
+/* secundário: mantém “neutro” */
+.form-actions .button.secondary {
+  background: #fff;
+}
+
+/* primary só nesta tela */
+.form-actions .button--primary {
+  background: rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.35);
+}
+
+.form-actions .button--primary:hover {
+  background: rgba(13, 110, 253, 0.16);
+}
+
+/* garante que <button> herde estilo igual <a> */
+.form-actions button.button {
+  font: inherit;
+}
+@media (max-width: 520px) {
+  .form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .form-actions .button {
+    width: 100%;
+  }
+}

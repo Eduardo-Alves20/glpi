@@ -1,0 +1,244 @@
+/* =========================
+   Portal do Usuário — Cards (estilo Admin)
+   Arquivo: /styles/portal-usuario.css
+   ========================= */
+
+/* Base (não agressivo, só para o portal ficar consistente) */
+.portal-usuario {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.portal-usuario__header h1 {
+  margin: 0;
+  color: #123;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+}
+
+.portal-usuario__header p {
+  margin: 6px 0 0;
+  color: #4a5668;
+}
+
+/* Grid dos módulos (3 cards) */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Card (mesmo look do admin) */
+.module-card {
+  background: #fff;
+  border: 1px solid #e7ecf3;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 6px 16px rgba(15, 31, 55, 0.08);
+  min-height: 220px; /* ajuda os cards ficarem “alinhados” */
+}
+
+/* Cabeçalho do card */
+.module-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.module-card__header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #123;
+}
+
+.module-subtitle {
+  margin: 4px 0 0;
+  color: #5b6c80;
+  font-size: 13px;
+}
+
+.module-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #0b3c6b;
+  border: 1px solid #d8e1ec;
+  vertical-align: middle;
+}
+
+.muted {
+  color: #9aa7b6 !important;
+}
+
+/* Métricas */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  background: #f9fbfd;
+  border: 1px solid #e7ecf3;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0b3c6b;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #5b6c80;
+}
+
+/* Lista de destaques */
+.highlight-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.highlight-list li {
+  background: #fdfefe;
+  border: 1px solid #f0f4f8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: default;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.highlight-list li.clickable {
+  cursor: pointer;
+}
+
+.highlight-list li.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 31, 55, 0.12);
+}
+
+.highlight-title {
+  font-weight: 600;
+  color: #17324d;
+}
+
+.highlight-meta {
+  font-size: 12px;
+  color: #5b6c80;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.highlight-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #0b3c6b;
+  text-transform: uppercase;
+}
+
+.highlight-date,
+.highlight-user {
+  font-size: 12px;
+  color: #5b6c80;
+}
+
+.highlight-list .empty {
+  background: #f4f7fb;
+  border-style: dashed;
+  color: #748396;
+  font-style: italic;
+}
+
+/* Botões (compatível com seu HTML do admin) */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+}
+
+.button.secondary {
+  background: #f1f5f9;
+  color: #0b3c6b;
+  border: 1px solid #d8e1ec;
+}
+
+.button.secondary:hover {
+  filter: brightness(0.98);
+}
+
+.button.tertiary {
+  background: transparent;
+  color: #0b3c6b;
+  border: 1px solid transparent;
+  text-decoration: none;
+  padding: 8px 10px;
+}
+
+.button.tertiary:hover {
+  background: #f1f5f9;
+  border-color: #d8e1ec;
+}
+
+/* Ações no rodapé do card (se você usar) */
+.portal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto; /* empurra ações pro fim do card */
+}
+
+/* Responsivo */
+@media (min-width: 1440px) {
+  .module-grid {
+    grid-template-columns: repeat(3, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .module-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

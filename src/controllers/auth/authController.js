@@ -91,5 +91,5 @@ export function appGet(req, res) {
 
   if (perfil === "admin") return res.redirect("/admin");
   if (perfil === "tecnico") return res.redirect("/tecnico/fila");
-  return res.redirect("/chamados/meus");
+  return res.redirect("/usuario");
 }

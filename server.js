@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import expressLayouts from "express-ejs-layouts";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+
 import { injetarLocalsLayout } from "./src/compartilhado/middlewares/viewLocals.js";
 import { conectarMongo, pegarDb } from "./src/compartilhado/db/mongo.js";
 import { montarRotas } from "./src/rotas/index.js";
@@ -16,11 +17,18 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+const NODE_ENV = process.env.NODE_ENV || "development";
+const isProd = NODE_ENV === "production";
+
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
+const MONGO_DB = process.env.MONGO_DB || "glpi_dev";
+
 // --------- Config básica
 app.disable("x-powered-by");
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.set("trust proxy", 1);
 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "200kb" }));
 
 // --------- Views + Layouts
 app.use(expressLayouts);
@@ -41,19 +49,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// --------- Mongo + Session
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
-const MONGO_DB = process.env.MONGO_DB || "glpi_dev";
+// --------- Mongo
+await conectarMongo();
 
-await conectarMongo(); // lê MONGO_URI e MONGO_DB a partir do env (mongo.js)
-
+// --------- Auditoria
 const auditoriaRepo = criarAuditoriaRepo(pegarDb);
 const auditoria = criarAuditoriaSeguranca({ auditoriaRepo });
+
+// --------- Session
+if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+  if (isProd) throw new Error("SESSION_SECRET fraca/ausente em produção.");
+  console.warn("[warn] SESSION_SECRET ausente/fraca (ok em dev, não em produção).");
+}
 
 app.use(
   session({
     name: "glpi.sid",
-    secret: process.env.SESSION_SECRET || "troque-essa-chave-grande-aqui-depois",
+    secret: process.env.SESSION_SECRET || "dev-secret-troque-isso",
     resave: false,
     saveUninitialized: false,
     rolling: true,
@@ -62,11 +74,12 @@ app.use(
       dbName: MONGO_DB,
       collectionName: "sessoes",
       ttl: 60 * 60 * 8,
+      stringify: false,
     }),
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      // secure: true, // habilite em produção HTTPS
+      secure: isProd,
       maxAge: 1000 * 60 * 60 * 8,
     },
   })
@@ -77,6 +90,25 @@ app.use(injetarLocalsLayout);
 // --------- Rotas
 montarRotas(app, { auditoria });
 
+// --------- 404
+app.use((req, res) => {
+  return res.status(404).render("erros/erro", {
+    layout: "layout-public",
+    titulo: "Página não encontrada",
+    mensagem: "A rota informada não existe ou foi removida.",
+  });
+});
+
+// --------- Error handler
+app.use((err, req, res, next) => {
+  console.error("[erro]", err);
+  return res.status(500).render("erros/erro", {
+    layout: "layout-public",
+    titulo: "Erro interno",
+    mensagem: "Ocorreu um erro inesperado. Tente novamente.",
+  });
+});
+
 // --------- Start
-const porta = process.env.PORT || 3000;
-app.listen(porta, () => console.log(`Rodando em http://localhost:${porta}/auth`));
+const porta = Number(process.env.PORT || 3000);
+app.listen(porta, () => console.log(`Rodando em http://localhost:${porta}/auth (env=${NODE_ENV})`));

@@ -1,0 +1,96 @@
+<section class="portal-usuario">
+  <header class="home-header">
+    <div class="home-header-text">
+      <h1>Abrir chamado</h1>
+      <p>Preencha os dados abaixo para registrar um novo atendimento.</p>
+    </div>
+  </header>
+
+  <div class="module-grid">
+    <article class="module-card module-card--full">
+      <header class="module-card__header">
+        <div>
+          <h2>Novo chamado</h2>
+          <p class="module-subtitle">Título objetivo + descrição com passos e impacto</p>
+        </div>
+      </header>
+
+      <% if (sucesso) { %>
+        <div class="alert success"><%= sucesso %></div>
+      <% } %>
+
+      <form class="form" action="/chamados/novo" method="POST">
+        <div class="form-row">
+          <label class="form-label" for="titulo">Título</label>
+          <input
+            class="form-input <%= erros?.titulo ? 'is-invalid' : '' %>"
+            id="titulo"
+            name="titulo"
+            type="text"
+            maxlength="120"
+            placeholder="Ex.: Não consigo acessar o sistema via VPN"
+            value="<%= (dados?.titulo || '') %>"
+            required
+          />
+          <% if (erros?.titulo) { %><small class="form-error"><%= erros.titulo %></small><% } %>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label class="form-label" for="categoria">Categoria</label>
+            <select
+              class="form-input <%= erros?.categoria ? 'is-invalid' : '' %>"
+              id="categoria"
+              name="categoria"
+              required
+            >
+              <option value="">Selecione</option>
+              <option value="acesso" <%= (dados?.categoria === 'acesso') ? 'selected' : '' %>>Acesso / Login</option>
+              <option value="incidente" <%= (dados?.categoria === 'incidente') ? 'selected' : '' %>>Incidente</option>
+              <option value="solicitacao" <%= (dados?.categoria === 'solicitacao') ? 'selected' : '' %>>Solicitação</option>
+              <option value="infra" <%= (dados?.categoria === 'infra') ? 'selected' : '' %>>Infraestrutura</option>
+              <option value="outros" <%= (dados?.categoria === 'outros') ? 'selected' : '' %>>Outros</option>
+            </select>
+            <% if (erros?.categoria) { %><small class="form-error"><%= erros.categoria %></small><% } %>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="prioridade">Prioridade</label>
+            <select
+              class="form-input <%= erros?.prioridade ? 'is-invalid' : '' %>"
+              id="prioridade"
+              name="prioridade"
+              required
+            >
+              <option value="">Selecione</option>
+              <option value="baixa" <%= (dados?.prioridade === 'baixa') ? 'selected' : '' %>>Baixa</option>
+              <option value="media" <%= (dados?.prioridade === 'media') ? 'selected' : '' %>>Média</option>
+              <option value="alta" <%= (dados?.prioridade === 'alta') ? 'selected' : '' %>>Alta</option>
+              <option value="critica" <%= (dados?.prioridade === 'critica') ? 'selected' : '' %>>Crítica</option>
+            </select>
+            <% if (erros?.prioridade) { %><small class="form-error"><%= erros.prioridade %></small><% } %>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="descricao">Descrição</label>
+          <textarea
+            class="form-textarea <%= erros?.descricao ? 'is-invalid' : '' %>"
+            id="descricao"
+            name="descricao"
+            rows="7"
+            placeholder="Inclua: passos para reproduzir, impacto, urgência, e se ocorre sempre."
+            required
+          ><%= (dados?.descricao || '') %></textarea>
+          <% if (erros?.descricao) { %><small class="form-error"><%= erros.descricao %></small><% } %>
+        </div>
+
+        <div class="form-actions">
+  <a class="button secondary" href="/usuario">Cancelar</a>
+  <button class="button tertiary button--primary" type="submit">Registrar chamado</button>
+</div>
+
+      </form>
+    </article>
+  </div>
+</section>

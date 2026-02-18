@@ -1,29 +1,143 @@
 
 
-  <main class="content">
-    <header class="content__header">
-      <h1>Bem-vindo, <%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %></h1>
-      <p>Área do usuário. Aqui você poderá abrir e acompanhar seus chamados.</p>
-    </header>
+<section class="portal-usuario">
+  <header class="home-header">
+    <div class="home-header-text">
+      <h1>Bem-vindo, <%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %>.</h1>
+      <p>Use os atalhos abaixo para abrir solicitações e acompanhar seus atendimentos.</p>
+    </div>
+  </header>
 
-    <section class="grid">
-      <div class="card">
-        <h2>Meus chamados</h2>
-        <p>Visualize chamados abertos, em atendimento e resolvidos.</p>
-        <a class="btn" href="/chamados/meus">Acessar</a>
+  <div class="module-grid">
+    <!-- MEUS CHAMADOS -->
+    <article class="module-card" id="card-meus-chamados">
+      <header class="module-card__header">
+        <div>
+          <h2>Meus chamados <span class="badge muted">  <%= (kpisUsuario?.total ?? 0) %> </span></h2>
+          <p class="module-subtitle">Acompanhe status, interações e histórico</p>
+        </div>
+        <div class="module-actions">
+          <a class="button tertiary" href="/chamados/meus" title="Visualizar">Ver</a>
+        </div>
+      </header>
+
+      <div class="metric-grid">
+        <div class="metric"> 
+          <span class="metric-value"><%= kpisUsuario?.abertos ?? 0 %></span>
+          <span class="metric-label">Abertos</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value"><%= kpisUsuario?.emAndamento ?? 0 %></span>
+          <span class="metric-label">Em andamento</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value"><%= kpisUsuario?.aguardando ?? 0 %></span>
+          <span class="metric-label">Aguardando</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value"><%= kpisUsuario?.fechados ?? 0 %></span>
+          <span class="metric-label">Fechados</span>
+        </div>
       </div>
 
-      <div class="card">
-        <h2>Abrir chamado</h2>
-        <p>Crie um novo chamado com descrição e anexos (em breve).</p>
-        <button class="btn btn--disabled" type="button" disabled>Em breve</button>
-      </div>
+      <ul class="highlight-list">
+        <% if (!ultimosMeusChamados || ultimosMeusChamados.length === 0) { %>
+          <li class="empty">Nenhum chamado ainda.</li>
+        <% } else { %>
+          <% ultimosMeusChamados.slice(0, 5).forEach((c) => { %>
+            <li class="clickable" onclick="window.location.href='/chamados/<%= c.id %>'">
+              <div class="highlight-title">#<%= c.numero %> — <%= c.titulo %></div>
+              <div class="highlight-meta">
+                <span class="highlight-status"><%= c.status %></span>
+                <span class="highlight-date"><%= c.quando %></span>
+              </div>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
 
-      <div class="card">
-        <h2>Meu perfil</h2>
-        <p>Dados básicos e segurança da conta (em breve).</p>
-        <a class="btn" href="/conta/perfil">Acessar</a>
+    <!-- ABRIR CHAMADO -->
+    <article class="module-card" id="card-abrir-chamado">
+      <header class="module-card__header">
+        <div>
+          <h2>Abrir chamado</h2>
+          <p class="module-subtitle">Registre um novo problema ou solicitação</p>
+        </div>
+        <div class="module-actions">
+          <a class="button tertiary" href="/chamados/novo" title="Abrir agora">Abrir</a>
+        </div>
+      </header>
+
+      <ul class="highlight-list">
+        <li>
+          <div class="highlight-title">Descreva o problema</div>
+          <div class="highlight-meta">
+            <span class="highlight-user">Inclua passos, impacto e urgência</span>
+          </div>
+        </li>
+        <li>
+          <div class="highlight-title">Anexe evidências</div>
+          <div class="highlight-meta">
+            <span class="highlight-user">PDF, imagem ou documento (quando necessário)</span>
+          </div>
+        </li>
+        <li>
+          <div class="highlight-title">Acompanhe as atualizações</div>
+          <div class="highlight-meta">
+            <span class="highlight-user">Responda interações para não travar o fluxo</span>
+          </div>
+        </li>
+      </ul>
+
+      <div class="portal-actions">
+        <a class="button secondary" href="/chamados/novo">Abrir agora</a>
+        <a class="button secondary" href="/chamados/meus">Ver meus chamados</a>
       </div>
-    </section>
-  </main>
-</div>
+    </article>
+
+    <!-- MEU PERFIL -->
+    <article class="module-card" id="card-meu-perfil">
+      <header class="module-card__header">
+        <div>
+          <h2>Meu perfil</h2>
+          <p class="module-subtitle">Dados da conta e configurações básicas</p>
+        </div>
+        <div class="module-actions">
+          <a class="button tertiary" href="/conta/perfil" title="Visualizar">Ver</a>
+        </div>
+      </header>
+
+      <ul class="highlight-list">
+        <li>
+          <div class="highlight-title"><%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %></div>
+          <div class="highlight-meta">
+            <span class="highlight-status"><%= (usuarioSessao?.perfil || "usuário") %></span>
+            <% if (usuarioSessao?.email) { %>
+              <span class="highlight-user"><%= usuarioSessao.email %></span>
+            <% } %>
+          </div>
+        </li>
+
+        <li>
+          <div class="highlight-title">Último acesso</div>
+          <div class="highlight-meta">
+            <span class="highlight-date"><%= (usuarioSessao?.ultimoAcessoFmt || "—") %></span>
+          </div>
+        </li>
+
+        <li>
+          <div class="highlight-title">Segurança</div>
+          <div class="highlight-meta">
+            <span class="highlight-user">Altere sua senha e mantenha seus dados atualizados</span>
+          </div>
+        </li>
+      </ul>
+
+      <div class="portal-actions">
+        <a class="button secondary" href="/conta/perfil">Editar perfil</a>
+        <a class="button secondary" href="/conta/senha">Trocar senha</a>
+      </div>
+    </article>
+  </div>
+</section>
