@@ -40,6 +40,7 @@
           <tr>
             <th style="width: 70px;">#</th>
             <th>Título</th>
+            <th style="width: 180px;">Solicitante</th>
             <th style="width: 140px;">Categoria</th>
             <th style="width: 140px;">Prioridade</th>
             <th style="width: 140px;">Status</th>
@@ -69,6 +70,10 @@
                       <%= c.titulo %>
                     </a>
                   </p>
+                </td>
+                
+                <td>
+                  <p class="table-content"><%= c.solicitante %></p>
                 </td>
 
                 <td>

@@ -8,7 +8,7 @@ import { acharPorId } from "../../repos/usuariosRepo.js";
 
 
 
-import { chamadoNovoGet, chamadoNovoPost, meusChamadosGet } from "../../controllers/chamados/chamadosController.js";
+import { chamadoNovoGet, chamadoNovoPost, meusChamadosGet, chamadoEditarGet, chamadoEditarPost } from "../../controllers/chamados/chamadosController.js";
 
 export function criarChamadosRotas({ auditoria } = {}) {
   const router = Router();
@@ -26,6 +26,8 @@ export function criarChamadosRotas({ auditoria } = {}) {
 router.get("/chamados/meus", meusChamadosGet);
   router.get("/chamados/novo", chamadoNovoGet);
   router.post("/chamados/novo", chamadoNovoPost);
+  router.get("/chamados/:id/editar", chamadoEditarGet);
+router.post("/chamados/:id/editar", chamadoEditarPost);
 
   return router;
 }
