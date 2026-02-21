@@ -83,6 +83,7 @@ export async function meusChamadosGet(req, res) {
       categoria: c.categoria || "—",
       quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "—",
       responsavel: c.responsavelLogin ? `${c.responsavelNome || ""} (${c.responsavelLogin})` : "—",
+      solicitante: c?.criadoPor?.login ? `${c.criadoPor.nome || ""} (${c.criadoPor.login})` : "—",
     }));
 
     return res.render("chamados/meus", {

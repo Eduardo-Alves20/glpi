@@ -38,7 +38,6 @@
       <table class="table">
         <thead>
           <tr>
-            <th style="width: 70px;">#</th>
             <th>Título</th>
             <th style="width: 180px;">Solicitante</th>
             <th style="width: 140px;">Categoria</th>
@@ -52,7 +51,7 @@
         <tbody>
           <% if (!chamados || chamados.length === 0) { %>
             <tr>
-              <td colspan="7" class="empty-row">Nenhum chamado encontrado.</td>
+              <td colspan="6" class="empty-row">Nenhum chamado encontrado.</td>
             </tr>
           <% } else { %>
             <% chamados.forEach((c) => { 
@@ -60,9 +59,7 @@
                  const status = String(c.status || "").toLowerCase();
             %>
               <tr>
-                <td>
-                  <p class="table-content"><%= c.numero %></p>
-                </td>
+              
 
                 <td>
                   <p class="table-content">
@@ -71,7 +68,7 @@
                     </a>
                   </p>
                 </td>
-                
+
                 <td>
                   <p class="table-content"><%= c.solicitante %></p>
                 </td>

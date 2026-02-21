@@ -116,28 +116,7 @@ export async function criarChamado({
  * Projeção mínima e limite defensivo.
  */
 export async function listarMeusChamados(usuarioId, { limit = 50 } = {}) {
-  const db = pegarDb();
-  if (!ObjectId.isValid(String(usuarioId))) return [];
-
-  const lim = Math.max(1, Math.min(Number(limit) || 50, 200));
-  const u = new ObjectId(String(usuarioId));
-
-  return db
-    .collection(COL_CHAMADOS)
-    .find({ "criadoPor.usuarioId": u })
-    .project({
-      numero: 1,
-      titulo: 1,
-      status: 1,
-      createdAt: 1,
-      prioridade: 1,
-      categoria: 1,
-      responsavelNome: 1,
-      responsavelLogin: 1,
-    })
-    .sort({ createdAt: -1 })
-    .limit(lim)
-    .toArray();
+  return listarChamados({ solicitanteId: usuarioId, limit });
 }
 
 /**
