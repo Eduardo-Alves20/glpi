@@ -1,0 +1,151 @@
+/* src/public/styles/chamado-novo.css
+   Página: chamados/novo.ejs
+   Complementa app.css (não repete card/btn/breadcrumb base)
+*/
+
+/* Ajusta container .page (no app.css já tem max-width:1200px) */
+.page {
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Topo: usa estrutura page__top da view */
+.page__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Tipografia */
+.page__title {
+  margin: 0;
+  font-size: 34px;          /* alinhado com app.css */
+  letter-spacing: -0.02em;
+}
+
+.page__subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+/* Ações */
+.page__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Breadcrumb da página: no app.css já existe .breadcrumb, aqui só refina se necessário */
+.breadcrumb strong {
+  font-weight: 700;
+  color: #0b2a4a;
+}
+
+/* Alerta */
+.alert {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.alert--danger {
+  border-color: rgba(180, 35, 24, 0.25);
+  background: rgba(180, 35, 24, 0.08);
+  color: #b42318;
+  font-weight: 600;
+}
+
+/* Cabeçalho do card (você não tem isso no app.css ainda) */
+.card__header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #f7f8fa;
+}
+
+.card__title {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: #0b2a4a;
+}
+
+.card__hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Form (sua view usa .form e classes form__*) */
+.form {
+  max-width: none; /* no app.css .form limita 720px; aqui a tela é mais “wide” */
+  padding: 16px;
+}
+
+.form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 860px) {
+  .form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+  }
+}
+
+.form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form__field--full {
+  grid-column: 1 / -1;
+}
+
+.form__label {
+  font-weight: 600;
+  color: #0b2a4a;
+  font-size: 14px;
+}
+
+.form__input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+
+.form__input:focus {
+  border-color: rgba(2, 132, 199, 0.55);
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+.form__textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.form__help {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Melhor ajuste do textarea (mantém padding igual do input) */
+textarea.form__input {
+  line-height: 1.35;
+}
+.form__actions{
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}

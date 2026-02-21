@@ -1,5 +1,7 @@
+/* src/public/styles/app.css */
+
 /* =========================
-   APP SHELL (sidebar + main)
+   APP SHELL (sidebar + main) - MANTÉM SEU COMPORTAMENTO
    ========================= */
 
 :root {
@@ -30,7 +32,7 @@ body.app-layout {
 /* main deve ocupar a 2ª coluna e crescer */
 .app-shell > .app-main {
   grid-column: 2;
-  min-width: 0;          
+  min-width: 0;
   width: 100%;
   padding: 24px;
   overflow-x: hidden;
@@ -38,7 +40,7 @@ body.app-layout {
   background: var(--app-bg);
 }
 
-
+/* compat: container antigo */
 .app-main .container {
   width: 100%;
   max-width: 1400px;
@@ -53,13 +55,9 @@ body.app-layout {
   max-width: none;
 }
 
-/* =========================
-   RESPONSIVO (mobile)
-   ========================= */
+/* responsivo */
 @media (max-width: 980px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
+  .app-shell { grid-template-columns: 1fr; }
 
   .app-shell > .sidebar {
     grid-column: 1;
@@ -71,18 +69,161 @@ body.app-layout {
     padding: 16px;
   }
 }
-/* =========================
-   Admin dashboard: encostar no sidebar (não centralizar)
-   ========================= */
 
-/* qualquer container dentro do main NÃO deve centralizar */
+/* =========================
+   Compat extra: não centralizar (seu ajuste)
+   ========================= */
 body.app-layout .app-main .container,
 body.app-layout .app-main .form-wrapper {
   max-width: none !important;
   margin: 0 !important;
 }
 
-
 body.app-layout .app-main {
-  padding-left: 24px; 
+  padding-left: 24px;
+}
+
+/* =========================
+   DESIGN SYSTEM (novo visual, sem quebrar o shell)
+   ========================= */
+
+/* Container padrão recomendado para páginas novas */
+.page{
+  max-width: 1200px;
+}
+
+/* Cabeçalho padrão de página */
+.page-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+.page-header h1{
+  margin:0;
+  font-size:34px;
+  letter-spacing:-.02em;
+}
+
+.page-subtitle{
+  margin:6px 0 0;
+  color: var(--muted);
+}
+
+/* Breadcrumb (use sua partial se quiser, só aplica a classe) */
+.breadcrumb{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-size:14px;
+  margin-bottom:14px;
+}
+.breadcrumb a{ color: var(--primary-color); }
+.breadcrumb .sep{ color: #94a3b8; }
+
+/* Card */
+.card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-min);
+}
+
+/* Table */
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+}
+.table thead th{
+  text-align:left;
+  font-weight:600;
+  color:#0b2a4a;
+  background:#f7f8fa;
+  border-bottom:1px solid var(--border);
+  padding:14px 16px;
+}
+.table tbody td{
+  padding:14px 16px;
+  border-bottom:1px solid #eef2f7;
+  vertical-align:middle;
+}
+.table tbody tr:last-child td{ border-bottom:0; }
+
+/* Badges */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  border:1px solid var(--border);
+  background:#fff;
+  color:#0f172a;
+}
+.badge--blue{ background:#e8f1ff; border-color:#cfe2ff; color:#0b3a75; }
+.badge--green{ background:#eaffef; border-color:#c9f5d4; color:#0b5a22; }
+.badge--gray{ background:#f1f5f9; border-color:#e2e8f0; color:#334155; }
+
+/* Botões */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  height:40px;
+  padding:0 14px;
+  border-radius:10px;
+  border:1px solid transparent;
+  cursor:pointer;
+  font-weight:600;
+  font-size:14px;
+  text-decoration:none !important;
+  user-select:none;
+}
+.btn--primary{
+  background: var(--primary-color);
+  color:#fff;
+}
+.btn--primary:hover{ background: var(--primary-color-dark); }
+.btn--ghost{
+  background: transparent;
+  border-color: var(--border);
+  color: var(--primary-color);
+}
+.btn--ghost:hover{ background:#f8fafc; }
+
+/* Form */
+.form{ max-width: 720px; }
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin: 12px 0;
+}
+.label{
+  font-weight:600;
+  color:#0b2a4a;
+  font-size:14px;
+}
+.input, .select, .textarea{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:14px;
+  outline:none;
+  background:#fff;
+}
+.textarea{ min-height:140px; resize:vertical; }
+.hint{ color:var(--muted); font-size:12px; }
+
+.form-actions{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
 }

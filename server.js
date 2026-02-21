@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import expressLayouts from "express-ejs-layouts";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import { garantirIndicesChamados } from "./src/repos/chamados/chamadosRepo.js";
 
 import { injetarLocalsLayout } from "./src/compartilhado/middlewares/viewLocals.js";
 import { conectarMongo, pegarDb } from "./src/compartilhado/db/mongo.js";
@@ -51,6 +52,7 @@ app.use((req, res, next) => {
 
 // --------- Mongo
 await conectarMongo();
+await garantirIndicesChamados();
 
 // --------- Auditoria
 const auditoriaRepo = criarAuditoriaRepo(pegarDb);

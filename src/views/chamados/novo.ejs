@@ -1,96 +1,89 @@
-<section class="portal-usuario">
-  <header class="home-header">
-    <div class="home-header-text">
-      <h1>Abrir chamado</h1>
-      <p>Preencha os dados abaixo para registrar um novo atendimento.</p>
+<section class="page">
+  <div class="page__top">
+    <div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/app">Home</a>
+        <span>/</span>
+        <a href="/chamados/meus">Chamados</a>
+        <span>/</span>
+        <strong>Abrir chamado</strong>
+      </nav>
+
+      <h1 class="page__title">Abrir chamado</h1>
+      <p class="page__subtitle">Preencha os dados abaixo para registrar um novo atendimento.</p>
     </div>
-  </header>
 
-  <div class="module-grid">
-    <article class="module-card module-card--full">
-      <header class="module-card__header">
-        <div>
-          <h2>Novo chamado</h2>
-          <p class="module-subtitle">Título objetivo + descrição com passos e impacto</p>
-        </div>
-      </header>
+    <div class="page__actions">
+      <a class="btn btn--ghost" href="/chamados/meus">Voltar</a>
+    </div>
+  </div>
 
-      <% if (sucesso) { %>
-        <div class="alert success"><%= sucesso %></div>
-      <% } %>
+  <% if (erroGeral) { %>
+    <div class="alert alert--danger"><%= erroGeral %></div>
+  <% } %>
 
-      <form class="form" action="/chamados/novo" method="POST">
-        <div class="form-row">
-          <label class="form-label" for="titulo">Título</label>
+  <div class="card">
+    <div class="card__header">
+      <h2 class="card__title">Novo chamado</h2>
+      <p class="card__hint">Título objetivo + descrição com passos e impacto</p>
+    </div>
+
+    <form class="form" method="post" action="/chamados/novo" autocomplete="off" novalidate>
+      <div class="form__grid">
+        <div class="form__field form__field--full">
+          <label class="form__label" for="titulo">Título</label>
           <input
-            class="form-input <%= erros?.titulo ? 'is-invalid' : '' %>"
+            class="form__input"
             id="titulo"
             name="titulo"
             type="text"
+            minlength="6"
             maxlength="120"
-            placeholder="Ex.: Não consigo acessar o sistema via VPN"
-            value="<%= (dados?.titulo || '') %>"
             required
+            placeholder="Ex.: Não consigo acessar o sistema"
+            value="<%= valores?.titulo || '' %>"
           />
-          <% if (erros?.titulo) { %><small class="form-error"><%= erros.titulo %></small><% } %>
+          <small class="form__help">Seja direto: o que aconteceu + onde.</small>
         </div>
 
-        <div class="form-grid-2">
-          <div class="form-row">
-            <label class="form-label" for="categoria">Categoria</label>
-            <select
-              class="form-input <%= erros?.categoria ? 'is-invalid' : '' %>"
-              id="categoria"
-              name="categoria"
-              required
-            >
-              <option value="">Selecione</option>
-              <option value="acesso" <%= (dados?.categoria === 'acesso') ? 'selected' : '' %>>Acesso / Login</option>
-              <option value="incidente" <%= (dados?.categoria === 'incidente') ? 'selected' : '' %>>Incidente</option>
-              <option value="solicitacao" <%= (dados?.categoria === 'solicitacao') ? 'selected' : '' %>>Solicitação</option>
-              <option value="infra" <%= (dados?.categoria === 'infra') ? 'selected' : '' %>>Infraestrutura</option>
-              <option value="outros" <%= (dados?.categoria === 'outros') ? 'selected' : '' %>>Outros</option>
-            </select>
-            <% if (erros?.categoria) { %><small class="form-error"><%= erros.categoria %></small><% } %>
-          </div>
-
-          <div class="form-row">
-            <label class="form-label" for="prioridade">Prioridade</label>
-            <select
-              class="form-input <%= erros?.prioridade ? 'is-invalid' : '' %>"
-              id="prioridade"
-              name="prioridade"
-              required
-            >
-              <option value="">Selecione</option>
-              <option value="baixa" <%= (dados?.prioridade === 'baixa') ? 'selected' : '' %>>Baixa</option>
-              <option value="media" <%= (dados?.prioridade === 'media') ? 'selected' : '' %>>Média</option>
-              <option value="alta" <%= (dados?.prioridade === 'alta') ? 'selected' : '' %>>Alta</option>
-              <option value="critica" <%= (dados?.prioridade === 'critica') ? 'selected' : '' %>>Crítica</option>
-            </select>
-            <% if (erros?.prioridade) { %><small class="form-error"><%= erros.prioridade %></small><% } %>
-          </div>
+        <div class="form__field">
+          <label class="form__label" for="categoria">Categoria</label>
+          <select class="form__input" id="categoria" name="categoria" required>
+            <option value="" <%= !valores?.categoria ? "selected" : "" %>>Selecione</option>
+            <option value="acesso" <%= valores?.categoria === "acesso" ? "selected" : "" %>>Acesso</option>
+            <option value="incidente" <%= valores?.categoria === "incidente" ? "selected" : "" %>>Incidente</option>
+            <option value="solicitacao" <%= valores?.categoria === "solicitacao" ? "selected" : "" %>>Solicitação</option>
+            <option value="infra" <%= valores?.categoria === "infra" ? "selected" : "" %>>Infra</option>
+            <option value="outros" <%= valores?.categoria === "outros" ? "selected" : "" %>>Outros</option>
+          </select>
         </div>
 
-        <div class="form-row">
-          <label class="form-label" for="descricao">Descrição</label>
+        <div class="form__field">
+          <label class="form__label" for="prioridade">Prioridade</label>
+          <select class="form__input" id="prioridade" name="prioridade" required>
+            <option value="" <%= !valores?.prioridade ? "selected" : "" %>>Selecione</option>
+            <option value="baixa" <%= valores?.prioridade === "baixa" ? "selected" : "" %>>Baixa</option>
+            <option value="media" <%= valores?.prioridade === "media" ? "selected" : "" %>>Média</option>
+            <option value="alta" <%= valores?.prioridade === "alta" ? "selected" : "" %>>Alta</option>
+            <option value="critica" <%= valores?.prioridade === "critica" ? "selected" : "" %>>Crítica</option>
+          </select>
+        </div>
+
+        <div class="form__field form__field--full">
+          <label class="form__label" for="descricao">Descrição</label>
           <textarea
-            class="form-textarea <%= erros?.descricao ? 'is-invalid' : '' %>"
-            id="descricao"
-            name="descricao"
-            rows="7"
-            placeholder="Inclua: passos para reproduzir, impacto, urgência, e se ocorre sempre."
-            required
-          ><%= (dados?.descricao || '') %></textarea>
-          <% if (erros?.descricao) { %><small class="form-error"><%= erros.descricao %></small><% } %>
-        </div>
+  class="form__input form__textarea"
+  id="descricao"
+  name="descricao"
+  minlength="20"
+  maxlength="5000"
+  required
+  placeholder="Inclua: passos para reproduzir, impacto, urgência, e se ocorre sempre."
+  rows="7"
+><%= valores?.descricao || '' %></textarea>
 
-        <div class="form-actions">
-  <a class="button secondary" href="/usuario">Cancelar</a>
-  <button class="button tertiary button--primary" type="submit">Registrar chamado</button>
-</div>
-
-      </form>
-    </article>
-  </div>
-</section>
+      <div class="form__actions">
+        <button class="btn btn--primary" type="submit">Criar chamado</button>
+        <a class="btn btn--ghost" href="/chamados/meus">Cancelar</a>
+      </div>
+    </form>

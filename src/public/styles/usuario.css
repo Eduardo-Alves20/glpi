@@ -242,3 +242,19 @@
     align-items: flex-start;
   }
 }
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin: 6px 0 12px 0;
+  color: #5a6b7a;
+}
+.breadcrumb a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb .sep { color: #9aa8b5; }
+.breadcrumb .current { font-weight: 700; color: #33424f; }

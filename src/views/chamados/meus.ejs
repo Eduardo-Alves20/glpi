@@ -1,0 +1,121 @@
+<div class="content-with-pagination-wrapper">
+  <div class="content-with-pagination">
+
+    <%- include('../partials/breadcrumb', {
+      crumbs: [
+        { label: 'Home', href: '/app' },
+        { label: 'Chamados', href: '/chamados/meus' },
+        { label: 'Meus chamados' }
+      ]
+    }) %>
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Meus chamados</h1>
+        <p class="page-subtitle">Acompanhe os chamados que você abriu.</p>
+
+        <% if (typeof erroGeral !== 'undefined' && erroGeral) { %>
+          <div class="alert-error"><%= erroGeral %></div>
+        <% } %>
+      </div>
+
+      <div class="page-actions">
+        <a class="btn-primary" href="/chamados/novo">Abrir chamado</a>
+      </div>
+    </div>
+
+    <% if (typeof flash !== "undefined" && flash) { %>
+      <script>
+        // Flash vem do servidor (req.session.flash); não depende de querystring (mais seguro)
+        window.__FLASH__ = <%- JSON.stringify({
+          tipo: String(flash.tipo || "info").toLowerCase(),
+          mensagem: String(flash.mensagem || "").slice(0, 300)
+        }) %>;
+      </script>
+    <% } %>
+
+    <div class="table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 70px;">#</th>
+            <th>Título</th>
+            <th style="width: 140px;">Categoria</th>
+            <th style="width: 140px;">Prioridade</th>
+            <th style="width: 140px;">Status</th>
+            <th style="width: 190px;">Quando</th>
+            <th style="width: 110px;">Ações</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (!chamados || chamados.length === 0) { %>
+            <tr>
+              <td colspan="7" class="empty-row">Nenhum chamado encontrado.</td>
+            </tr>
+          <% } else { %>
+            <% chamados.forEach((c) => { 
+                 const prio = String(c.prioridade || "").toLowerCase();
+                 const status = String(c.status || "").toLowerCase();
+            %>
+              <tr>
+                <td>
+                  <p class="table-content"><%= c.numero %></p>
+                </td>
+
+                <td>
+                  <p class="table-content">
+                    <a class="table-link" href="/chamados/<%= c.id %>">
+                      <%= c.titulo %>
+                    </a>
+                  </p>
+                </td>
+
+                <td>
+                  <p class="table-content">
+                    <span class="pill pill-muted"><%= c.categoria %></span>
+                  </p>
+                </td>
+
+                <td>
+                  <p class="table-content">
+                    <span class="pill pill-prio pill-prio-<%= prio %>">
+                      <%= c.prioridade %>
+                    </span>
+                  </p>
+                </td>
+
+                <td>
+                  <p class="table-content">
+                    <span class="pill pill-status pill-status-<%= status %>">
+                      <%= c.status %>
+                    </span>
+                  </p>
+                </td>
+
+                <td>
+                  <p class="table-content"><%= c.quando %></p>
+                </td>
+
+                <td>
+                  <div class="btn-items">
+                    <a class="small-icon" href="/chamados/<%= c.id %>" title="Ver detalhes" aria-label="Ver detalhes">
+                      <img class="small-icon" src="/assets/visualizar.png" alt="Ver">
+                    </a>
+
+                    <a class="small-icon" href="/chamados/<%= c.id %>/editar" title="Editar" aria-label="Editar">
+                      <img class="small-icon" src="/assets/editar.png" alt="Editar">
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <% /* include('../partials/pagination.ejs') */ %>
+</div>

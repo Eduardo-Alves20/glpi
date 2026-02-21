@@ -1,0 +1,10 @@
+<nav class="breadcrumb">
+  <% (crumbs || []).forEach((c, i) => { %>
+    <% if (c.href && i !== (crumbs.length - 1)) { %>
+      <a href="<%= c.href %>"><%= c.label %></a>
+      <span class="sep">/</span>
+    <% } else { %>
+      <span class="current"><%= c.label %></span>
+    <% } %>
+  <% }) %>
+</nav>

@@ -1,116 +1,178 @@
-.module-card--full {
-  grid-column: 1 / -1;
-}
-
-.alert {
-  padding: 12px 14px;
-  border-radius: 10px;
-  margin: 12px 0 18px;
-  border: 1px solid rgba(0,0,0,.08);
-}
-
-.alert.success {
-  background: rgba(40, 167, 69, 0.10);
-}
-
-.form {
+/* Base: reutiliza as variáveis que você já tem no :root do projeto */
+.page-head {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 6px 0 14px 0;
 }
 
-.form-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0b2d4d;
 }
 
-.form-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-label {
-  font-weight: 600;
+.page-subtitle {
+  margin-top: 6px;
+  color: #5a6b7a;
   font-size: 14px;
 }
 
-.form-input, .form-textarea, select.form-input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(0,0,0,.15);
-  background: #fff;
-  outline: none;
-}
-
-.form-textarea { resize: vertical; }
-
-.is-invalid {
-  border-color: rgba(220, 53, 69, .75);
-}
-
-.form-error {
-  color: rgba(220, 53, 69, 1);
-  font-size: 12px;
-}
-
-.form-actions {
+.page-actions {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
-  margin-top: 6px;
+  align-items: center;
 }
 
-@media (max-width: 900px) {
-  .form-grid-2 { grid-template-columns: 1fr; }
+.btn-primary {
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--box-shadow-minimal);
+  transition: filter 0.15s ease, transform 0.05s ease;
 }
-/* --- Botões (padronizar nesta tela) --- */
-.form-actions .button {
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.alert-error {
+  margin-top: 10px;
+  background: rgba(255, 61, 87, 0.1);
+  border: 1px solid rgba(255, 61, 87, 0.25);
+  color: #9b1c2c;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+/* Card ao redor da tabela, no padrão clean */
+.table-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: var(--box-shadow-minimal);
+  overflow: hidden;
+  border: 1px solid #e7edf3;
+}
+
+/* Se sua classe .table já existe, isso aqui só melhora o acabamento */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  text-align: center;
+  background: #f2f2f2;
+  color: var(--primary-color);
+  font-weight: 700;
+  padding: 14px 10px;
+  border-bottom: 1px solid #e2e2e2;
+  font-size: 16px;
+}
+
+.table tbody td {
+  padding: 14px 10px;
+  border-bottom: 1px solid #eaeaea;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.table tbody tr:hover {
+  background: #fafafa;
+}
+
+.table-content {
+  margin: 0;
+  color: #2d3b45;
+  font-size: 14px;
+}
+
+.table-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
+.empty-row {
+  padding: 18px 10px !important;
+  color: #6b7c8b;
+  text-align: center;
+}
+
+.btn-items {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.small-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.small-icon img,
+img.small-icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+/* Pills */
+.pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 10px;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid rgba(0,0,0,.15);
-  background: #fff;
-  cursor: pointer;
-  user-select: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  text-transform: capitalize;
 }
 
-.form-actions .button:hover {
-  filter: brightness(0.98);
+.pill-muted {
+  background: #f3f6f9;
+  color: #415563;
+  border-color: #e2e8ef;
 }
 
-/* secundário: mantém “neutro” */
-.form-actions .button.secondary {
-  background: #fff;
-}
+/* Prioridade */
+.pill-prio-baixa { background: rgba(12, 207, 45, 0.12); color: #0a7a1c; border-color: rgba(12, 207, 45, 0.25); }
+.pill-prio-media { background: rgba(241, 196, 15, 0.16); color: #7a5a00; border-color: rgba(241, 196, 15, 0.28); }
+.pill-prio-alta { background: rgba(243, 113, 26, 0.14); color: #8a3f00; border-color: rgba(243, 113, 26, 0.28); }
+.pill-prio-critica { background: rgba(230, 50, 65, 0.14); color: #8b1420; border-color: rgba(230, 50, 65, 0.28); }
 
-/* primary só nesta tela */
-.form-actions .button--primary {
-  background: rgba(13, 110, 253, 0.12);
-  border-color: rgba(13, 110, 253, 0.35);
-}
+/* Status */
+.pill-status-aberto { background: rgba(44, 131, 207, 0.14); color: #0b4a7a; border-color: rgba(44, 131, 207, 0.28); }
+.pill-status-andamento { background: rgba(241, 196, 15, 0.16); color: #7a5a00; border-color: rgba(241, 196, 15, 0.28); }
+.pill-status-fechado { background: rgba(108, 117, 125, 0.14); color: #3d444b; border-color: rgba(108, 117, 125, 0.25); }
 
-.form-actions .button--primary:hover {
-  background: rgba(13, 110, 253, 0.16);
-}
-
-/* garante que <button> herde estilo igual <a> */
-.form-actions button.button {
-  font: inherit;
-}
-@media (max-width: 520px) {
-  .form-actions {
-    flex-direction: column-reverse;
+@media (max-width: 900px) {
+  .page-head {
+    flex-direction: column;
     align-items: stretch;
   }
-  .form-actions .button {
-    width: 100%;
+  .page-actions {
+    justify-content: flex-start;
+  }
+  .table thead th,
+  .table tbody td {
+    font-size: 13px;
+    padding: 12px 8px;
   }
 }

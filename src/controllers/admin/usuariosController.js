@@ -10,7 +10,7 @@ export async function usuariosIndexGet(req, res) {
   const usuarios = await listarRecentes(50);
 
   return res.render("admin/usuarios/index", {
-    layout: "layout-admin",
+    layout: "layout-app.ejs",
     titulo: "GLPI - Usuários",
     ambiente: process.env.AMBIENTE || "LOCAL",
     cssExtra: null,
@@ -21,7 +21,7 @@ export async function usuariosIndexGet(req, res) {
 
 export function usuariosNovoGet(req, res) {
   return res.render("admin/usuarios/novo", {
-    layout: "layout-admin",
+    layout: "layout-app.ejs",
     titulo: "GLPI - Novo Usuário",
     ambiente: process.env.AMBIENTE || "LOCAL",
     cssExtra: null,
@@ -36,7 +36,7 @@ export async function usuariosCreatePost(req, res) {
 
   if (!v.ok) {
     return res.status(400).render("admin/usuarios/novo", {
-      layout: "layout-admin",
+      layout: "layout-app.ejs",
       titulo: "GLPI - Novo Usuário",
       ambiente: process.env.AMBIENTE || "LOCAL",
       cssExtra: null,
@@ -49,7 +49,7 @@ export async function usuariosCreatePost(req, res) {
   const senhaTemporaria = String(req.body.senhaTemporaria || "").trim();
   if (!senhaTemporaria || senhaTemporaria.length < 8) {
     return res.status(400).render("admin/usuarios/novo", {
-      layout: "layout-admin",
+      layout: "layout-app.ejs",
       titulo: "GLPI - Novo Usuário",
       ambiente: process.env.AMBIENTE || "LOCAL",
       cssExtra: null,
@@ -65,7 +65,7 @@ export async function usuariosCreatePost(req, res) {
 
   if (jaExiste) {
     return res.status(409).render("admin/usuarios/novo", {
-      layout: "layout-admin",
+      layout: "layout-app.ejs",
       titulo: "GLPI - Novo Usuário",
       ambiente: process.env.AMBIENTE || "LOCAL",
       cssExtra: null,
