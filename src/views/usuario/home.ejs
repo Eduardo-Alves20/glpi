@@ -96,48 +96,48 @@
       </div>
     </article>
 
-    <!-- MEU PERFIL -->
-    <article class="module-card" id="card-meu-perfil">
-      <header class="module-card__header">
-        <div>
-          <h2>Meu perfil</h2>
-          <p class="module-subtitle">Dados da conta e configurações básicas</p>
-        </div>
-        <div class="module-actions">
-          <a class="button tertiary" href="/conta/perfil" title="Visualizar">Ver</a>
-        </div>
-      </header>
+ <!-- MEU PERFIL -->
+<article class="module-card" id="card-meu-perfil">
+  <header class="module-card__header">
+    <div>
+      <h2>Meu perfil</h2>
+      <p class="module-subtitle">Dados da conta e configurações básicas</p>
+    </div>
+    <div class="module-actions">
+      <a class="button tertiary" href="/usuario/perfil" title="Visualizar">Ver</a>
+    </div>
+  </header>
 
-      <ul class="highlight-list">
-        <li>
-          <div class="highlight-title"><%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %></div>
-          <div class="highlight-meta">
-            <span class="highlight-status"><%= (usuarioSessao?.perfil || "usuário") %></span>
-            <% if (usuarioSessao?.email) { %>
-              <span class="highlight-user"><%= usuarioSessao.email %></span>
-            <% } %>
-          </div>
-        </li>
-
-        <li>
-          <div class="highlight-title">Último acesso</div>
-          <div class="highlight-meta">
-            <span class="highlight-date"><%= (usuarioSessao?.ultimoAcessoFmt || "—") %></span>
-          </div>
-        </li>
-
-        <li>
-          <div class="highlight-title">Segurança</div>
-          <div class="highlight-meta">
-            <span class="highlight-user">Altere sua senha e mantenha seus dados atualizados</span>
-          </div>
-        </li>
-      </ul>
-
-      <div class="portal-actions">
-        <a class="button secondary" href="/conta/perfil">Editar perfil</a>
-        <a class="button secondary" href="/conta/senha">Trocar senha</a>
+  <ul class="highlight-list">
+    <li>
+      <div class="highlight-title"><%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %></div>
+      <div class="highlight-meta">
+        <span class="highlight-status"><%= (usuarioSessao?.perfil || "usuário") %></span>
+        <% if (usuarioSessao?.email) { %>
+          <span class="highlight-user"><%= usuarioSessao.email %></span>
+        <% } %>
       </div>
-    </article>
+    </li>
+
+    <li>
+      <div class="highlight-title">Último acesso</div>
+      <div class="highlight-meta">
+        <span class="highlight-date"><%= (usuarioSessao?.ultimoAcessoFmt || "—") %></span>
+      </div>
+    </li>
+
+    <li>
+      <div class="highlight-title">Segurança</div>
+      <div class="highlight-meta">
+        <span class="highlight-user">Altere sua senha e mantenha seus dados atualizados</span>
+      </div>
+    </li>
+  </ul>
+
+  <div class="portal-actions">
+    <a class="button secondary" href="/usuario/perfil">Editar perfil</a>
+    <a class="button secondary" href="/usuario/perfil">Trocar senha</a>
+  </div>
+</article>
   </div>
 </section>

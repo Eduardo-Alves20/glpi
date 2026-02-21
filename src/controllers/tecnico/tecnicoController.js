@@ -3,7 +3,7 @@ import {
   assumirChamado,
   resolverChamado,
 } from "../../repos/chamados/chamadosRepo.js";
-
+import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";;
 export async function tecnicoFilaGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
@@ -86,4 +86,27 @@ export async function tecnicoResolverPost(req, res) {
     req.session.flash = { tipo: "error", mensagem: e?.message || "Não foi possível resolver o chamado." };
     return res.redirect("/tecnico/chamados");
   }
+}
+export async function tecnicoHomeGet(req, res) {
+  const usuarioSessao = req.session?.usuario || null;
+  if (!usuarioSessao?.id) return res.redirect("/auth");
+
+  const flash = req.session?.flash || null;
+  if (req.session) req.session.flash = null;
+
+  const { kpis, logs, ultimosChamados } = await obterHomeTecnicoData(usuarioSessao.id);
+
+  return res.render("tecnico/home", {
+    layout: "layout-app",
+    titulo: "Home Técnico",
+    ambiente: process.env.AMBIENTE || "LOCAL",
+    usuarioSessao,
+    flash,
+    kpis,
+    logs,
+    ultimosChamados,
+
+    // se sua view também referencia ultimosUsuarios, mande vazio pra não quebrar:
+    ultimosUsuarios: [],
+  });
 }

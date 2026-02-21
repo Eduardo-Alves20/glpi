@@ -3,6 +3,7 @@
 // Layout (layout-app.ejs) é quem deve renderizar a sidebar e o <main class="app-main">.
 const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)");
 %>
+<% const _kpis = (typeof kpis !== "undefined" && kpis) ? kpis : {}; %>
 
 <section class="admin-home">
   <header class="admin-home__header">

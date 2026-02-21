@@ -17,6 +17,16 @@
     <% if (typeof cssExtra !== "undefined" && cssExtra) { %>
       <link rel="stylesheet" href="<%= cssExtra %>" />
     <% } %>
+    <% if (typeof cssPortal !== "undefined" && cssPortal) { %>
+  <link rel="stylesheet" href="<%= cssPortal %>" />
+<% } %>
+
+<% if (typeof jsExtra !== "undefined" && jsExtra) { %>
+  <% (Array.isArray(jsExtra) ? jsExtra : [jsExtra]).forEach((src) => { %>
+    <script src="<%= src %>" defer></script>
+  <% }) %>
+<% } %>
+
   </head>
 
   <body class="app-layout">

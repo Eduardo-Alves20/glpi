@@ -7,6 +7,8 @@ import {
 
 import { acharPorId } from "../../repos/usuariosRepo.js";
 import { usuarioHomeGet } from "../../controllers/usuario/portalUsuarioController.js";
+import { perfilGet, perfilPost } from "../../controllers/usuario/perfilController.js";
+
 
 export function criarUsuarioRotas({ auditoria } = {}) {
   const router = Router();
@@ -17,7 +19,7 @@ export function criarUsuarioRotas({ auditoria } = {}) {
     "/usuario",
     exigirLogin,
     validarAtivo,
-    exigirPerfis(["usuario", "admin"], {
+    exigirPerfis(["usuario", "admin","tecnico"], {
       onNegado: auditoria?.registrarTentativaAcessoNegado,
     })
   );
@@ -28,6 +30,9 @@ export function criarUsuarioRotas({ auditoria } = {}) {
 
   // opcional: rota alternativa
   router.get("/usuario/home", usuarioHomeGet);
+
+  router.get("/usuario/perfil", perfilGet);
+  router.post("/usuario/perfil", perfilPost);
 
   return router;
 }

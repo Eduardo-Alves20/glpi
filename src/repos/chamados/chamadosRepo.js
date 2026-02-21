@@ -367,6 +367,55 @@ export async function resolverChamado(chamadoId, tecnicoId, { porLogin = "sistem
   if (!r.value) throw new Error("Não foi possível resolver este chamado.");
   return r.value;
 }
+export async function contarChamados({
+  status = null,          // string ou array
+  responsavelId = null,   // tecnicoId
+  somenteSemResponsavel = false,
+  createdFrom = null,
+  createdTo = null,
+  updatedFrom = null,
+  updatedTo = null,
+} = {}) {
+  const db = pegarDb();
+  const filtro = {};
+
+  // status allowlist
+  if (typeof status === "string") {
+    const s = status.trim();
+    if (STATUS_ALLOWED.includes(s)) filtro.status = s;
+  } else if (Array.isArray(status) && status.length) {
+    const st = status.map((s) => String(s).trim()).filter((s) => STATUS_ALLOWED.includes(s));
+    if (st.length) filtro.status = { $in: st };
+  }
+
+  // responsavel
+  if (responsavelId !== null && responsavelId !== undefined) {
+    const s = String(responsavelId).trim();
+    if (!ObjectId.isValid(s)) return 0;
+    filtro.responsavelId = new ObjectId(s);
+  }
+
+  // sem responsável (fila geral)
+  if (somenteSemResponsavel) {
+    filtro.$or = [{ responsavelId: null }, { responsavelId: { $exists: false } }];
+  }
+
+  // range createdAt
+  if (createdFrom || createdTo) {
+    filtro.createdAt = {};
+    if (createdFrom) filtro.createdAt.$gte = new Date(createdFrom);
+    if (createdTo) filtro.createdAt.$lt = new Date(createdTo);
+  }
+
+  // range updatedAt
+  if (updatedFrom || updatedTo) {
+    filtro.updatedAt = {};
+    if (updatedFrom) filtro.updatedAt.$gte = new Date(updatedFrom);
+    if (updatedTo) filtro.updatedAt.$lt = new Date(updatedTo);
+  }
+
+  return db.collection(COL_CHAMADOS).countDocuments(filtro);
+}
 
 /**
  * Índices (chamar no boot)

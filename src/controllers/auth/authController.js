@@ -4,10 +4,8 @@ import { compararSenha } from "../../compartilhado/seguranca/senha.js";
 const NODE_ENV = process.env.NODE_ENV || "development";
 const isProd = NODE_ENV === "production";
 
-// ajuste conforme sua rota técnica real:
-// - se você criou /tecnico/chamados, use isso
-// - se você está usando /tecnico/fila, troque aqui
-const TECNICO_HOME = "/tecnico/chamados";
+
+const TECNICO_HOME = "/tecnico/home";
 
 function renderLogin(res, { mensagemErro = "" } = {}) {
   return res.status(mensagemErro ? 400 : 200).render("autenticacao/login", {

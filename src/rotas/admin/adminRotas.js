@@ -11,6 +11,7 @@ import {
   usuariosIndexGet,
   usuariosNovoGet,
   usuariosCreatePost,
+  usuariosSugerirLoginGet,
 } from "../../controllers/admin/usuariosController.js";
 
 export function criarAdminRotas({ auditoria } = {}) {
@@ -29,9 +30,10 @@ export function criarAdminRotas({ auditoria } = {}) {
   );
 
   router.get("/admin", adminHomeGet);
-
   router.get("/admin/usuarios", usuariosIndexGet);
   router.get("/admin/usuarios/novo", usuariosNovoGet);
+  router.get("/admin/usuarios/sugerir-login", usuariosSugerirLoginGet);
+
   router.post("/admin/usuarios", usuariosCreatePost);
 
   return router;

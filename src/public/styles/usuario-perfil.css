@@ -1,0 +1,216 @@
+/* src/public/styles/usuario-perfil.css
+   Página: /usuario/perfil
+   Complementa app.css + index.css
+*/
+
+/* limita largura e centraliza */
+.page{
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* espaçamento padrão */
+.page{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+/* topo */
+.page__top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+.page__title{
+  margin: 8px 0 4px;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+}
+
+.page__subtitle{
+  margin:0;
+  color: var(--muted);
+}
+
+/* breadcrumb (caso não esteja estilizado no app.css) */
+.breadcrumb{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-size:14px;
+  margin-bottom:14px;
+}
+.breadcrumb a{ color: var(--primary-color); text-decoration:none; }
+.breadcrumb a:hover{ text-decoration:underline; }
+.breadcrumb span{ color:#94a3b8; }
+
+/* alerta */
+.alert{
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  background: #fff;
+}
+.alert--danger{
+  border-color: rgba(180, 35, 24, 0.25);
+  background: rgba(180, 35, 24, 0.08);
+  color: #b42318;
+  font-weight: 600;
+}
+
+/* card header */
+.card__header{
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background:#f7f8fa;
+}
+.card__title{
+  margin:0;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color:#0b2a4a;
+}
+.card__hint{
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* form */
+.form{
+  padding: 16px;
+  max-width: none;
+}
+
+.form__grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 860px){
+  .form__grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+  }
+}
+
+.form__field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.form__field--full{
+  grid-column: 1 / -1;
+}
+
+.form__label{
+  font-weight:600;
+  color:#0b2a4a;
+  font-size:14px;
+}
+
+.form__input{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:14px;
+  outline:none;
+  background:#fff;
+}
+
+.form__input:focus{
+  border-color: rgba(2,132,199,.55);
+  box-shadow: 0 0 0 4px rgba(2,132,199,.12);
+}
+
+.form__input[disabled]{
+  background:#f7f8fa;
+  color: rgba(0,0,0,.65);
+  cursor:not-allowed;
+}
+
+.form__help{
+  color: var(--muted);
+  font-size:12px;
+}
+
+/* ações */
+.form__actions{
+  margin-top: 14px;
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
+
+/* botão caso seu app.css use outro padrão */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  height:40px;
+  padding:0 14px;
+  border-radius:10px;
+  border:1px solid transparent;
+  cursor:pointer;
+  font-weight:600;
+  font-size:14px;
+  text-decoration:none !important;
+  user-select:none;
+}
+.btn--primary{
+  background: var(--primary-color);
+  color:#fff;
+}
+.btn--primary:hover{ background: var(--primary-color-dark); }
+.btn--ghost{
+  background: transparent;
+  border-color: var(--border);
+  color: var(--primary-color);
+}
+.btn--ghost:hover{ background:#f8fafc; }
+/* Seção colapsável de senha */
+.senha-section{
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: #fff;
+}
+
+/* Campo de senha com botão "olhinho" */
+.pw-field{
+  position: relative;
+}
+
+.pw-input{
+  padding-right: 44px; /* espaço pro botão */
+}
+
+.pw-toggle{
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.pw-toggle:hover{
+  background: #f8fafc;
+}

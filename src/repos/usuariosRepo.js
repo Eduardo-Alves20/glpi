@@ -1,6 +1,9 @@
 import { pegarDb } from "../compartilhado/db/mongo.js";
 import { ObjectId } from "mongodb";
 
+
+
+
 function col() {
   return pegarDb().collection("usuarios");
 }
