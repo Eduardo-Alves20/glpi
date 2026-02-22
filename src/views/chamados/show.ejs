@@ -1,0 +1,66 @@
+<section class="usuarios-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Chamado #<%= chamado.numero %></h1>
+          <p class="page-subtitle"><strong>Status:</strong> <%= chamado.status %></p>
+        </div>
+        <div class="page-actions">
+          <a class="button secondary" href="/tecnico/chamados">Voltar</a>
+        </div>
+      </div>
+
+      <div class="glpi-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Título</label>
+            <input type="text" value="<%= chamado.titulo %>" disabled />
+          </div>
+
+          <div class="form-field">
+            <label>Solicitante</label>
+            <input type="text" value="<%= (chamado.criadoPor?.nome || chamado.criadoPor?.login || '-') %>" disabled />
+          </div>
+
+          <div class="form-field" style="grid-column: 1 / -1;">
+            <label>Descrição</label>
+            <textarea rows="6" disabled><%= chamado.descricao %></textarea>
+          </div>
+        </div>
+      </div>
+
+      <% if (chamado.status === "aberto" && !chamado.responsavelId) { %>
+        <form action="/tecnico/chamados/<%= chamado._id %>/assumir" method="POST" class="form-actions">
+          <button class="button" type="submit">Assumir chamado</button>
+        </form>
+      <% } %>
+
+      <% if (chamado.status === "em_atendimento") { %>
+        <form action="/tecnico/chamados/<%= chamado._id %>/solucao" method="POST" class="glpi-form" autocomplete="off">
+          <div class="form-field">
+            <label for="solucao">Solução do técnico (obrigatória)</label>
+            <textarea id="solucao" name="solucao" rows="6" minlength="10" required placeholder="Descreva a solução aplicada..."></textarea>
+            <small class="hint">Ao enviar, o chamado ficará aguardando confirmação do usuário.</small>
+          </div>
+
+          <div class="form-actions">
+            <button class="button" type="submit">Enviar solução</button>
+          </div>
+        </form>
+      <% } %>
+
+      <% if (chamado.status === "aguardando_usuario") { %>
+        <div class="alert">
+          <strong>Chamado aguardando usuário.</strong>
+          <p style="margin: 6px 0 0;">Solução enviada em: <%= chamado.solucaoEm ? new Date(chamado.solucaoEm).toLocaleString("pt-BR") : "-" %></p>
+        </div>
+
+        <div class="form-field">
+          <label>Solução enviada</label>
+          <textarea rows="6" disabled><%= chamado.solucao || "" %></textarea>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>

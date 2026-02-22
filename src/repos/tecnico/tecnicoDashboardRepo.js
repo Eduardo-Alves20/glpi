@@ -43,13 +43,14 @@ export async function obterHomeTecnicoData(tecnicoId) {
   // Últimos chamados (reaproveita sua listagem com projeção mínima)
   const ultimosChamadosRaw = await listarChamados({ limit: 10 });
 
-  const ultimosChamados = ultimosChamadosRaw.slice(0, 5).map((c) => ({
-    numero: c.numero ?? "-",
-    titulo: c.titulo ?? "(sem título)",
-    status: c.status ?? "-",
-    solicitante: c?.criadoPor?.nome || c?.criadoPor?.login || "-",
-    quando: fmtQuando(c.createdAt),
-  }));
+ const ultimosChamados = ultimosChamadosRaw.slice(0, 5).map((c) => ({
+  id: String(c._id),               // ✅ ADD
+  numero: c.numero ?? "-",
+  titulo: c.titulo ?? "(sem título)",
+  status: c.status ?? "-",
+  solicitante: c?.criadoPor?.nome || c?.criadoPor?.login || "-",
+  quando: fmtQuando(c.createdAt),
+}));
 
   // logs: você ainda não tem repo/collection? então manda vazio SEM quebrar view
   const logs = [];

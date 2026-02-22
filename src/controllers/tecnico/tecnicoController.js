@@ -3,7 +3,7 @@ import {
   assumirChamado,
   resolverChamado,
 } from "../../repos/chamados/chamadosRepo.js";
-import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";;
+import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";
 export async function tecnicoFilaGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
@@ -68,7 +68,7 @@ export async function tecnicoAssumirPost(req, res) {
   } catch (e) {
     console.error("Erro ao assumir chamado:", e);
     req.session.flash = { tipo: "error", mensagem: e?.message || "Não foi possível assumir o chamado." };
-    return res.redirect("/tecnico/chamados");
+    return res.redirect(`/tecnico/chamados/${req.params.id}`);
   }
 }
 

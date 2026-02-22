@@ -82,7 +82,7 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
           <h2>Chamados</h2>
           <p>Fila e últimos chamados abertos</p>
         </div>
-        <a class="admin-home__btn admin-home__btn--tertiary" href="/admin/chamados">Ver</a>
+        <a class="admin-home__btn admin-home__btn--tertiary" href="/tecnico/chamados">Ver</a>
       </header>
 
       <div class="miniKpis">
@@ -109,13 +109,15 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
           <li class="list__empty">Nenhum chamado ainda.</li>
         <% } else { %>
           <% ultimosChamados.slice(0, 5).forEach((c) => { %>
-            <li class="list__item list__item--clickable">
-              <div class="list__title">#<%= c.numero %> — <%= c.titulo %></div>
-              <div class="list__meta">
-                <span class="pill"><%= c.status %></span>
-                <span><%= c.solicitante %></span>
-                <span><%= c.quando %></span>
-              </div>
+           <li class="list__item list__item--clickable">
+  <a class="list__link" href="/tecnico/chamados/<%= c.id || c._id %>">
+    <div class="list__title">#<%= c.numero %> — <%= c.titulo %></div>
+    <div class="list__meta">
+      <span class="pill"><%= c.status %></span>
+      <span><%= c.solicitante %></span>
+      <span><%= c.quando %></span>
+    </div>
+  </a>
             </li>
           <% }) %>
         <% } %>

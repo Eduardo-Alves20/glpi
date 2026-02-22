@@ -1,0 +1,98 @@
+/* /styles/tecnico/chamado-show.css */
+/* Ajustes finos só para a tela de detalhe do chamado (técnico) */
+
+.usuarios-page .container {
+  max-width: 1100px;
+}
+
+.usuarios-page .form-wrapper {
+  padding: 22px;
+}
+
+/* Header mais alinhado */
+.usuarios-page .page-header {
+  align-items: flex-start;
+}
+
+.usuarios-page .page-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+
+.usuarios-page .page-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  opacity: 0.78;
+}
+
+/* “Status” com cara de badge */
+.usuarios-page .page-subtitle strong {
+  font-weight: 800;
+}
+
+.usuarios-page .page-subtitle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.usuarios-page .page-subtitle::after {
+  content: "";
+}
+
+/* Campos disabled mais “clean” */
+.usuarios-page input[disabled],
+.usuarios-page textarea[disabled] {
+  background: rgba(15, 31, 55, 0.03);
+  border-color: rgba(15, 31, 55, 0.12);
+  color: rgba(15, 31, 55, 0.88);
+}
+
+/* Descrição e solução com altura mínima agradável */
+.usuarios-page textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Caixa de alerta */
+.usuarios-page .alert {
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 16px 0;
+  border: 1px solid rgba(15, 31, 55, 0.12);
+  background: rgba(15, 31, 55, 0.04);
+}
+
+.usuarios-page .alert strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Separação visual da área de ações */
+.usuarios-page .form-actions {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 31, 55, 0.08);
+}
+
+/* Botões: manter padrão, só alinhar melhor */
+.usuarios-page .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .usuarios-page .form-wrapper {
+    padding: 18px;
+  }
+
+  .usuarios-page .form-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
