@@ -2,20 +2,14 @@ import { ObjectId } from "mongodb";
 import {
   acharChamadoPorId,
   assumirChamado,
-  responderSolucaoTecnico,
+  adicionarInteracaoTecnico,
 } from "../../repos/chamados/chamadosRepo.js";
 
-function podeTecnicoVerChamado(chamado, tecnicoId) {
+function podeTecnicoVerChamado(usuarioSessao, chamado) {
   if (!chamado) return false;
 
-  const tId = String(tecnicoId || "");
-  const resp = chamado.responsavelId ? String(chamado.responsavelId) : "";
-
-  // Fila: aberto e sem responsável
-  if (chamado.status === "aberto" && !resp) return true;
-
-  // Se o responsável é o técnico logado, pode ver qualquer status
-  if (resp && resp === tId) return true;
+  const perfil = String(usuarioSessao?.perfil || "");
+  if (perfil === "admin" || perfil === "tecnico") return true;
 
   return false;
 }
@@ -33,10 +27,10 @@ console.log("[SHOW] chamado=", {
   responsavelId: chamado?.responsavelId ? String(chamado.responsavelId) : null,
 });
 console.log("[SHOW] podeVer=", podeTecnicoVerChamado(chamado, tecnicoId));
-  if (!podeTecnicoVerChamado(chamado, tecnicoId)) {
-    req.session.flash = { tipo: "error", mensagem: "Acesso negado ao chamado." };
-    return res.redirect("/tecnico/chamados");
-  }
+ if (!podeTecnicoVerChamado(usuarioSessao, chamado)) {
+  req.session.flash = { tipo: "error", mensagem: "Acesso negado ao chamado." };
+  return res.redirect("/tecnico/chamados");
+}
 
   return res.render("tecnico/chamados/show", {
     layout: "layout-app",
@@ -44,6 +38,7 @@ console.log("[SHOW] podeVer=", podeTecnicoVerChamado(chamado, tecnicoId));
     ambiente: process.env.AMBIENTE || "LOCAL",
     usuarioSessao,
     chamado,
+    cssPortal: "/styles/usuario.css",         
     cssExtra: "/styles/chamado-show.css",
   });
 }
@@ -68,16 +63,43 @@ export async function tecnicoChamadoSolucaoPost(req, res) {
   const solucao = String(req.body?.solucao || "").trim();
 
   try {
-    await responderSolucaoTecnico(
-      req.params.id,
-      { id: usuarioSessao.id, nome: usuarioSessao.nome, usuario: usuarioSessao.usuario },
-      solucao,
-      { porLogin: usuarioSessao.usuario }
-    );
+    await adicionarInteracaoTecnico(
+  req.params.id,
+  { id: usuarioSessao.id, nome: usuarioSessao.nome, usuario: usuarioSessao.usuario },
+  solucao,
+  {
+    tipo: "solucao",
+    porLogin: usuarioSessao.usuario,
+    mudarStatusPara: "aguardando_usuario", // se você quiser manter o fluxo
+  }
+);
     req.session.flash = { tipo: "success", mensagem: "Solução enviada. Aguardando resposta do usuário." };
   } catch (e) {
     req.session.flash = { tipo: "error", mensagem: e.message || "Falha ao enviar solução." };
   }
 
   return res.redirect(`/tecnico/chamados/${req.params.id}`);
+}
+export async function tecnicoChamadoInteracaoPost(req, res) {
+  try {
+    const usuarioSessao = req.session?.usuario;
+    const { texto, tipo } = req.body || {};
+
+    const t = (tipo === "solucao") ? "solucao" : "mensagem";
+    const mudarStatusPara = (t === "solucao") ? "aguardando_usuario" : null;
+
+    await adicionarInteracaoTecnico(
+      req.params.id,
+      { id: usuarioSessao.id, nome: usuarioSessao.nome, usuario: usuarioSessao.usuario },
+      texto,
+      { tipo: t, porLogin: usuarioSessao.usuario, mudarStatusPara }
+    );
+
+    req.session.flash = { tipo: "success", mensagem: (t === "solucao") ? "Solução enviada." : "Mensagem enviada." };
+    return res.redirect(`/tecnico/chamados/${req.params.id}`);
+  } catch (err) {
+    console.error(err);
+    req.session.flash = { tipo: "error", mensagem: err?.message || "Erro ao enviar." };
+    return res.redirect(`/tecnico/chamados/${req.params.id}`);
+  }
 }

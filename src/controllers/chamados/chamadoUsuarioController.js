@@ -3,6 +3,7 @@ import {
   usuarioConfirmarSolucao,
   usuarioReabrirChamado,
 } from "../../repos/chamados/chamadosRepo.js";
+import { usuarioAdicionarInteracao } from "../../repos/chamados/chamadosRepo.js"; 
 
 export async function usuarioChamadoShowGet(req, res) {
   const usuarioSessao = req.session?.usuario;
@@ -18,6 +19,8 @@ export async function usuarioChamadoShowGet(req, res) {
     titulo: `Chamado #${chamado.numero}`,
     ambiente: process.env.AMBIENTE || "LOCAL",
     usuarioSessao,
+    cssPortal: "/styles/usuario.css",
+cssExtra: "/styles/chamado-show.css",
     chamado,
   });
 }
@@ -45,4 +48,25 @@ export async function usuarioChamadoReabrirPost(req, res) {
   }
 
   return res.redirect(`/chamados/${req.params.id}`);
+}
+
+
+export async function usuarioChamadoInteracaoPost(req, res) {
+  try {
+    const usuarioSessao = req.session?.usuario;
+    const { texto } = req.body || {};
+
+    await usuarioAdicionarInteracao(
+      req.params.id,
+      { id: usuarioSessao.id, nome: usuarioSessao.nome, usuario: usuarioSessao.usuario },
+      texto
+    );
+
+    req.session.flash = { tipo: "success", mensagem: "Mensagem enviada." };
+    return res.redirect(`/chamados/${req.params.id}`);
+  } catch (err) {
+    console.error(err);
+    req.session.flash = { tipo: "error", mensagem: err?.message || "Erro ao enviar mensagem." };
+    return res.redirect(`/chamados/${req.params.id}`);
+  }
 }

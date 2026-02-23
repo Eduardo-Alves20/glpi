@@ -53,7 +53,7 @@
                 <td><p class="table-content"><%= c.numero %></p></td>
                 <td>
                   <p class="table-content">
-                    <a class="table-link" href="/chamados/<%= c.id %>"><%= c.titulo %></a>
+                    <a href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a>
                   </p>
                 </td>
                 <td><p class="table-content"><span class="pill pill-muted"><%= c.categoria %></span></p></td>
@@ -67,10 +67,6 @@
                   <div class="btn-items">
                     <form method="post" action="/tecnico/chamados/<%= c.id %>/assumir" style="display:inline;">
                       <button class="btn-primary" type="submit">Assumir</button>
-                    </form>
-
-                    <form method="post" action="/tecnico/chamados/<%= c.id %>/resolver" style="display:inline;">
-                      <button class="btn-ghost" type="submit">Resolver</button>
                     </form>
                   </div>
                 </td>

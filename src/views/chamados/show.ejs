@@ -1,13 +1,79 @@
 <section class="usuarios-page">
   <div class="container">
     <div class="form-wrapper">
+      <%
+        const STATUS_UI = {
+          aberto: { label: "Aberto", cls: "st-aberto" },
+          em_atendimento: { label: "Em atendimento", cls: "st-atendimento" },
+          aguardando_usuario: { label: "Aguardando você", cls: "st-aguardando" },
+          fechado: { label: "Fechado", cls: "st-fechado" },
+        };
+
+        const st = STATUS_UI[chamado.status] || { label: String(chamado.status || "-"), cls: "st-outro" };
+
+        const categoriaLabel =
+          chamado.categoria ? String(chamado.categoria) :
+          (chamado.tipo ? String(chamado.tipo) : "-");
+
+        const prioridadeLabel =
+          chamado.prioridade ? String(chamado.prioridade) :
+          (chamado.urgencia ? String(chamado.urgencia) : "-");
+
+        const responsavelLabel =
+          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "—"));
+
+        const solicitanteLabel =
+          (chamado.criadoPor?.nome || chamado.criadoPor?.login || "-");
+
+        const historico = Array.isArray(chamado.historico) ? chamado.historico.slice() : [];
+        historico.sort((a,b) => new Date(a.em || 0) - new Date(b.em || 0));
+
+        const fmtData = (d) => {
+          try { return d ? new Date(d).toLocaleString("pt-BR") : "-"; } catch { return "-"; }
+        };
+
+        const autorLinha = (h) => {
+          const a = h?.meta?.autor;
+          if (a && (a.nome || a.login)) {
+            const nome = a.nome ? String(a.nome) : "";
+            const login = a.login ? String(a.login) : "";
+            return `${nome}${(nome && login) ? " ("+login+")" : (login ? "("+login+")" : "")}`;
+          }
+          return String(h?.por || "sistema");
+        };
+
+        const tipoLabel = (t) => {
+          if (t === "solucao") return "Solução";
+          if (t === "mensagem") return "Mensagem";
+          if (t === "status") return "Status";
+          if (t === "transferencia") return "Transferência";
+          if (t === "criacao") return "Criação";
+          if (t === "atribuicao") return "Atribuição";
+          return t ? String(t) : "Evento";
+        };
+
+        const podeComentar = chamado.status !== "fechado"; // ajuste se quiser permitir comentar mesmo fechado
+        const podeConfirmar = chamado.status === "aguardando_usuario";
+      %>
+
       <div class="page-header">
         <div>
           <h1 class="page-title">Chamado #<%= chamado.numero %></h1>
-          <p class="page-subtitle"><strong>Status:</strong> <%= chamado.status %></p>
+
+          <div class="subrow">
+            <span class="badge <%= st.cls %>"><%= st.label %></span>
+            <span class="meta"><strong>Categoria:</strong> <%= categoriaLabel %></span>
+            <span class="meta"><strong>Prioridade:</strong> <%= prioridadeLabel %></span>
+          </div>
+
+          <div class="subrow">
+            <span class="meta"><strong>Solicitante:</strong> <%= solicitanteLabel %></span>
+            <span class="meta"><strong>Responsável:</strong> <%= responsavelLabel %></span>
+          </div>
         </div>
+
         <div class="page-actions">
-          <a class="button secondary" href="/tecnico/chamados">Voltar</a>
+          <a class="button secondary" href="/chamados/meus">Voltar</a>
         </div>
       </div>
 
@@ -20,7 +86,7 @@
 
           <div class="form-field">
             <label>Solicitante</label>
-            <input type="text" value="<%= (chamado.criadoPor?.nome || chamado.criadoPor?.login || '-') %>" disabled />
+            <input type="text" value="<%= solicitanteLabel %>" disabled />
           </div>
 
           <div class="form-field" style="grid-column: 1 / -1;">
@@ -30,37 +96,142 @@
         </div>
       </div>
 
-      <% if (chamado.status === "aberto" && !chamado.responsavelId) { %>
-        <form action="/tecnico/chamados/<%= chamado._id %>/assumir" method="POST" class="form-actions">
-          <button class="button" type="submit">Assumir chamado</button>
-        </form>
+      <!-- Interações (chat) -->
+      <div class="chat-wrap">
+        <div class="chat-head">
+          <h2 class="chat-title">Interações</h2>
+          <span class="chat-sub">Acompanhe as mensagens dos técnicos e suas respostas.</span>
+        </div>
+
+        <% if (!historico.length) { %>
+          <div class="chat-empty">Nenhuma interação ainda.</div>
+        <% } else { %>
+          <div class="chat">
+            <% historico.forEach((h) => { %>
+              <div class="msg">
+                <div class="msg-top">
+                  <span class="msg-author"><%= autorLinha(h) %></span>
+                  <span class="msg-type"><%= tipoLabel(h.tipo) %></span>
+                  <span class="msg-time"><%= fmtData(h.em) %></span>
+                </div>
+                <div class="msg-body"><%= h.mensagem || "—" %></div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Ações do usuário -->
+      <% if (podeConfirmar) { %>
+        <div class="user-actions">
+          <form method="POST" action="/chamados/<%= chamado._id %>/confirmar">
+            <button class="button" type="submit">Confirmar e fechar</button>
+          </form>
+
+          <form method="POST" action="/chamados/<%= chamado._id %>/reabrir" class="reabrir-form">
+            <input type="text" name="comentario" minlength="5" required placeholder="Explique por que está reabrindo…" />
+            <button class="button secondary" type="submit">Reabrir</button>
+          </form>
+        </div>
       <% } %>
 
-      <% if (chamado.status === "em_atendimento") { %>
-        <form action="/tecnico/chamados/<%= chamado._id %>/solucao" method="POST" class="glpi-form" autocomplete="off">
+      <% if (podeComentar) { %>
+        <form action="/chamados/<%= chamado._id %>/interacao" method="POST" class="glpi-form" autocomplete="off">
           <div class="form-field">
-            <label for="solucao">Solução do técnico (obrigatória)</label>
-            <textarea id="solucao" name="solucao" rows="6" minlength="10" required placeholder="Descreva a solução aplicada..."></textarea>
-            <small class="hint">Ao enviar, o chamado ficará aguardando confirmação do usuário.</small>
+            <label for="texto">Responder</label>
+            <textarea id="texto" name="texto" rows="5" minlength="2" required placeholder="Escreva uma mensagem…"></textarea>
+            <small class="hint">Se precisar de mais ajuda, explique o que ainda não funcionou.</small>
           </div>
 
           <div class="form-actions">
-            <button class="button" type="submit">Enviar solução</button>
+            <button class="button" type="submit">Enviar mensagem</button>
           </div>
         </form>
-      <% } %>
-
-      <% if (chamado.status === "aguardando_usuario") { %>
-        <div class="alert">
-          <strong>Chamado aguardando usuário.</strong>
-          <p style="margin: 6px 0 0;">Solução enviada em: <%= chamado.solucaoEm ? new Date(chamado.solucaoEm).toLocaleString("pt-BR") : "-" %></p>
-        </div>
-
-        <div class="form-field">
-          <label>Solução enviada</label>
-          <textarea rows="6" disabled><%= chamado.solucao || "" %></textarea>
-        </div>
+      <% } else { %>
+        <div class="hint muted" style="margin-top:14px;">Este chamado está fechado. Se precisar, reabra o chamado.</div>
       <% } %>
     </div>
   </div>
 </section>
+
+<style>
+  .usuarios-page .container { max-width: 1100px; }
+  .usuarios-page .form-wrapper { padding: 22px; }
+
+  .page-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+  .page-title { margin:0; font-size:22px; line-height:1.2; letter-spacing:-0.2px; }
+  .subrow { margin-top: 8px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .meta { font-size: 13px; opacity: .85; }
+  .meta strong { opacity: 1; }
+
+  .badge {
+    display:inline-flex; align-items:center;
+    padding: 6px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    border: 1px solid rgba(15,31,55,.12);
+    background: rgba(15,31,55,.04);
+  }
+  .st-aberto { background: rgba(46, 204, 113, .12); border-color: rgba(46,204,113,.35); }
+  .st-atendimento { background: rgba(52, 152, 219, .12); border-color: rgba(52,152,219,.35); }
+  .st-aguardando { background: rgba(243, 156, 18, .14); border-color: rgba(243,156,18,.38); }
+  .st-fechado { background: rgba(149, 165, 166, .18); border-color: rgba(149,165,166,.45); }
+  .st-outro { background: rgba(155, 89, 182, .12); border-color: rgba(155,89,182,.35); }
+
+  input[disabled], textarea[disabled] {
+    background: rgba(15,31,55,.03);
+    border-color: rgba(15,31,55,.12);
+    color: rgba(15,31,55,.88);
+  }
+
+  .chat-wrap {
+    margin-top: 18px;
+    border: 1px solid rgba(15,31,55,.10);
+    border-radius: 14px;
+    background: #fff;
+  }
+  .chat-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(15,31,55,.08);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .chat-title { margin:0; font-size: 16px; }
+  .chat-sub { font-size: 12px; opacity:.75; }
+  .chat-empty { padding: 14px 16px; opacity:.8; }
+
+  .chat { padding: 12px 14px; display:flex; flex-direction:column; gap:10px; max-height: 360px; overflow:auto; }
+  .msg { border: 1px solid rgba(15,31,55,.10); border-radius: 12px; padding: 10px 12px; background: rgba(15,31,55,.02); }
+  .msg-top { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom: 6px; }
+  .msg-author { font-weight: 800; font-size: 13px; }
+  .msg-type { font-size: 12px; padding: 2px 8px; border-radius: 999px; border:1px solid rgba(15,31,55,.12); background:#fff; }
+  .msg-time { margin-left:auto; font-size: 12px; opacity: .75; }
+  .msg-body { white-space: pre-wrap; font-size: 13px; line-height: 1.4; }
+
+  .user-actions {
+    margin-top: 14px;
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .reabrir-form { display:flex; gap: 10px; flex: 1; min-width: 260px; }
+  .reabrir-form input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15,31,55,.14);
+  }
+
+  .form-actions {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(15,31,55,.08);
+    display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;
+  }
+
+  .muted { opacity: .75; }
+  @media (max-width: 900px) {
+    .usuarios-page .form-wrapper { padding: 18px; }
+    .form-actions .button { width: 100%; justify-content: center; }
+    .reabrir-form { flex-direction: column; }
+  }
+</style>

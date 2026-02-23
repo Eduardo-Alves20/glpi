@@ -1,9 +1,10 @@
 import {
   listarFilaChamados,
   assumirChamado,
-  resolverChamado,
 } from "../../repos/chamados/chamadosRepo.js";
+
 import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";
+
 export async function tecnicoFilaGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
@@ -72,21 +73,6 @@ export async function tecnicoAssumirPost(req, res) {
   }
 }
 
-export async function tecnicoResolverPost(req, res) {
-  const usuarioSessao = req.session?.usuario || null;
-  if (!usuarioSessao?.id) return res.redirect("/auth");
-
-  try {
-    await resolverChamado(req.params.id, usuarioSessao.id, { porLogin: usuarioSessao.usuario });
-
-    req.session.flash = { tipo: "success", mensagem: "Chamado resolvido." };
-    return res.redirect("/tecnico/chamados");
-  } catch (e) {
-    console.error("Erro ao resolver chamado:", e);
-    req.session.flash = { tipo: "error", mensagem: e?.message || "Não foi possível resolver o chamado." };
-    return res.redirect("/tecnico/chamados");
-  }
-}
 export async function tecnicoHomeGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
@@ -105,8 +91,6 @@ export async function tecnicoHomeGet(req, res) {
     kpis,
     logs,
     ultimosChamados,
-
-    // se sua view também referencia ultimosUsuarios, mande vazio pra não quebrar:
-    ultimosUsuarios: [],
+    ultimosUsuarios: [], // não quebra view
   });
 }

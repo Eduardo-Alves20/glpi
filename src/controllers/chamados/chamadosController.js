@@ -1,8 +1,8 @@
 import {
   criarChamado,
-  listarMeusChamados,
+  listarChamados,
   acharChamadoPorIdDoUsuario,
-  atualizarChamadoDoUsuario,
+  editarChamadoDoUsuario,
 } from "../../repos/chamados/chamadosRepo.js";
 
 export async function chamadoNovoGet(req, res) {
@@ -32,19 +32,23 @@ export async function chamadoNovoPost(req, res) {
 
   try {
     // validações mínimas
-    if (valores.titulo.length < 6 || valores.titulo.length > 120) throw new Error("Título deve ter entre 6 e 120 caracteres.");
-    if (valores.descricao.length < 20 || valores.descricao.length > 5000) throw new Error("Descrição deve ter entre 20 e 5000 caracteres.");
+    if (valores.titulo.length < 6 || valores.titulo.length > 120)
+      throw new Error("Título deve ter entre 6 e 120 caracteres.");
+    if (valores.descricao.length < 20 || valores.descricao.length > 5000)
+      throw new Error("Descrição deve ter entre 20 e 5000 caracteres.");
 
     const categoriasPermitidas = ["acesso", "incidente", "solicitacao", "infra", "outros"];
-    if (!categoriasPermitidas.includes(valores.categoria)) throw new Error("Selecione uma categoria válida.");
+    if (!categoriasPermitidas.includes(valores.categoria))
+      throw new Error("Selecione uma categoria válida.");
 
     const prioridadesPermitidas = ["baixa", "media", "alta", "critica"];
-    if (!prioridadesPermitidas.includes(valores.prioridade)) throw new Error("Selecione uma prioridade válida.");
+    if (!prioridadesPermitidas.includes(valores.prioridade))
+      throw new Error("Selecione uma prioridade válida.");
 
     await criarChamado({
       usuarioId: usuarioSessao.id,
       usuarioNome: usuarioSessao.nome,
-      usuarioLogin: usuarioSessao.usuario, // ou login
+      usuarioLogin: usuarioSessao.usuario,
       ...valores,
     });
 
@@ -72,7 +76,7 @@ export async function meusChamadosGet(req, res) {
   if (req.session) req.session.flash = null;
 
   try {
-    const lista = await listarMeusChamados(usuarioSessao.id, { limit: 50 });
+    const lista = await listarChamados({ solicitanteId: usuarioSessao.id, limit: 50 });
 
     const chamados = (lista || []).map((c) => ({
       id: String(c._id),
@@ -113,10 +117,7 @@ export async function meusChamadosGet(req, res) {
   }
 }
 
-/**
- * GET editar (usuário): só dono
- * Regra de edição por status será aplicada no POST (repo já exige status=aberto)
- */
+
 export async function chamadoEditarGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
@@ -163,7 +164,7 @@ export async function chamadoEditarPost(req, res) {
     categoria: String(req.body?.categoria ?? "").trim(),
   };
 
-  // 1) Ownership check ANTES de atualizar (segurança + UX)
+  // 1) Ownership check ANTES de atualizar
   const chamadoAtual = await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id);
   if (!chamadoAtual) {
     return res.status(404).render("erros/erro", {
@@ -173,7 +174,7 @@ export async function chamadoEditarPost(req, res) {
     });
   }
 
-  // 2) Se status não é aberto, não tenta atualizar (regra profissional)
+  // 2) Se status não é aberto, não tenta atualizar
   const bloqueado = chamadoAtual.status !== "aberto";
   if (bloqueado) {
     return res.status(400).render("chamados/editar", {
@@ -198,21 +199,15 @@ export async function chamadoEditarPost(req, res) {
   }
 
   try {
-    await atualizarChamadoDoUsuario(
-      req.params.id,
-      usuarioSessao.id,
-      valores,
-      { porLogin: usuarioSessao.usuario }
-    );
+    await editarChamadoDoUsuario(req.params.id, usuarioSessao.id, valores, { porLogin: usuarioSessao.usuario });
 
     req.session.flash = { tipo: "success", mensagem: "Chamado atualizado com sucesso!" };
     return res.redirect("/chamados/meus");
   } catch (e) {
     console.error("Erro ao editar chamado:", e);
 
-    // Recarrega para garantir status/numero atualizados (se mudou entre o check e o update)
-    const chamadoDepois = await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id) || chamadoAtual;
-    const bloqueadoDepois = (chamadoDepois.status !== "aberto");
+    const chamadoDepois = (await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id)) || chamadoAtual;
+    const bloqueadoDepois = chamadoDepois.status !== "aberto";
 
     return res.status(400).render("chamados/editar", {
       layout: "layout-app",
