@@ -92,14 +92,11 @@
         }
       })();
     </script>
-<script type="module">
-  import { startChamadoPoll } from "/js/chamado-poll.js";
-  startChamadoPoll({
-    chamadoId: "<%= String(chamado._id) %>",
-    viewerId: "<%= String(usuarioSessao?.id || '') %>",
-    intervalMs: 1000,
-    notifyOnlyWhenHidden: true
-  });
-</script>
+    <script type="module">
+      import { startNotificacoesPoll } from "/js/notificacoes-poll.js";
+      startNotificacoesPoll({
+        perfil: "<%= String(usuarioSessao?.perfil || '') %>",
+      });
+    </script>
   </body>
 </html>

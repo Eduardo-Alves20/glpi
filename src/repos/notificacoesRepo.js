@@ -6,6 +6,7 @@ function oid(id) {
 }
 const COL = "notificacoes";
 export async function criarNotificacao({
+  destinatario,
   destinatarioTipo,
   destinatarioId, // string
   chamadoId,      // string
@@ -18,8 +19,11 @@ export async function criarNotificacao({
   const db = pegarDb();
   const now = new Date();
 
+  const tipoDestino = destinatario?.tipo || destinatarioTipo;
+  const idDestino = destinatario?.id || destinatarioId;
+
   const doc = {
-    destinatario: { tipo: destinatarioTipo, id: String(destinatarioId) },
+    destinatario: { tipo: tipoDestino, id: String(idDestino) },
     chamadoId: chamadoId ? String(chamadoId) : null,
     tipo,
     titulo,
