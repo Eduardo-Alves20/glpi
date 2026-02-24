@@ -10,6 +10,14 @@ import { listarUsuariosPorPerfis } from "../../repos/usuariosRepo.js";
 import { notificarNovoChamadoFila } from "../../service/notificacoesService.js";
 import { registrarEventoSistema } from "../../service/logsService.js";
 import { apagarArquivosUpload, mapearArquivosUpload } from "../../service/anexosService.js";
+import {
+  aplicarFiltrosListaChamados,
+  lerFiltrosListaChamados,
+  obterOpcoesFiltrosChamados,
+  rotuloCategoriaChamado,
+  rotuloPrioridadeChamado,
+  rotuloStatusChamado,
+} from "../../service/chamadosListaFiltrosService.js";
 
 export async function chamadoNovoGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
@@ -42,22 +50,21 @@ export async function chamadoNovoPost(req, res) {
     if (req.uploadError) throw new Error(req.uploadError);
     anexos = mapearArquivosUpload(req.files);
 
-    // validações mínimas
     if (valores.titulo.length < 6 || valores.titulo.length > 120) {
-      throw new Error("Título deve ter entre 6 e 120 caracteres.");
+      throw new Error("Titulo deve ter entre 6 e 120 caracteres.");
     }
     if (valores.descricao.length < 20 || valores.descricao.length > 5000) {
-      throw new Error("Descrição deve ter entre 20 e 5000 caracteres.");
+      throw new Error("Descricao deve ter entre 20 e 5000 caracteres.");
     }
 
     const categoriasPermitidas = ["acesso", "incidente", "solicitacao", "infra", "outros"];
     if (!categoriasPermitidas.includes(valores.categoria)) {
-      throw new Error("Selecione uma categoria válida.");
+      throw new Error("Selecione uma categoria valida.");
     }
 
     const prioridadesPermitidas = ["baixa", "media", "alta", "critica"];
     if (!prioridadesPermitidas.includes(valores.prioridade)) {
-      throw new Error("Selecione uma prioridade válida.");
+      throw new Error("Selecione uma prioridade valida.");
     }
 
     chamadoCriado = await criarChamado({
@@ -125,7 +132,7 @@ export async function chamadoNovoPost(req, res) {
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamado-novo.css",
       usuarioSessao,
-      erroGeral: e?.message || "Não foi possível registrar o chamado.",
+      erroGeral: e?.message || "Nao foi possivel registrar o chamado.",
       valores,
     });
   }
@@ -138,19 +145,35 @@ export async function meusChamadosGet(req, res) {
   const flash = req.session?.flash || null;
   if (req.session) req.session.flash = null;
 
-  try {
-    const lista = await listarChamados({ solicitanteId: usuarioSessao.id, limit: 50 });
+  const filtros = lerFiltrosListaChamados(req.query, {
+    limitDefault: 50,
+    allowResponsavelLogin: true,
+  });
+  const opcoes = obterOpcoesFiltrosChamados({ incluirAlocacao: false });
 
-    const chamados = (lista || []).map((c) => ({
+  try {
+    const lista = await listarChamados({ solicitanteId: usuarioSessao.id, limit: 200 });
+    const resultado = aplicarFiltrosListaChamados(lista, filtros, {
+      usuarioLogin: usuarioSessao.usuario,
+    });
+
+    const chamados = (resultado.itens || []).map((c) => ({
       id: String(c._id),
       numero: c.numero,
       titulo: c.titulo,
-      status: c.status || "—",
-      prioridade: c.prioridade || "—",
-      categoria: c.categoria || "—",
-      quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "—",
-      responsavel: c.responsavelLogin ? `${c.responsavelNome || ""} (${c.responsavelLogin})` : "—",
-      solicitante: c?.criadoPor?.login ? `${c.criadoPor.nome || ""} (${c.criadoPor.login})` : "—",
+      status: c.status || "-",
+      statusLabel: rotuloStatusChamado(c.status),
+      prioridade: c.prioridade || "-",
+      prioridadeLabel: rotuloPrioridadeChamado(c.prioridade),
+      categoria: c.categoria || "-",
+      categoriaLabel: rotuloCategoriaChamado(c.categoria),
+      quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "-",
+      responsavel: c.responsavelLogin
+        ? `${c.responsavelNome || ""} (${c.responsavelLogin})`
+        : "-",
+      solicitante: c?.criadoPor?.login
+        ? `${c.criadoPor.nome || ""} (${c.criadoPor.login})`
+        : "-",
     }));
 
     return res.render("chamados/meus", {
@@ -158,23 +181,36 @@ export async function meusChamadosGet(req, res) {
       titulo: "Meus chamados",
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamados.css",
+      jsExtra: "/js/chamados-filters.js",
       usuarioSessao,
       chamados,
+      filtros,
+      opcoes,
+      totalFiltrados: resultado.total,
+      totalBase: Array.isArray(lista) ? lista.length : 0,
       erroGeral: null,
       flash,
     });
   } catch (e) {
     console.error("Erro ao listar meus chamados:", e);
-    const flashErro = flash || { tipo: "error", mensagem: "Não foi possível carregar seus chamados." };
+    const flashErro = flash || {
+      tipo: "error",
+      mensagem: "Nao foi possivel carregar seus chamados.",
+    };
 
     return res.status(500).render("chamados/meus", {
       layout: "layout-app",
       titulo: "Meus chamados",
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamados.css",
+      jsExtra: "/js/chamados-filters.js",
       usuarioSessao,
       chamados: [],
-      erroGeral: "Não foi possível carregar seus chamados.",
+      filtros,
+      opcoes,
+      totalFiltrados: 0,
+      totalBase: 0,
+      erroGeral: "Nao foi possivel carregar seus chamados.",
       flash: flashErro,
     });
   }
@@ -188,8 +224,8 @@ export async function chamadoEditarGet(req, res) {
   if (!chamado) {
     return res.status(404).render("erros/erro", {
       layout: "layout-app",
-      titulo: "Não encontrado",
-      mensagem: "Chamado não encontrado.",
+      titulo: "Nao encontrado",
+      mensagem: "Chamado nao encontrado.",
     });
   }
 
@@ -201,7 +237,7 @@ export async function chamadoEditarGet(req, res) {
     cssPortal: "/styles/usuario.css",
     cssExtra: "/styles/chamado-novo.css",
     usuarioSessao,
-    erroGeral: bloqueado ? "Este chamado não pode mais ser editado (status diferente de aberto)." : null,
+    erroGeral: bloqueado ? "Este chamado nao pode mais ser editado (status diferente de aberto)." : null,
     bloqueado,
     chamado: {
       id: String(chamado._id),
@@ -226,17 +262,15 @@ export async function chamadoEditarPost(req, res) {
     categoria: String(req.body?.categoria ?? "").trim(),
   };
 
-  // 1) Ownership check ANTES de atualizar
   const chamadoAtual = await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id);
   if (!chamadoAtual) {
     return res.status(404).render("erros/erro", {
       layout: "layout-app",
-      titulo: "Não encontrado",
-      mensagem: "Chamado não encontrado.",
+      titulo: "Nao encontrado",
+      mensagem: "Chamado nao encontrado.",
     });
   }
 
-  // 2) Se status não é aberto, não tenta atualizar
   const bloqueado = chamadoAtual.status !== "aberto";
   if (bloqueado) {
     return res.status(400).render("chamados/editar", {
@@ -245,7 +279,7 @@ export async function chamadoEditarPost(req, res) {
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamado-novo.css",
       usuarioSessao,
-      erroGeral: "Este chamado não pode mais ser editado (status diferente de aberto).",
+      erroGeral: "Este chamado nao pode mais ser editado (status diferente de aberto).",
       bloqueado: true,
       chamado: {
         id: String(chamadoAtual._id),
@@ -291,7 +325,8 @@ export async function chamadoEditarPost(req, res) {
   } catch (e) {
     console.error("Erro ao editar chamado:", e);
 
-    const chamadoDepois = (await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id)) || chamadoAtual;
+    const chamadoDepois =
+      (await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id)) || chamadoAtual;
     const bloqueadoDepois = chamadoDepois.status !== "aberto";
 
     return res.status(400).render("chamados/editar", {
@@ -300,7 +335,7 @@ export async function chamadoEditarPost(req, res) {
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamado-novo.css",
       usuarioSessao,
-      erroGeral: e?.message || "Não foi possível atualizar o chamado.",
+      erroGeral: e?.message || "Nao foi possivel atualizar o chamado.",
       bloqueado: bloqueadoDepois,
       chamado: {
         id: String(chamadoDepois._id),

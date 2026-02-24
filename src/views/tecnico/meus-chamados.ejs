@@ -1,10 +1,10 @@
-<div class="content-with-pagination-wrapper">
+<div class="content-with-pagination-wrapper chamados-page">
   <div class="content-with-pagination">
 
     <%- include('../partials/breadcrumb', {
       crumbs: [
         { label: 'Home', href: '/app' },
-        { label: 'Técnico' },
+        { label: 'Tecnico' },
         { label: 'Meus chamados' }
       ]
     }) %>
@@ -12,7 +12,7 @@
     <div class="page-head">
       <div>
         <h1 class="page-title">Meus chamados</h1>
-        <p class="page-subtitle">Chamados atualmente atribuídos a você.</p>
+        <p class="page-subtitle">Chamados atualmente atribuidos a voce.</p>
 
         <% if (typeof erroGeral !== 'undefined' && erroGeral) { %>
           <div class="alert-error"><%= erroGeral %></div>
@@ -29,32 +29,43 @@
       </script>
     <% } %>
 
-    <div class="table-card">
+    <%- include('../partials/chamados-filtros', {
+      filtroId: 'meus-chamados-tecnico',
+      filtros,
+      opcoes,
+      totalFiltrados,
+      totalBase,
+      rotaLimpar: '/tecnico/meus-chamados',
+      mostrarCampoAlocacao: false,
+      mostrarCampoResponsavelLogin: false,
+    }) %>
+
+    <div class="table-card chamados-table-card">
       <table class="table">
         <thead>
           <tr>
             <th style="width:70px;">#</th>
-            <th>Título</th>
+            <th>Titulo</th>
             <th style="width:140px;">Categoria</th>
             <th style="width:140px;">Prioridade</th>
-            <th style="width:160px;">Solicitante</th>
+            <th style="width:180px;">Solicitante</th>
             <th style="width:140px;">Status</th>
             <th style="width:190px;">Atualizado</th>
-            <th style="width:120px;">Ações</th>
+            <th style="width:120px;">Acoes</th>
           </tr>
         </thead>
         <tbody>
           <% if (!chamados || chamados.length === 0) { %>
-            <tr><td colspan="8" class="empty-row">Você ainda não possui chamados atribuídos.</td></tr>
+            <tr><td colspan="8" class="empty-row">Voce ainda nao possui chamados atribuidos.</td></tr>
           <% } else { %>
             <% chamados.forEach((c) => { %>
               <tr>
                 <td><p class="table-content"><%= c.numero %></p></td>
-                <td><p class="table-content"><a href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a></p></td>
-                <td><p class="table-content"><span class="pill pill-muted"><%= c.categoria %></span></p></td>
-                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade).toLowerCase() %>"><%= c.prioridade %></span></p></td>
+                <td><p class="table-content"><a class="table-link" href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a></p></td>
+                <td><p class="table-content"><span class="pill pill-muted"><%= c.categoriaLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>"><%= c.prioridadeLabel %></span></p></td>
                 <td><p class="table-content"><%= c.solicitante %></p></td>
-                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status).toLowerCase() %>"><%= c.status %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>"><%= c.statusLabel %></span></p></td>
                 <td><p class="table-content"><%= c.quando %></p></td>
                 <td><a class="btn-primary" href="/tecnico/chamados/<%= c.id %>">Abrir</a></td>
               </tr>

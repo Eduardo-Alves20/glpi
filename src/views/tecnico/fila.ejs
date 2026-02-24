@@ -1,10 +1,10 @@
-<div class="content-with-pagination-wrapper">
+<div class="content-with-pagination-wrapper chamados-page">
   <div class="content-with-pagination">
 
     <%- include('../partials/breadcrumb', {
       crumbs: [
         { label: 'Home', href: '/app' },
-        { label: 'Técnico' },
+        { label: 'Tecnico' },
         { label: 'Fila de chamados' }
       ]
     }) %>
@@ -29,19 +29,30 @@
       </script>
     <% } %>
 
-    <div class="table-card">
+    <%- include('../partials/chamados-filtros', {
+      filtroId: 'fila-tecnico',
+      filtros,
+      opcoes,
+      totalFiltrados,
+      totalBase,
+      rotaLimpar: '/tecnico/chamados',
+      mostrarCampoAlocacao: true,
+      mostrarCampoResponsavelLogin: true,
+    }) %>
+
+    <div class="table-card chamados-table-card">
       <table class="table">
         <thead>
           <tr>
             <th style="width:70px;">#</th>
-            <th>Título</th>
+            <th>Titulo</th>
             <th style="width:140px;">Categoria</th>
             <th style="width:140px;">Prioridade</th>
-            <th style="width:160px;">Solicitante</th>
-            <th style="width:160px;">Responsável</th>
+            <th style="width:180px;">Solicitante</th>
+            <th style="width:180px;">Responsavel</th>
             <th style="width:140px;">Status</th>
             <th style="width:190px;">Quando</th>
-            <th style="width:210px;">Ações</th>
+            <th style="width:210px;">Acoes</th>
           </tr>
         </thead>
         <tbody>
@@ -53,14 +64,14 @@
                 <td><p class="table-content"><%= c.numero %></p></td>
                 <td>
                   <p class="table-content">
-                    <a href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a>
+                    <a class="table-link" href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a>
                   </p>
                 </td>
-                <td><p class="table-content"><span class="pill pill-muted"><%= c.categoria %></span></p></td>
-                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade).toLowerCase() %>"><%= c.prioridade %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-muted"><%= c.categoriaLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>"><%= c.prioridadeLabel %></span></p></td>
                 <td><p class="table-content"><%= c.solicitante %></p></td>
                 <td><p class="table-content"><%= c.responsavel %></p></td>
-                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status).toLowerCase() %>"><%= c.status %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>"><%= c.statusLabel %></span></p></td>
                 <td><p class="table-content"><%= c.quando %></p></td>
 
                 <td>
@@ -85,4 +96,3 @@
 </div>
 
 <script type="module" src="/js/tecnico-live.js"></script>
-

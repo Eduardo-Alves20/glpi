@@ -1,0 +1,92 @@
+<div class="content-with-pagination-wrapper chamados-page">
+  <div class="content-with-pagination">
+
+    <%- include('../partials/breadcrumb', {
+      crumbs: [
+        { label: 'Home', href: '/app' },
+        { label: 'Admin', href: '/admin' },
+        { label: 'Chamados' }
+      ]
+    }) %>
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Chamados</h1>
+        <p class="page-subtitle">Visao administrativa da fila e dos atendimentos.</p>
+
+        <% if (typeof erroGeral !== 'undefined' && erroGeral) { %>
+          <div class="alert-error"><%= erroGeral %></div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (typeof flash !== "undefined" && flash) { %>
+      <script>
+        window.__FLASH__ = <%- JSON.stringify({
+          tipo: String(flash.tipo || "info").toLowerCase(),
+          mensagem: String(flash.mensagem || "").slice(0, 300)
+        }) %>;
+      </script>
+    <% } %>
+
+    <%- include('../partials/chamados-filtros', {
+      filtroId: 'admin-chamados',
+      filtros,
+      opcoes,
+      totalFiltrados,
+      totalBase,
+      rotaLimpar: '/admin/chamados',
+      mostrarCampoAlocacao: true,
+      mostrarCampoResponsavelLogin: true,
+      acaoPrimaria: { href: '/chamados/novo', label: 'Novo chamado' },
+    }) %>
+
+    <div class="table-card chamados-table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:70px;">#</th>
+            <th>Titulo</th>
+            <th style="width:140px;">Categoria</th>
+            <th style="width:140px;">Prioridade</th>
+            <th style="width:180px;">Solicitante</th>
+            <th style="width:180px;">Responsavel</th>
+            <th style="width:140px;">Status</th>
+            <th style="width:190px;">Quando</th>
+            <th style="width:210px;">Acoes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!chamados || chamados.length === 0) { %>
+            <tr><td colspan="9" class="empty-row">Nenhum chamado encontrado.</td></tr>
+          <% } else { %>
+            <% chamados.forEach((c) => { %>
+              <tr>
+                <td><p class="table-content"><%= c.numero %></p></td>
+                <td><p class="table-content"><a class="table-link" href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a></p></td>
+                <td><p class="table-content"><span class="pill pill-muted"><%= c.categoriaLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>"><%= c.prioridadeLabel %></span></p></td>
+                <td><p class="table-content"><%= c.solicitante %></p></td>
+                <td><p class="table-content"><%= c.responsavel %></p></td>
+                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>"><%= c.statusLabel %></span></p></td>
+                <td><p class="table-content"><%= c.quando %></p></td>
+                <td>
+                  <div class="btn-items">
+                    <% if (!c.temResponsavel) { %>
+                      <form method="post" action="/tecnico/chamados/<%= c.id %>/assumir" style="display:inline;">
+                        <button class="btn-primary" type="submit">Assumir</button>
+                      </form>
+                    <% } else { %>
+                      <a class="btn-primary" href="/tecnico/chamados/<%= c.id %>" style="text-decoration:none; display:inline-flex; align-items:center;">Abrir</a>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

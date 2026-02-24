@@ -1,0 +1,188 @@
+<%
+  const baseId = String(typeof filtroId !== "undefined" && filtroId ? filtroId : "chamados");
+  const limparHref = String(typeof rotaLimpar !== "undefined" ? rotaLimpar : "");
+  const showAlocacao = Boolean(typeof mostrarCampoAlocacao !== "undefined" && mostrarCampoAlocacao);
+  const showResponsavel = Boolean(typeof mostrarCampoResponsavelLogin !== "undefined" && mostrarCampoResponsavelLogin);
+  const acao = typeof acaoPrimaria !== "undefined" ? acaoPrimaria : null;
+
+  const advancedValues = [
+    filtros?.status,
+    filtros?.categoria,
+    filtros?.prioridade,
+    filtros?.dataInicio,
+    filtros?.dataFim,
+  ];
+
+  if (showAlocacao) advancedValues.push(filtros?.alocacao);
+  if (showResponsavel) advancedValues.push(filtros?.responsavelLogin);
+
+  const advancedCount = advancedValues.filter((v) => String(v || "").trim() !== "").length;
+  const advancedActive = advancedCount > 0;
+%>
+
+<form
+  method="GET"
+  class="table-card chamados-filters-card"
+  data-chamados-filters
+>
+  <div class="chamados-basic-grid">
+    <div class="chamados-field chamados-field-search">
+      <label for="<%= baseId %>-q">Pesquisar</label>
+      <div class="chamados-search-control">
+        <input
+          id="<%= baseId %>-q"
+          name="q"
+          value="<%= filtros?.q || "" %>"
+          placeholder="Digite titulo, numero, usuario ou responsavel"
+          autocomplete="off"
+        />
+        <button type="submit" class="chamados-search-submit" aria-label="Aplicar busca">
+          <span aria-hidden="true">&#128269;</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="chamados-field chamados-field-limit">
+      <label for="<%= baseId %>-limit">Itens por pagina</label>
+      <select id="<%= baseId %>-limit" name="limit">
+        <% [10, 25, 50, 75, 100, 200].forEach((n) => { %>
+          <option value="<%= n %>" <%= Number(filtros?.limit || 50) === n ? "selected" : "" %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="chamados-field chamados-field-summary">
+      <label>Resumo</label>
+      <p class="chamados-summary-line">
+        <% if (Number(totalFiltrados || 0) > 0) { %>
+          <strong><%= Number(totalFiltrados || 0) %></strong> de <%= Number(totalBase || 0) %> chamado(s) carregado(s).
+        <% } else { %>
+          Nenhum chamado encontrado.
+        <% } %>
+      </p>
+    </div>
+  </div>
+
+  <div class="chamados-filter-actions">
+    <button
+      type="button"
+      data-action="open-advanced"
+      class="button secondary chamados-open-advanced <%= advancedActive ? "is-active" : "" %>"
+      aria-haspopup="dialog"
+      aria-controls="<%= baseId %>-advanced-modal"
+      aria-expanded="false"
+    >
+      Filtros avancados
+      <% if (advancedActive) { %>
+        <span class="chamados-filter-counter"><%= advancedCount %></span>
+      <% } %>
+    </button>
+
+    <% if (acao && acao.href && acao.label) { %>
+      <a class="btn-primary" href="<%= acao.href %>"><%= acao.label %></a>
+    <% } %>
+
+    <button class="button" type="submit">Aplicar filtros</button>
+    <a class="button tertiary chamados-clear-button" href="<%= limparHref %>">Limpar filtros</a>
+  </div>
+
+  <div id="<%= baseId %>-advanced-modal" class="chamados-advanced-modal" data-role="advanced-modal" hidden>
+    <div class="chamados-advanced-dialog" role="dialog" aria-modal="true" aria-labelledby="<%= baseId %>-advanced-title">
+      <div class="chamados-advanced-header">
+        <h2 id="<%= baseId %>-advanced-title">Filtros avancados</h2>
+        <button type="button" class="chamados-advanced-close" data-action="close-advanced" aria-label="Fechar filtros">&times;</button>
+      </div>
+
+      <div class="chamados-advanced-grid">
+        <section class="chamados-advanced-card">
+          <h3>Classificacao</h3>
+
+          <div class="chamados-advanced-field">
+            <label for="<%= baseId %>-status">Status</label>
+            <select id="<%= baseId %>-status" name="status" data-advanced-field>
+              <option value="">Todos</option>
+              <% (opcoes?.status || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= filtros?.status === item.value ? "selected" : "" %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="chamados-advanced-field">
+            <label for="<%= baseId %>-categoria">Categoria</label>
+            <select id="<%= baseId %>-categoria" name="categoria" data-advanced-field>
+              <option value="">Todas</option>
+              <% (opcoes?.categorias || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= filtros?.categoria === item.value ? "selected" : "" %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="chamados-advanced-field">
+            <label for="<%= baseId %>-prioridade">Prioridade</label>
+            <select id="<%= baseId %>-prioridade" name="prioridade" data-advanced-field>
+              <option value="">Todas</option>
+              <% (opcoes?.prioridades || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= filtros?.prioridade === item.value ? "selected" : "" %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+        </section>
+
+        <section class="chamados-advanced-card">
+          <h3>Relacionamentos</h3>
+
+          <% if (showAlocacao) { %>
+            <div class="chamados-advanced-field">
+              <label for="<%= baseId %>-alocacao">Alocacao</label>
+              <select id="<%= baseId %>-alocacao" name="alocacao" data-advanced-field>
+                <% (opcoes?.alocacao || []).forEach((item) => { %>
+                  <option value="<%= item.value %>" <%= filtros?.alocacao === item.value ? "selected" : "" %>><%= item.label %></option>
+                <% }) %>
+              </select>
+            </div>
+          <% } %>
+
+          <% if (showResponsavel) { %>
+            <div class="chamados-advanced-field">
+              <label for="<%= baseId %>-responsavel-login">Login do responsavel</label>
+              <input
+                id="<%= baseId %>-responsavel-login"
+                name="responsavelLogin"
+                value="<%= filtros?.responsavelLogin || "" %>"
+                data-advanced-field
+                placeholder="Ex: tecnico01"
+              />
+            </div>
+          <% } %>
+
+          <% if (!showAlocacao && !showResponsavel) { %>
+            <p class="chamados-advanced-note">Nenhum filtro adicional nesta secao.</p>
+          <% } %>
+        </section>
+
+        <section class="chamados-advanced-card">
+          <h3>Periodo de criacao</h3>
+
+          <div class="chamados-advanced-field">
+            <label for="<%= baseId %>-data-inicio">Data inicial</label>
+            <input id="<%= baseId %>-data-inicio" type="date" name="dataInicio" value="<%= filtros?.dataInicio || "" %>" data-advanced-field />
+          </div>
+
+          <div class="chamados-advanced-field">
+            <label for="<%= baseId %>-data-fim">Data final</label>
+            <input id="<%= baseId %>-data-fim" type="date" name="dataFim" value="<%= filtros?.dataFim || "" %>" data-advanced-field />
+          </div>
+        </section>
+      </div>
+
+      <div class="chamados-advanced-footer">
+        <button type="button" class="button secondary" data-action="clear-advanced">Limpar tudo</button>
+
+        <div class="chamados-advanced-footer-actions">
+          <button type="button" class="button secondary" data-action="cancel-advanced">Cancelar</button>
+          <button type="submit" class="button">Aplicar filtros</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>

@@ -6,7 +6,10 @@ import {
 } from "../../compartilhado/middlewares/seguranca.js";
 import { acharPorId, listarRecentes } from "../../repos/usuariosRepo.js";
 
-import { adminHomeGet } from "../../controllers/admin/adminController.js";
+import {
+  adminChamadosGet,
+  adminHomeGet,
+} from "../../controllers/admin/adminController.js";
 import { adminLogsGet } from "../../controllers/admin/logsController.js";
 import {
   usuariosIndexGet,
@@ -31,6 +34,7 @@ export function criarAdminRotas({ auditoria } = {}) {
   );
 
   router.get("/admin", adminHomeGet);
+  router.get("/admin/chamados", adminChamadosGet);
   router.get("/admin/logs", adminLogsGet);
   router.get("/admin/usuarios", usuariosIndexGet);
   router.get("/admin/usuarios/novo", usuariosNovoGet);

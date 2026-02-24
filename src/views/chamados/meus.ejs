@@ -1,4 +1,4 @@
-<div class="content-with-pagination-wrapper">
+<div class="content-with-pagination-wrapper chamados-page">
   <div class="content-with-pagination">
 
     <%- include('../partials/breadcrumb', {
@@ -12,7 +12,7 @@
     <div class="page-head">
       <div>
         <h1 class="page-title">Meus chamados</h1>
-        <p class="page-subtitle">Acompanhe os chamados que você abriu.</p>
+        <p class="page-subtitle">Acompanhe os chamados que voce abriu.</p>
 
         <% if (typeof erroGeral !== 'undefined' && erroGeral) { %>
           <div class="alert-error"><%= erroGeral %></div>
@@ -26,7 +26,6 @@
 
     <% if (typeof flash !== "undefined" && flash) { %>
       <script>
-        // Flash vem do servidor (req.session.flash); não depende de querystring (mais seguro)
         window.__FLASH__ = <%- JSON.stringify({
           tipo: String(flash.tipo || "info").toLowerCase(),
           mensagem: String(flash.mensagem || "").slice(0, 300)
@@ -34,33 +33,40 @@
       </script>
     <% } %>
 
-    <div class="table-card">
+    <%- include('../partials/chamados-filtros', {
+      filtroId: 'meus-chamados',
+      filtros,
+      opcoes,
+      totalFiltrados,
+      totalBase,
+      rotaLimpar: '/chamados/meus',
+      mostrarCampoAlocacao: false,
+      mostrarCampoResponsavelLogin: true,
+    }) %>
+
+    <div class="table-card chamados-table-card">
       <table class="table">
         <thead>
           <tr>
-            <th>Título</th>
+            <th>Titulo</th>
             <th style="width: 180px;">Solicitante</th>
             <th style="width: 140px;">Categoria</th>
             <th style="width: 140px;">Prioridade</th>
+            <th style="width: 160px;">Responsavel</th>
             <th style="width: 140px;">Status</th>
             <th style="width: 190px;">Quando</th>
-            <th style="width: 110px;">Ações</th>
+            <th style="width: 110px;">Acoes</th>
           </tr>
         </thead>
 
         <tbody>
           <% if (!chamados || chamados.length === 0) { %>
             <tr>
-              <td colspan="6" class="empty-row">Nenhum chamado encontrado.</td>
+              <td colspan="8" class="empty-row">Nenhum chamado encontrado.</td>
             </tr>
           <% } else { %>
-            <% chamados.forEach((c) => { 
-                 const prio = String(c.prioridade || "").toLowerCase();
-                 const status = String(c.status || "").toLowerCase();
-            %>
+            <% chamados.forEach((c) => { %>
               <tr>
-              
-
                 <td>
                   <p class="table-content">
                     <a class="table-link" href="/chamados/<%= c.id %>">
@@ -75,22 +81,26 @@
 
                 <td>
                   <p class="table-content">
-                    <span class="pill pill-muted"><%= c.categoria %></span>
+                    <span class="pill pill-muted"><%= c.categoriaLabel %></span>
                   </p>
                 </td>
 
                 <td>
                   <p class="table-content">
-                    <span class="pill pill-prio pill-prio-<%= prio %>">
-                      <%= c.prioridade %>
+                    <span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>">
+                      <%= c.prioridadeLabel %>
                     </span>
                   </p>
                 </td>
 
                 <td>
+                  <p class="table-content"><%= c.responsavel %></p>
+                </td>
+
+                <td>
                   <p class="table-content">
-                    <span class="pill pill-status pill-status-<%= status %>">
-                      <%= c.status %>
+                    <span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>">
+                      <%= c.statusLabel %>
                     </span>
                   </p>
                 </td>
@@ -118,6 +128,4 @@
     </div>
 
   </div>
-
-  <% /* include('../partials/pagination.ejs') */ %>
 </div>
