@@ -227,3 +227,35 @@ body.app-layout .app-main {
   gap:10px;
   margin-top:14px;
 }
+#toast-wrap{
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 340px;
+}
+
+.toast{
+  background: #0f1f37;
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 14px 36px rgba(0,0,0,.35);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all .18s ease;
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.clickable{ cursor: pointer; }
+.toast-title{ font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+.toast-msg{ font-size: 13px; opacity: .95; line-height: 1.35; }
+.toast-link{ margin-top: 6px; font-size: 12px; opacity: .9; text-decoration: underline; }

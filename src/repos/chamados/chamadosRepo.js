@@ -4,8 +4,19 @@ import { pegarDb } from "../../compartilhado/db/mongo.js";
 const COL_CHAMADOS = "chamados";
 const COL_COUNTERS = "counters";
 
-const STATUS_ALLOWED = ["aberto", "em_atendimento", "aguardando_usuario", "fechado"];
-const CATEGORIAS_ALLOWED = ["acesso", "incidente", "solicitacao", "infra", "outros"];
+const STATUS_ALLOWED = [
+  "aberto",
+  "em_atendimento",
+  "aguardando_usuario",
+  "fechado",
+];
+const CATEGORIAS_ALLOWED = [
+  "acesso",
+  "incidente",
+  "solicitacao",
+  "infra",
+  "outros",
+];
 const PRIORIDADES_ALLOWED = ["baixa", "media", "alta", "critica"];
 
 /** helpers */
@@ -27,11 +38,13 @@ function toObjectId(id, field = "id") {
 }
 
 async function nextChamadoNumero(db) {
-  const res = await db.collection(COL_COUNTERS).findOneAndUpdate(
-    { _id: "chamado_numero" },
-    { $inc: { seq: 1 } },
-    { upsert: true, returnDocument: "after", returnOriginal: false }
-  );
+  const res = await db
+    .collection(COL_COUNTERS)
+    .findOneAndUpdate(
+      { _id: "chamado_numero" },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: "after", returnOriginal: false },
+    );
 
   const doc = res?.value ?? res;
   const seq = doc?.seq;
@@ -60,7 +73,11 @@ export async function criarChamado({
   const descSan = assertString(descricao, "descricao", { min: 20, max: 5000 });
 
   const categoriaSan = sanitizeEnum(categoria, CATEGORIAS_ALLOWED, "categoria");
-  const prioridadeSan = sanitizeEnum(prioridade, PRIORIDADES_ALLOWED, "prioridade");
+  const prioridadeSan = sanitizeEnum(
+    prioridade,
+    PRIORIDADES_ALLOWED,
+    "prioridade",
+  );
 
   const now = new Date();
   const numero = await nextChamadoNumero(db);
@@ -131,7 +148,12 @@ export async function acharChamadoPorIdDoUsuario(chamadoId, usuarioId) {
 }
 
 /** Edição do usuário (só enquanto aberto) */
-export async function editarChamadoDoUsuario(chamadoId, usuarioId, dados, { porLogin = "sistema" } = {}) {
+export async function editarChamadoDoUsuario(
+  chamadoId,
+  usuarioId,
+  dados,
+  { porLogin = "sistema" } = {},
+) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   const u = toObjectId(usuarioId, "usuarioId");
@@ -159,10 +181,14 @@ export async function editarChamadoDoUsuario(chamadoId, usuarioId, dados, { porL
   }
 
   // validações
-  if (allowed.titulo) assertString(allowed.titulo, "titulo", { min: 6, max: 120 });
-  if (allowed.descricao) assertString(allowed.descricao, "descricao", { min: 20, max: 5000 });
-  if (allowed.categoria) sanitizeEnum(allowed.categoria, CATEGORIAS_ALLOWED, "categoria");
-  if (allowed.prioridade) sanitizeEnum(allowed.prioridade, PRIORIDADES_ALLOWED, "prioridade");
+  if (allowed.titulo)
+    assertString(allowed.titulo, "titulo", { min: 6, max: 120 });
+  if (allowed.descricao)
+    assertString(allowed.descricao, "descricao", { min: 20, max: 5000 });
+  if (allowed.categoria)
+    sanitizeEnum(allowed.categoria, CATEGORIAS_ALLOWED, "categoria");
+  if (allowed.prioridade)
+    sanitizeEnum(allowed.prioridade, PRIORIDADES_ALLOWED, "prioridade");
 
   const now = new Date();
 
@@ -191,14 +217,15 @@ export async function editarChamadoDoUsuario(chamadoId, usuarioId, dados, { porL
     return db.collection(COL_CHAMADOS).findOne({ _id });
   }
 
-  const existeDoUsuario = await db.collection(COL_CHAMADOS).findOne(
-    { _id, "criadoPor.usuarioId": u },
-    { projection: { status: 1 } }
-  );
+  const existeDoUsuario = await db
+    .collection(COL_CHAMADOS)
+    .findOne({ _id, "criadoPor.usuarioId": u }, { projection: { status: 1 } });
 
   if (!existeDoUsuario) throw new Error("Chamado não encontrado.");
   if (existeDoUsuario.status !== "aberto") {
-    throw new Error("Este chamado não pode mais ser editado (status diferente de aberto).");
+    throw new Error(
+      "Este chamado não pode mais ser editado (status diferente de aberto).",
+    );
   }
 
   throw new Error("Edição não permitida.");
@@ -206,9 +233,9 @@ export async function editarChamadoDoUsuario(chamadoId, usuarioId, dados, { porL
 
 /** Listagens com projeção mínima */
 export async function listarChamados({
-  status = null,          // ex: ["aberto","em_atendimento"]
-  solicitanteId = null,   // criadoPor.usuarioId
-  responsavelId = null,   // responsavelId
+  status = null, // ex: ["aberto","em_atendimento"]
+  solicitanteId = null, // criadoPor.usuarioId
+  responsavelId = null, // responsavelId
   limit = 50,
 } = {}) {
   const db = pegarDb();
@@ -216,7 +243,9 @@ export async function listarChamados({
 
   // status (allowlist)
   if (Array.isArray(status) && status.length) {
-    const st = status.map((s) => String(s).trim()).filter((s) => STATUS_ALLOWED.includes(s));
+    const st = status
+      .map((s) => String(s).trim())
+      .filter((s) => STATUS_ALLOWED.includes(s));
     if (st.length) filtro.status = { $in: st };
   } else if (typeof status === "string" && status.trim()) {
     const s = status.trim();
@@ -264,13 +293,16 @@ export async function listarMeusAtendimentos(tecnicoId, { limit = 50 } = {}) {
   return listarChamados({ responsavelId: tecnicoId, limit });
 }
 
-export async function listarFilaChamados({ status = ["aberto", "em_atendimento"], limit = 50 } = {}) {
+export async function listarFilaChamados({
+  status = ["aberto", "em_atendimento"],
+  limit = 50,
+} = {}) {
   return listarChamados({ status, limit });
 }
 
 export async function contarChamados({
-  status = null,          // string ou array
-  responsavelId = null,   // tecnicoId
+  status = null, // string ou array
+  responsavelId = null, // tecnicoId
   somenteSemResponsavel = false,
   createdFrom = null,
   createdTo = null,
@@ -285,7 +317,9 @@ export async function contarChamados({
     const s = status.trim();
     if (STATUS_ALLOWED.includes(s)) filtro.status = s;
   } else if (Array.isArray(status) && status.length) {
-    const st = status.map((s) => String(s).trim()).filter((s) => STATUS_ALLOWED.includes(s));
+    const st = status
+      .map((s) => String(s).trim())
+      .filter((s) => STATUS_ALLOWED.includes(s));
     if (st.length) filtro.status = { $in: st };
   }
 
@@ -298,7 +332,10 @@ export async function contarChamados({
 
   // sem responsável (fila geral)
   if (somenteSemResponsavel) {
-    filtro.$or = [{ responsavelId: null }, { responsavelId: { $exists: false } }];
+    filtro.$or = [
+      { responsavelId: null },
+      { responsavelId: { $exists: false } },
+    ];
   }
 
   // range createdAt
@@ -321,16 +358,29 @@ export async function contarChamados({
 export async function garantirIndicesChamados() {
   const db = pegarDb();
 
-  await db.collection(COL_CHAMADOS).createIndex({ numero: 1 }, { unique: true });
-  await db.collection(COL_CHAMADOS).createIndex({ "criadoPor.usuarioId": 1, createdAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ numero: 1 }, { unique: true });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ "criadoPor.usuarioId": 1, createdAt: -1 });
 
   await db.collection(COL_CHAMADOS).createIndex({ status: 1, createdAt: -1 });
-  await db.collection(COL_CHAMADOS).createIndex({ responsavelId: 1, createdAt: -1 });
-  await db.collection(COL_CHAMADOS).createIndex({ responsavelId: 1, status: 1, updatedAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ responsavelId: 1, createdAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ responsavelId: 1, status: 1, updatedAt: -1 });
 }
 
 /** Fluxo: técnico envia solução (atribuição opcional) */
-export async function responderSolucaoTecnico(chamadoId, tecnico, solucao, { porLogin = "sistema" } = {}) {
+export async function responderSolucaoTecnico(
+  chamadoId,
+  tecnico,
+  solucao,
+  { porLogin = "sistema" } = {},
+) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   const tId = toObjectId(tecnico?.id, "tecnicoId");
@@ -358,19 +408,27 @@ export async function responderSolucaoTecnico(chamadoId, tecnico, solucao, { por
           tipo: "solucao",
           em: now,
           por: String(porLogin || "sistema"),
-          mensagem: "Técnico enviou solução e aguardando confirmação do usuário",
+          mensagem:
+            "Técnico enviou solução e aguardando confirmação do usuário",
         },
       },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 
-  if (!r.value) throw new Error("Não foi possível registrar a solução (verifique o status).");
+  if (!r.value)
+    throw new Error(
+      "Não foi possível registrar a solução (verifique o status).",
+    );
   return r.value;
 }
 
 /** Usuário confirma (fecha) */
-export async function usuarioConfirmarSolucao(chamadoId, usuarioId, { porLogin = "sistema" } = {}) {
+export async function usuarioConfirmarSolucao(
+  chamadoId,
+  usuarioId,
+  { porLogin = "sistema" } = {},
+) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   const uId = toObjectId(usuarioId, "usuarioId");
@@ -395,15 +453,23 @@ export async function usuarioConfirmarSolucao(chamadoId, usuarioId, { porLogin =
         },
       },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 
-  if (!r.value) throw new Error("Não foi possível confirmar (status inválido ou chamado não é seu).");
+  if (!r.value)
+    throw new Error(
+      "Não foi possível confirmar (status inválido ou chamado não é seu).",
+    );
   return r.value;
 }
 
 /** Usuário reabre */
-export async function usuarioReabrirChamado(chamadoId, usuarioId, comentario, { porLogin = "sistema" } = {}) {
+export async function usuarioReabrirChamado(
+  chamadoId,
+  usuarioId,
+  comentario,
+  { porLogin = "sistema" } = {},
+) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   const uId = toObjectId(usuarioId, "usuarioId");
@@ -412,7 +478,11 @@ export async function usuarioReabrirChamado(chamadoId, usuarioId, comentario, { 
   const msg = assertString(comentario, "comentario", { min: 5, max: 2000 });
 
   const r = await db.collection(COL_CHAMADOS).findOneAndUpdate(
-    { _id, "criadoPor.usuarioId": uId, status: { $in: ["aguardando_usuario", "fechado"] } },
+    {
+      _id,
+      "criadoPor.usuarioId": uId,
+      status: { $in: ["aguardando_usuario", "fechado"] },
+    },
     {
       $set: { status: "aberto", updatedAt: now },
       $push: {
@@ -424,15 +494,20 @@ export async function usuarioReabrirChamado(chamadoId, usuarioId, comentario, { 
         },
       },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 
-  if (!r.value) throw new Error("Não foi possível reabrir (status inválido ou chamado não é seu).");
+  if (!r.value)
+    throw new Error(
+      "Não foi possível reabrir (status inválido ou chamado não é seu).",
+    );
   return r.value;
 }
 
 /** Auto-fechamento */
-export async function fecharChamadosVencidosAguardandoUsuario({ dias = 30 } = {}) {
+export async function fecharChamadosVencidosAguardandoUsuario({
+  dias = 30,
+} = {}) {
   const db = pegarDb();
   const d = Math.max(1, Math.min(Number(dias) || 30, 365));
   const now = new Date();
@@ -460,17 +535,20 @@ export async function fecharChamadosVencidosAguardandoUsuario({ dias = 30 } = {}
           mensagem: `Fechamento automático após ${d} dias sem resposta do usuário`,
         },
       },
-    }
+    },
   );
 
   return { fechados: r.modifiedCount || 0 };
 }
 
 /** Assumir (atribuir) */
-export async function assumirChamado(chamadoId, tecnico, { porLogin = "sistema" } = {}) {
+export async function assumirChamado(
+  chamadoId,
+  tecnico,
+  { porLogin = "sistema" } = {},
+) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
-  const tId = toObjectId(tecnico?.id, "tecnicoId");
 
   const now = new Date();
 
@@ -485,7 +563,9 @@ export async function assumirChamado(chamadoId, tecnico, { porLogin = "sistema" 
         status: "em_atendimento",
         responsavelId: tId,
         responsavelNome: String(tecnico?.nome || "").trim(),
-        responsavelLogin: String(tecnico?.usuario || tecnico?.login || "").trim(),
+        responsavelLogin: String(
+          tecnico?.usuario || tecnico?.login || "",
+        ).trim(),
         atendidoEm: now,
         updatedAt: now,
       },
@@ -499,13 +579,16 @@ export async function assumirChamado(chamadoId, tecnico, { porLogin = "sistema" 
         },
       },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
 
   const doc = r?.value || (await db.collection(COL_CHAMADOS).findOne({ _id }));
   if (!doc) throw new Error("Não foi possível assumir este chamado.");
 
-  if (String(doc.responsavelId || "") !== String(tId) || doc.status !== "em_atendimento") {
+  if (
+    String(doc.responsavelId || "") !== String(tId) ||
+    doc.status !== "em_atendimento"
+  ) {
     throw new Error("Não foi possível assumir este chamado.");
   }
 
@@ -514,11 +597,13 @@ export async function assumirChamado(chamadoId, tecnico, { porLogin = "sistema" 
 
 /** Chat/interações do técnico */
 export async function adicionarInteracaoTecnico(
+  
   chamadoId,
   tecnico,
   texto,
   { tipo = "mensagem", porLogin = "sistema", mudarStatusPara = null } = {}
 ) {
+  console.log("[REPO] adicionarInteracaoTecnico chamadoId=", chamadoId, "typeof=", typeof chamadoId);
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   const tId = toObjectId(tecnico?.id, "tecnicoId");
@@ -534,12 +619,10 @@ export async function adicionarInteracaoTecnico(
   if (mudarStatusPara) {
     const novo = sanitizeEnum(mudarStatusPara, STATUS_ALLOWED, "status");
     set.status = novo;
-    if (novo === "aguardando_usuario") {
-      set.aguardandoUsuarioDesde = now;
-    }
+    if (novo === "aguardando_usuario") set.aguardandoUsuarioDesde = now;
   }
 
-  const r = await db.collection(COL_CHAMADOS).findOneAndUpdate(
+  const out = await db.collection(COL_CHAMADOS).findOneAndUpdate(
     { _id },
     {
       $set: set,
@@ -559,12 +642,23 @@ export async function adicionarInteracaoTecnico(
         },
       },
     },
-    { returnDocument: "after" }
+    // ✅ Compatível com driver novo e antigo
+    { returnDocument: "after", returnOriginal: false }
   );
 
-  if (!r.value) throw new Error("Não foi possível registrar a interação.");
-  return r.value;
+  // ✅ Compatível: alguns drivers retornam {value}, outros retornam doc direto
+  const doc = out?.value ?? out;
+
+  // Se ainda assim não vier doc, aí sim é falha real (id não existe etc.)
+  if (!doc || !doc._id) {
+    throw new Error("Não foi possível registrar a interação.");
+  }
+
+  return doc;
 }
+
+
+
 export async function usuarioAdicionarInteracao(chamadoId, usuario, texto, { porLogin = "sistema" } = {}) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
@@ -573,8 +667,7 @@ export async function usuarioAdicionarInteracao(chamadoId, usuario, texto, { por
   const msg = assertString(texto, "texto", { min: 2, max: 5000 });
   const now = new Date();
 
-  // ✅ regra segura: usuário só interage em chamado dele e não fechado
-  const r = await db.collection(COL_CHAMADOS).findOneAndUpdate(
+  const out = await db.collection(COL_CHAMADOS).findOneAndUpdate(
     { _id, "criadoPor.usuarioId": uId, status: { $ne: "fechado" } },
     {
       $set: { updatedAt: now },
@@ -594,11 +687,14 @@ export async function usuarioAdicionarInteracao(chamadoId, usuario, texto, { por
         },
       },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after", returnOriginal: false }
   );
 
-  if (!r.value) {
+  const doc = out?.value ?? out;
+
+  if (!doc || !doc._id) {
     throw new Error("Não foi possível enviar mensagem (verifique se o chamado está fechado ou não é seu).");
   }
-  return r.value;
+
+  return doc;
 }

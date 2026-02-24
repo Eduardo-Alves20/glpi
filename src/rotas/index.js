@@ -3,18 +3,20 @@ import { criarAppRotas } from "./appRotas.js";
 import { criarAdminRotas } from "./admin/adminRotas.js";
 import { criarTecnicoRotas } from "./tecnico/tecnicoRotas.js";
 import { criarUsuarioRotas } from "./usuario/usuarioRotas.js";
-import { criarChamadosRotas } from "./chamados/chamadosRotas.js"; 
-
-// ✅ novo
+import { criarChamadosRotas } from "./chamados/chamadosRotas.js";
+import { criarApiRotas } from "./api/apiRotas.js";
 
 export function montarRotas(app, { auditoria } = {}) {
   app.use(criarAuthRotas());
   app.use(criarAppRotas());
 
+  // ✅ API sempre sob /api
+  app.use("/api", criarApiRotas({ auditoria }));
+
   app.use(criarAdminRotas({ auditoria }));
   app.use(criarTecnicoRotas({ auditoria }));
   app.use(criarUsuarioRotas({ auditoria }));
-  app.use(criarChamadosRotas({ auditoria })); // ✅ novo
+  app.use(criarChamadosRotas({ auditoria }));
 
   app.get("/", (req, res) => res.redirect("/auth"));
 }

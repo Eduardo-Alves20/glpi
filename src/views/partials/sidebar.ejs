@@ -73,11 +73,23 @@
             </p>
             <div class="accordion-content">
               <a class="accordion-item <%= isAtivo('/tecnico/chamados') ? 'active' : '' %>"
-                 href="/tecnico/chamados" title="Fila de chamados">Fila de chamados</a>
+                 href="/tecnico/chamados" title="Fila de chamados">
+                Fila de chamados
+                <!-- Badge da fila (atualizado via inbox polling). Começa oculto. -->
+                <span
+                  class="nav-badge"
+                  data-hook="fila-count"
+                  aria-label="Chamados na fila"
+                  hidden
+                >0</span>
+              </a>
+
               <a class="accordion-item <%= isAtivo('/tecnico/meus-chamados') ? 'active' : '' %>"
                  href="/tecnico/meus-chamados" title="Meus chamados">Meus chamados</a>
+
               <a class="accordion-item <%= isAtivo('/tecnico/atendimentos') ? 'active' : '' %>"
                  href="/tecnico/atendimentos" title="Atendimentos">Atendimentos</a>
+
               <a class="accordion-item <%= isAtivo('/artigos') ? 'active' : '' %>"
                  href="/artigos" title="Base de conhecimento">Base de conhecimento</a>
             </div>

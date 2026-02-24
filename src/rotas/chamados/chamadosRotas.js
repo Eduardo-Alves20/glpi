@@ -19,6 +19,9 @@ import {
   usuarioChamadoReabrirPost,
   usuarioChamadoInteracaoPost
 } from "../../controllers/chamados/chamadoUsuarioController.js";
+
+
+
 export function criarChamadosRotas({ auditoria } = {}) {
   const router = Router();
   const validarAtivo = exigirUsuarioAtivo(acharPorId);

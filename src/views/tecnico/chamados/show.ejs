@@ -57,7 +57,7 @@
           <h1 class="page-title">Chamado #<%= chamado.numero %></h1>
 
           <div class="subrow">
-            <span class="badge <%= st.cls %>"><%= st.label %></span>
+            <span class="badge <%= st.cls %>" data-status-badge><%= st.label %></span>
             <span class="meta">
               <strong>Categoria:</strong> <%= categoriaLabel %>
             </span>
@@ -112,7 +112,7 @@
         <% if (!historico.length) { %>
           <div class="chat-empty">Nenhuma interação ainda.</div>
         <% } else { %>
-          <div class="chat">
+    <div class="chat" data-chat-wrap>
             <% historico.forEach((h) => { %>
               <div class="msg">
                 <div class="msg-top">
@@ -234,3 +234,12 @@
     .form-actions .button { width: 100%; justify-content: center; }
   }
 </style>
+<script type="module">
+  import { startChamadoPoll } from "/js/chamado-poll.js";
+  startChamadoPoll({
+    chamadoId: "<%= String(chamado._id) %>",
+    viewerId: "<%= String(usuarioSessao?.id || '') %>",
+    intervalMs: 1000,
+    notifyOnlyWhenHidden: true
+  });
+</script>

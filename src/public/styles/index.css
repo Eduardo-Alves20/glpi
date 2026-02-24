@@ -44,3 +44,25 @@ a:hover{ text-decoration:underline; }
 html::-webkit-scrollbar{ width:8px; }
 html::-webkit-scrollbar-thumb{ background:#666; }
 html::-webkit-scrollbar-track{ background:#ddd; }
+.toast-notif{
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  z-index: 9999;
+  width: 320px;
+  background: #111827;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all .2s ease;
+  cursor: pointer;
+}
+.toast-notif.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast-title{ font-weight: 700; margin-bottom: 4px; }
+.toast-msg{ opacity: .95; font-size: 14px; }
