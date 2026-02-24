@@ -85,7 +85,7 @@ body.app-layout{
 .sidebar-collapse-toggle{
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 8px;
+  border-radius: 12px;
   height: 34px;
   width: 34px;
   cursor: pointer;
@@ -115,7 +115,7 @@ body.app-layout{
 }
 
 .main-anchor-wrapper{
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -147,7 +147,9 @@ body.app-layout{
 .main-anchor-icon{
   width: 18px;
   height: 18px;
-  filter: brightness(0) invert(1);
+  filter: none;
+  opacity: 0.95;
+  object-fit: contain;
 }
 
 /* Conteúdo do acordeão */
@@ -171,7 +173,7 @@ body.app-layout{
   font-size: 13px;
 
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .accordion-item:hover{
@@ -199,7 +201,7 @@ body.app-layout{
   background: rgba(255,255,255,0.10);
   color: #fff;
 
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 12px;
 
   font-weight: 800;
@@ -219,7 +221,9 @@ body.app-layout{
 .sidebar-footer-icon{
   width: 18px;
   height: 18px;
-  filter: brightness(0) invert(1);
+  filter: none;
+  opacity: 0.95;
+  object-fit: contain;
 }
 
 /* Dropdown perfil */
@@ -231,7 +235,7 @@ body.app-layout{
   padding: 8px;
   background: rgba(255,255,255,0.10);
   border: 1px solid rgba(255,255,255,0.20);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .profile-dropdown.open{
@@ -246,7 +250,7 @@ body.app-layout{
   text-align: left;
 
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
 
   cursor: pointer;
   font-weight: 700;

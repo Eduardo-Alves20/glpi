@@ -1,223 +1,204 @@
+<div class="app-page home-dashboard">
+  <div class="home-header">
+    <div class="home-header-text">
+      <p>
+        Ola,
+        <strong id="user-name"><%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)") %></strong>!
+        Aqui esta um panorama rapido do GLPI.
+      </p>
+    </div>
 
-      <div class="app-page home-dashboard">
-        <div class="home-header">
-          <div class="home-header-text">
-            <p>
-              Olá,
-              <strong id="user-name">
-                <%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)") %>
-              </strong>!
-              Aqui está um panorama rápido do GLPI. home adm
-            </p>
-          </div>
+    <div class="home-header-actions">
+      <span id="last-update" class="home-updated">
+        Atualizado em: <%= new Date(serverTime || Date.now()).toLocaleString("pt-BR") %>
+      </span>
+      <a href="/admin" class="button secondary" style="text-decoration:none;">Atualizar</a>
+    </div>
+  </div>
 
-          <div class="home-header-actions">
-            <span id="last-update" class="home-updated">
-              Atualizado em: <%= (new Date()).toLocaleString("pt-BR") %>
-            </span>
-            <a href="/admin" class="button secondary" style="text-decoration:none;">Atualizar</a>
-          </div>
+  <div class="kpi-band">
+    <div class="kpi-card">
+      <div class="kpi-title">Chamados abertos</div>
+      <div class="kpi-value" data-hook="kpi-abertos"><%= kpis?.chamadosAbertos ?? 0 %></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Chamados criticos</div>
+      <div class="kpi-value" data-hook="kpi-criticos"><%= kpis?.chamadosCriticos ?? 0 %></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Aguardando tecnico</div>
+      <div class="kpi-value" data-hook="kpi-aguardando"><%= kpis?.aguardandoTecnico ?? 0 %></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Criados hoje</div>
+      <div class="kpi-value" data-hook="kpi-hoje"><%= kpis?.criadosHoje ?? 0 %></div>
+    </div>
+  </div>
+
+  <div class="module-grid">
+    <article class="module-card" id="card-logs">
+      <header class="module-card__header">
+        <div>
+          <h2>Logs recentes <span class="badge muted" data-hook="admin-logs-count"><%= (logs?.length ?? 0) %></span></h2>
+          <p class="module-subtitle">Atividades do sistema e acoes administrativas</p>
         </div>
-
-        <div class="kpi-band">
-          <div class="kpi-card" id="kpi-abertos-card">
-            <div class="kpi-title">Chamados abertos</div>
-            <div class="kpi-value" id="kpi-abertos"><%= kpis?.chamadosAbertos ?? 0 %></div>
-          </div>
-
-          <div class="kpi-card" id="kpi-criticos-card">
-            <div class="kpi-title">Chamados críticos</div>
-            <div class="kpi-value" id="kpi-criticos"><%= kpis?.chamadosCriticos ?? 0 %></div>
-          </div>
-
-          <div class="kpi-card" id="kpi-aguardando-card">
-            <div class="kpi-title">Aguardando técnico</div>
-            <div class="kpi-value" id="kpi-aguardando"><%= kpis?.aguardandoTecnico ?? 0 %></div>
-          </div>
-
-          <div class="kpi-card" id="kpi-hoje-card">
-            <div class="kpi-title">Criados hoje</div>
-            <div class="kpi-value" id="kpi-hoje"><%= kpis?.criadosHoje ?? 0 %></div>
-          </div>
+        <div class="module-actions">
+          <a class="button tertiary" href="/admin/logs" title="Visualizar">Ver</a>
         </div>
+      </header>
 
-        <div class="module-grid">
-          <!-- LOGS / NOTIF -->
-          <article class="module-card" id="card-logs">
-            <header class="module-card__header">
-              <div>
-                <h2>Logs recentes <span class="badge muted"><%= (logs?.length ?? 0) %></span></h2>
-                <p class="module-subtitle">Atividades do sistema e ações administrativas</p>
+      <ul class="highlight-list" data-hook="admin-logs-list">
+        <% if (!logs || logs.length === 0) { %>
+          <li class="empty">Nenhum log ainda.</li>
+        <% } else { %>
+          <% logs.slice(0, 5).forEach((l) => { %>
+            <li>
+              <div class="highlight-title"><%= l.titulo %></div>
+              <div class="highlight-meta">
+                <span class="highlight-status"><%= l.tipo %></span>
+                <span class="highlight-date"><%= l.quando %></span>
               </div>
-              <div class="module-actions">
-                <a class="button tertiary" href="/admin/logs" title="Visualizar">Ver</a>
-              </div>
-            </header>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
 
-            <ul class="highlight-list">
-              <% if (!logs || logs.length === 0) { %>
-                <li class="empty">Nenhum log ainda.</li>
-              <% } else { %>
-                <% logs.slice(0, 5).forEach((l) => { %>
-                  <li>
-                    <div class="highlight-title"><%= l.titulo %></div>
-                    <div class="highlight-meta">
-                      <span class="highlight-status"><%= l.tipo %></span>
-                      <span class="highlight-date"><%= l.quando %></span>
-                    </div>
-                  </li>
-                <% }) %>
-              <% } %>
-            </ul>
-          </article>
-
-          <!-- CHAMADOS -->
-          <article class="module-card" id="card-chamados">
-            <header class="module-card__header">
-              <div>
-                <h2>Chamados</h2>
-                <p class="module-subtitle">Fila e últimos chamados abertos</p>
-              </div>
-              <div class="module-actions">
-                <a class="button tertiary" href="/admin/chamados" title="Visualizar">Ver</a>
-              </div>
-            </header>
-
-            <div class="metric-grid">
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.chamadosAbertos ?? 0 %></span>
-                <span class="metric-label">Abertos</span>
-              </div>
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.emAndamento ?? 0 %></span>
-                <span class="metric-label">Em andamento</span>
-              </div>
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.aguardandoUsuario ?? 0 %></span>
-                <span class="metric-label">Aguardando usuário</span>
-              </div>
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.vencendoSla ?? 0 %></span>
-                <span class="metric-label">Vencendo SLA</span>
-              </div>
-            </div>
-
-            <ul class="highlight-list">
-              <% if (!ultimosChamados || ultimosChamados.length === 0) { %>
-                <li class="empty">Nenhum chamado ainda.</li>
-              <% } else { %>
-                <% ultimosChamados.slice(0, 5).forEach((c) => { %>
-                  <li class="clickable">
-                    <div class="highlight-title">#<%= c.numero %> — <%= c.titulo %></div>
-                    <div class="highlight-meta">
-                      <span class="highlight-status"><%= c.status %></span>
-                      <span class="highlight-user"><%= c.solicitante %></span>
-                      <span class="highlight-date"><%= c.quando %></span>
-                    </div>
-                  </li>
-                <% }) %>
-              <% } %>
-            </ul>
-          </article>
-
-          <!-- USUÁRIOS -->
-          <article class="module-card" id="card-usuarios">
-            <header class="module-card__header">
-              <div>
-                <h2>Usuários</h2>
-                <p class="module-subtitle">Cadastros e perfis</p>
-              </div>
-              <div class="module-actions">
-                <a class="button tertiary" href="/admin/usuarios" title="Visualizar">Ver</a>
-              </div>
-            </header>
-
-            <div class="metric-grid">
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.totalUsuarios ?? 0 %></span>
-                <span class="metric-label">Total</span>
-              </div>
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.totalTecnicos ?? 0 %></span>
-                <span class="metric-label">Técnicos</span>
-              </div>
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.totalAdmins ?? 0 %></span>
-                <span class="metric-label">Admins</span>
-              </div>
-              <div class="metric">
-                <span class="metric-value"><%= kpis?.usuariosBloqueados ?? 0 %></span>
-                <span class="metric-label">Bloqueados</span>
-              </div>
-            </div>
-
-            <ul class="highlight-list">
-              <% if (!ultimosUsuarios || ultimosUsuarios.length === 0) { %>
-                <li class="empty">Nenhum usuário criado ainda.</li>
-              <% } else { %>
-                <% ultimosUsuarios.slice(0, 5).forEach((u) => { %>
-                  <li>
-                    <div class="highlight-title"><%= u.nome %></div>
-                    <div class="highlight-meta">
-                      <span class="highlight-status"><%= u.perfil %></span>
-                      <span class="highlight-date"><%= u.quando %></span>
-                    </div>
-                  </li>
-                <% }) %>
-              <% } %>
-            </ul>
-          </article>
+    <article class="module-card" id="card-chamados">
+      <header class="module-card__header">
+        <div>
+          <h2>Chamados</h2>
+          <p class="module-subtitle">Fila e ultimos chamados abertos</p>
         </div>
-  
+        <div class="module-actions">
+          <a class="button tertiary" href="/admin/chamados" title="Visualizar">Ver</a>
+        </div>
+      </header>
 
-    <!-- Ideal: mover esse <style> para /styles/admin-home.css e passar via cssExtra -->
-    <style>
-      .home-dashboard { gap: 24px; }
-      .home-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; }
-      .home-header-text p { margin:0; color:#4a5668; }
-      .home-header-actions { display:flex; align-items:center; gap:12px; }
-      .home-updated { font-size:13px; color:#6c7a89; }
+      <div class="metric-grid">
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-chamados-abertos"><%= kpis?.chamadosAbertos ?? 0 %></span>
+          <span class="metric-label">Abertos</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-chamados-andamento"><%= kpis?.emAndamento ?? 0 %></span>
+          <span class="metric-label">Em andamento</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-chamados-aguardando"><%= kpis?.aguardandoUsuario ?? 0 %></span>
+          <span class="metric-label">Aguardando usuario</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-chamados-sla"><%= kpis?.vencendoSla ?? 0 %></span>
+          <span class="metric-label">Vencendo SLA</span>
+        </div>
+      </div>
 
-      .kpi-band { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; }
-      .kpi-card { background:#fff; border:1px solid #e7ecf3; border-radius:10px; padding:16px 18px; box-shadow:0 4px 12px rgba(0,0,0,.05); }
-      .kpi-card .kpi-title { font-size:13px; color:#4a5668; text-transform:uppercase; letter-spacing:.02em; }
-      .kpi-card .kpi-value { font-size:28px; font-weight:700; color:#123; margin-top:6px; }
+      <ul class="highlight-list" data-hook="admin-chamados-list">
+        <% if (!ultimosChamados || ultimosChamados.length === 0) { %>
+          <li class="empty">Nenhum chamado ainda.</li>
+        <% } else { %>
+          <% ultimosChamados.slice(0, 5).forEach((c) => { %>
+            <li class="clickable">
+              <div class="highlight-title">#<%= c.numero %> - <%= c.titulo %></div>
+              <div class="highlight-meta">
+                <span class="highlight-status"><%= c.status %></span>
+                <span class="highlight-user"><%= c.solicitante %></span>
+                <span class="highlight-date"><%= c.quando %></span>
+              </div>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
 
-      .module-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; }
-      .module-card { background:#fff; border:1px solid #e7ecf3; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:16px; box-shadow:0 6px 16px rgba(15,31,55,0.08); }
-      .module-card__header { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-      .module-card__header h2 { margin:0; font-size:20px; color:#123; }
-      .module-subtitle { margin:4px 0 0; color:#5b6c80; font-size:13px; }
+    <article class="module-card" id="card-usuarios">
+      <header class="module-card__header">
+        <div>
+          <h2>Usuarios</h2>
+          <p class="module-subtitle">Cadastros e perfis</p>
+        </div>
+        <div class="module-actions">
+          <a class="button tertiary" href="/admin/usuarios" title="Visualizar">Ver</a>
+        </div>
+      </header>
 
-      .metric-grid { display:grid; grid-template-columns: repeat(2, minmax(120px,1fr)); gap:12px; }
-      .metric { background:#f9fbfd; border:1px solid #e7ecf3; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; }
-      .metric-value { font-size:20px; font-weight:600; color:#0b3c6b; }
-      .metric-label { font-size:12px; color:#5b6c80; }
+      <div class="metric-grid">
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-usuarios-total"><%= kpis?.totalUsuarios ?? 0 %></span>
+          <span class="metric-label">Total</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-usuarios-tecnicos"><%= kpis?.totalTecnicos ?? 0 %></span>
+          <span class="metric-label">Tecnicos</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-usuarios-admins"><%= kpis?.totalAdmins ?? 0 %></span>
+          <span class="metric-label">Admins</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value" data-hook="metric-usuarios-bloqueados"><%= kpis?.usuariosBloqueados ?? 0 %></span>
+          <span class="metric-label">Bloqueados</span>
+        </div>
+      </div>
 
-      .highlight-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
-      .highlight-list li { background:#fdfefe; border:1px solid #f0f4f8; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; cursor:default; transition:transform .15s ease, box-shadow .15s ease; }
-      .highlight-list li.clickable { cursor:pointer; }
-      .highlight-list li.clickable:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,31,55,0.12); }
-      .highlight-title { font-weight:600; color:#17324d; }
-      .highlight-meta { font-size:12px; color:#5b6c80; display:flex; gap:8px; flex-wrap:wrap; }
-      .highlight-status { font-size:11px; padding:2px 6px; border-radius:999px; background:#eaf2ff; color:#0b3c6b; text-transform:uppercase; }
-      .highlight-date, .highlight-user { font-size:12px; color:#5b6c80; }
-      .highlight-list .empty { background:#f4f7fb; border-style:dashed; color:#748396; font-style:italic; }
-
-      .button.secondary { background:#f1f5f9; color:#0b3c6b; border:1px solid #d8e1ec; border-radius:10px; padding:8px 14px; font-size:13px; cursor:pointer; }
-      .button.tertiary { background:transparent; color:#0b3c6b; text-decoration:none; font-weight:700; }
-
-      .badge { display:inline-block; margin-left:8px; padding:2px 8px; font-size:11px; border-radius:999px; background:#f1f5f9; color:#0b3c6b; border:1px solid #d8e1ec; vertical-align:middle; }
-      .muted { color:#9aa7b6 !important; }
-
-      @media (min-width: 1440px) {
-        .module-grid { grid-template-columns:repeat(3, minmax(320px,1fr)); }
-      }
-
-      @media (max-width: 720px) {
-        .metric-grid { grid-template-columns:1fr; }
-        .module-card__header { flex-direction:column; align-items:flex-start; }
-      }
-    </style>
-  </main>
+      <ul class="highlight-list" data-hook="admin-usuarios-list">
+        <% if (!ultimosUsuarios || ultimosUsuarios.length === 0) { %>
+          <li class="empty">Nenhum usuario criado ainda.</li>
+        <% } else { %>
+          <% ultimosUsuarios.slice(0, 5).forEach((u) => { %>
+            <li>
+              <div class="highlight-title"><%= u.nome %></div>
+              <div class="highlight-meta">
+                <span class="highlight-status"><%= u.perfil %></span>
+                <span class="highlight-date"><%= u.quando %></span>
+              </div>
+            </li>
+          <% }) %>
+        <% } %>
+      </ul>
+    </article>
+  </div>
 </div>
+
+<style>
+  .home-dashboard { gap: 24px; }
+  .home-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  .home-header-text p { margin:0; color:#4a5668; }
+  .home-header-actions { display:flex; align-items:center; gap:12px; }
+  .home-updated { font-size:13px; color:#6c7a89; }
+  .kpi-band { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; }
+  .kpi-card { background:#fff; border:1px solid #e7ecf3; border-radius:10px; padding:16px 18px; box-shadow:0 4px 12px rgba(0,0,0,.05); }
+  .kpi-card .kpi-title { font-size:13px; color:#4a5668; text-transform:uppercase; letter-spacing:.02em; }
+  .kpi-card .kpi-value { font-size:28px; font-weight:700; color:#123; margin-top:6px; }
+  .module-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; }
+  .module-card { background:#fff; border:1px solid #e7ecf3; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:16px; box-shadow:0 6px 16px rgba(15,31,55,0.08); }
+  .module-card__header { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+  .module-card__header h2 { margin:0; font-size:20px; color:#123; }
+  .module-subtitle { margin:4px 0 0; color:#5b6c80; font-size:13px; }
+  .metric-grid { display:grid; grid-template-columns: repeat(2, minmax(120px,1fr)); gap:12px; }
+  .metric { background:#f9fbfd; border:1px solid #e7ecf3; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; }
+  .metric-value { font-size:20px; font-weight:600; color:#0b3c6b; }
+  .metric-label { font-size:12px; color:#5b6c80; }
+  .highlight-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .highlight-list li { background:#fdfefe; border:1px solid #f0f4f8; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; cursor:default; transition:transform .15s ease, box-shadow .15s ease; }
+  .highlight-list li.clickable { cursor:pointer; }
+  .highlight-list li.clickable:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,31,55,0.12); }
+  .highlight-title { font-weight:600; color:#17324d; }
+  .highlight-meta { font-size:12px; color:#5b6c80; display:flex; gap:8px; flex-wrap:wrap; }
+  .highlight-status { font-size:11px; padding:2px 6px; border-radius:999px; background:#eaf2ff; color:#0b3c6b; text-transform:uppercase; }
+  .highlight-date, .highlight-user { font-size:12px; color:#5b6c80; }
+  .highlight-list .empty { background:#f4f7fb; border-style:dashed; color:#748396; font-style:italic; }
+  .button.secondary { background:#f1f5f9; color:#0b3c6b; border:1px solid #d8e1ec; border-radius:10px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  .button.tertiary { background:transparent; color:#0b3c6b; text-decoration:none; font-weight:700; }
+  .badge { display:inline-block; margin-left:8px; padding:2px 8px; font-size:11px; border-radius:999px; background:#f1f5f9; color:#0b3c6b; border:1px solid #d8e1ec; vertical-align:middle; }
+  .muted { color:#9aa7b6 !important; }
+  @media (min-width: 1440px) { .module-grid { grid-template-columns:repeat(3, minmax(320px,1fr)); } }
+  @media (max-width: 720px) {
+    .metric-grid { grid-template-columns:1fr; }
+    .module-card__header { flex-direction:column; align-items:flex-start; }
+  }
+</style>
+
+<script type="module" src="/js/admin-live.js"></script>
+

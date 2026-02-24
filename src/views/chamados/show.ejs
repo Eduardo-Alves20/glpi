@@ -20,13 +20,13 @@
           (chamado.urgencia ? String(chamado.urgencia) : "-");
 
         const responsavelLabel =
-          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "—"));
+          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "-"));
 
         const solicitanteLabel =
           (chamado.criadoPor?.nome || chamado.criadoPor?.login || "-");
 
         const historico = Array.isArray(chamado.historico) ? chamado.historico.slice() : [];
-        historico.sort((a,b) => new Date(a.em || 0) - new Date(b.em || 0));
+        historico.sort((a, b) => new Date(a.em || 0) - new Date(b.em || 0));
 
         const fmtData = (d) => {
           try { return d ? new Date(d).toLocaleString("pt-BR") : "-"; } catch { return "-"; }
@@ -37,7 +37,7 @@
           if (a && (a.nome || a.login)) {
             const nome = a.nome ? String(a.nome) : "";
             const login = a.login ? String(a.login) : "";
-            return `${nome}${(nome && login) ? " ("+login+")" : (login ? "("+login+")" : "")}`;
+            return `${nome}${(nome && login) ? " (" + login + ")" : (login ? "(" + login + ")" : "")}`;
           }
           return String(h?.por || "sistema");
         };
@@ -52,7 +52,53 @@
           return t ? String(t) : "Evento";
         };
 
-        const podeComentar = chamado.status !== "fechado"; // ajuste se quiser permitir comentar mesmo fechado
+        const normalizarExt = (s) => {
+          const ext = String(s || "").trim().toLowerCase();
+          if (!ext) return "";
+          return ext.startsWith(".") ? ext : `.${ext}`;
+        };
+
+        const extArquivo = (nome) => {
+          const str = String(nome || "").trim().toLowerCase();
+          const idx = str.lastIndexOf(".");
+          if (idx <= 0 || idx === str.length - 1) return "";
+          return str.slice(idx);
+        };
+
+        const extAnexo = (a) => {
+          return (
+            normalizarExt(a?.extensao) ||
+            extArquivo(a?.nomeOriginal) ||
+            extArquivo(a?.nomeArmazenado)
+          );
+        };
+
+        const anexosDaInteracao = (h) => {
+          const lista = h?.meta?.anexos;
+          return Array.isArray(lista) ? lista : [];
+        };
+
+        const isImageAnexo = (a) => {
+          const mime = String(a?.mimeType || "").toLowerCase();
+          const ext = extAnexo(a);
+          if (mime.startsWith("image/")) return true;
+          return [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext);
+        };
+
+        const isPdfAnexo = (a) => {
+          const mime = String(a?.mimeType || "").toLowerCase();
+          const ext = extAnexo(a);
+          return mime === "application/pdf" || ext === ".pdf";
+        };
+
+        const tamanhoAnexo = (bytes) => {
+          const b = Number(bytes) || 0;
+          if (b < 1024) return `${b} B`;
+          if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+          return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+        };
+
+        const podeComentar = chamado.status !== "fechado";
         const podeConfirmar = chamado.status === "aguardando_usuario";
       %>
 
@@ -96,7 +142,6 @@
         </div>
       </div>
 
-      <!-- Interações (chat) -->
       <div class="chat-wrap">
         <div class="chat-head">
           <h2 class="chat-title">Interações</h2>
@@ -114,14 +159,43 @@
                   <span class="msg-type"><%= tipoLabel(h.tipo) %></span>
                   <span class="msg-time"><%= fmtData(h.em) %></span>
                 </div>
-                <div class="msg-body"><%= h.mensagem || "—" %></div>
+
+                <div class="msg-body"><%= h.mensagem || "-" %></div>
+
+                <% const anexosMsg = anexosDaInteracao(h); %>
+                <% if (anexosMsg.length) { %>
+                  <div class="anexos">
+                    <% anexosMsg.forEach((a) => { %>
+                      <div class="anexo-item">
+                        <a class="anexo-link" href="/anexos/<%= a.id %>" target="_blank" rel="noopener">
+                          <strong><%= a.nomeOriginal || "anexo" %></strong>
+                          <span><%= tamanhoAnexo(a.tamanhoBytes) %></span>
+                        </a>
+
+                        <% if (isImageAnexo(a)) { %>
+                          <img
+                            class="anexo-preview-img"
+                            src="/anexos/<%= a.id %>"
+                            alt="<%= a.nomeOriginal || "imagem" %>"
+                            loading="lazy"
+                          />
+                        <% } else if (isPdfAnexo(a)) { %>
+                          <iframe
+                            class="anexo-preview-pdf"
+                            src="/anexos/<%= a.id %>#view=FitH"
+                            title="<%= a.nomeOriginal || "PDF" %>"
+                          ></iframe>
+                        <% } %>
+                      </div>
+                    <% }) %>
+                  </div>
+                <% } %>
               </div>
             <% }) %>
           </div>
         <% } %>
       </div>
 
-      <!-- Ações do usuário -->
       <% if (podeConfirmar) { %>
         <div class="user-actions">
           <form method="POST" action="/chamados/<%= chamado._id %>/confirmar">
@@ -129,18 +203,36 @@
           </form>
 
           <form method="POST" action="/chamados/<%= chamado._id %>/reabrir" class="reabrir-form">
-            <input type="text" name="comentario" minlength="5" required placeholder="Explique por que está reabrindo…" />
+            <input type="text" name="comentario" minlength="5" required placeholder="Explique por que está reabrindo..." />
             <button class="button secondary" type="submit">Reabrir</button>
           </form>
         </div>
       <% } %>
 
       <% if (podeComentar) { %>
-        <form action="/chamados/<%= chamado._id %>/interacao" method="POST" class="glpi-form" autocomplete="off">
+        <form
+          action="/chamados/<%= chamado._id %>/interacao"
+          method="POST"
+          class="glpi-form"
+          autocomplete="off"
+          enctype="multipart/form-data"
+        >
           <div class="form-field">
             <label for="texto">Responder</label>
-            <textarea id="texto" name="texto" rows="5" minlength="2" required placeholder="Escreva uma mensagem…"></textarea>
-            <small class="hint">Se precisar de mais ajuda, explique o que ainda não funcionou.</small>
+            <textarea id="texto" name="texto" rows="5" minlength="2" placeholder="Escreva uma mensagem..."></textarea>
+            <small class="hint">Mensagem ou anexo obrigatorio.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="anexosInteracao">Anexos (opcional)</label>
+            <input
+              id="anexosInteracao"
+              name="anexos"
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp"
+            />
+            <small class="hint">Permitidos: imagem, PDF e Office. Maximo 5 arquivos de ate 10MB.</small>
           </div>
 
           <div class="form-actions">
@@ -206,6 +298,13 @@
   .msg-time { margin-left:auto; font-size: 12px; opacity: .75; }
   .msg-body { white-space: pre-wrap; font-size: 13px; line-height: 1.4; }
 
+  .anexos { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .anexo-item { border: 1px solid rgba(15,31,55,.1); border-radius: 10px; padding: 8px; background: rgba(15,31,55,.02); }
+  .anexo-link { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; text-decoration: none; color: #0b3c6b; }
+  .anexo-link span { color: #5b6c80; font-size: 12px; }
+  .anexo-preview-img { margin-top: 8px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(15,31,55,.14); }
+  .anexo-preview-pdf { margin-top: 8px; width: 100%; min-height: 320px; border: 1px solid rgba(15,31,55,.14); border-radius: 8px; background: #fff; }
+
   .user-actions {
     margin-top: 14px;
     display:flex;
@@ -241,6 +340,6 @@
     chamadoId: "<%= String(chamado._id) %>",
     viewerId: "<%= String(usuarioSessao?.id || '') %>",
     intervalMs: 1000,
-    notifyOnlyWhenHidden: true
+    notifyOnlyWhenHidden: true,
   });
 </script>

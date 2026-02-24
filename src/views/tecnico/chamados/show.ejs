@@ -1,7 +1,7 @@
 <section class="usuarios-page">
   <div class="container">
     <div class="form-wrapper">
-      <% 
+      <%
         const STATUS_UI = {
           aberto: { label: "Aberto", cls: "st-aberto" },
           em_atendimento: { label: "Em atendimento", cls: "st-atendimento" },
@@ -20,13 +20,13 @@
           (chamado.urgencia ? String(chamado.urgencia) : "-");
 
         const responsavelLabel =
-          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "—"));
+          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "-"));
 
         const solicitanteLabel =
           (chamado.criadoPor?.nome || chamado.criadoPor?.login || "-");
 
         const historico = Array.isArray(chamado.historico) ? chamado.historico.slice() : [];
-        historico.sort((a,b) => new Date(a.em || 0) - new Date(b.em || 0));
+        historico.sort((a, b) => new Date(a.em || 0) - new Date(b.em || 0));
 
         const fmtData = (d) => {
           try { return d ? new Date(d).toLocaleString("pt-BR") : "-"; } catch { return "-"; }
@@ -37,7 +37,7 @@
           if (a && (a.nome || a.login)) {
             const nome = a.nome ? String(a.nome) : "";
             const login = a.login ? String(a.login) : "";
-            return `${nome}${(nome && login) ? " ("+login+")" : (login ? "("+login+")" : "")}`;
+            return `${nome}${(nome && login) ? " (" + login + ")" : (login ? "(" + login + ")" : "")}`;
           }
           return String(h?.por || "sistema");
         };
@@ -50,6 +50,54 @@
           if (t === "transferencia") return "Transferência";
           return t ? String(t) : "Evento";
         };
+
+        const normalizarExt = (s) => {
+          const ext = String(s || "").trim().toLowerCase();
+          if (!ext) return "";
+          return ext.startsWith(".") ? ext : `.${ext}`;
+        };
+
+        const extArquivo = (nome) => {
+          const str = String(nome || "").trim().toLowerCase();
+          const idx = str.lastIndexOf(".");
+          if (idx <= 0 || idx === str.length - 1) return "";
+          return str.slice(idx);
+        };
+
+        const extAnexo = (a) => {
+          return (
+            normalizarExt(a?.extensao) ||
+            extArquivo(a?.nomeOriginal) ||
+            extArquivo(a?.nomeArmazenado)
+          );
+        };
+
+        const anexosDaInteracao = (h) => {
+          const lista = h?.meta?.anexos;
+          return Array.isArray(lista) ? lista : [];
+        };
+
+        const isImageAnexo = (a) => {
+          const mime = String(a?.mimeType || "").toLowerCase();
+          const ext = extAnexo(a);
+          if (mime.startsWith("image/")) return true;
+          return [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext);
+        };
+
+        const isPdfAnexo = (a) => {
+          const mime = String(a?.mimeType || "").toLowerCase();
+          const ext = extAnexo(a);
+          return mime === "application/pdf" || ext === ".pdf";
+        };
+
+        const tamanhoAnexo = (bytes) => {
+          const b = Number(bytes) || 0;
+          if (b < 1024) return `${b} B`;
+          if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+          return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+        };
+        const chamadoFechado = chamado.status === "fechado";
+        const respAtualId = chamado.responsavelId ? String(chamado.responsavelId) : "";
       %>
 
       <div class="page-header">
@@ -58,12 +106,8 @@
 
           <div class="subrow">
             <span class="badge <%= st.cls %>" data-status-badge><%= st.label %></span>
-            <span class="meta">
-              <strong>Categoria:</strong> <%= categoriaLabel %>
-            </span>
-            <span class="meta">
-              <strong>Prioridade:</strong> <%= prioridadeLabel %>
-            </span>
+            <span class="meta"><strong>Categoria:</strong> <%= categoriaLabel %></span>
+            <span class="meta"><strong>Prioridade:</strong> <%= prioridadeLabel %></span>
           </div>
 
           <div class="subrow">
@@ -89,6 +133,34 @@
             <input type="text" value="<%= solicitanteLabel %>" disabled />
           </div>
 
+          <% if (!chamadoFechado) { %>
+            <form
+              id="formResponsavel"
+              action="/tecnico/chamados/<%= chamado._id %>/responsavel"
+              method="POST"
+              class="form-field responsavel-form"
+              style="grid-column: 1 / -1;"
+            >
+              <label for="responsavelBusca">Responsável do chamado</label>
+              <input
+                id="responsavelBusca"
+                type="search"
+                autocomplete="off"
+                placeholder="Buscar por nome ou login..."
+              />
+              <select id="responsavelId" name="responsavelId" data-current-value="<%= respAtualId %>">
+                <option value="">Sem responsável (voltar para fila)</option>
+                <% (equipeResponsaveis || []).forEach((u) => { %>
+                  <option value="<%= u.id %>" <%= respAtualId === String(u.id) ? "selected" : "" %>>
+                    <%= u.nome %> (<%= u.usuario %>) - <%= u.perfil %>
+                  </option>
+                <% }) %>
+              </select>
+              <small class="hint">Selecione e a alteração é salva automaticamente.</small>
+              <small class="hint muted" id="responsavelStatus" hidden>Salvando responsável...</small>
+            </form>
+          <% } %>
+
           <div class="form-field" style="grid-column: 1 / -1;">
             <label>Descrição</label>
             <textarea rows="6" disabled><%= chamado.descricao %></textarea>
@@ -96,13 +168,6 @@
         </div>
       </div>
 
-      <% if (chamado.status === "aberto" && !chamado.responsavelId) { %>
-        <form action="/tecnico/chamados/<%= chamado._id %>/assumir" method="POST" class="form-actions">
-          <button class="button" type="submit">Assumir chamado</button>
-        </form>
-      <% } %>
-
-      <!-- CHAT / INTERAÇÕES -->
       <div class="chat-wrap">
         <div class="chat-head">
           <h2 class="chat-title">Interações</h2>
@@ -112,7 +177,7 @@
         <% if (!historico.length) { %>
           <div class="chat-empty">Nenhuma interação ainda.</div>
         <% } else { %>
-    <div class="chat" data-chat-wrap>
+          <div class="chat" data-chat-wrap>
             <% historico.forEach((h) => { %>
               <div class="msg">
                 <div class="msg-top">
@@ -124,7 +189,36 @@
                 <% if (h.mensagem) { %>
                   <div class="msg-body"><%= h.mensagem %></div>
                 <% } else { %>
-                  <div class="msg-body muted">—</div>
+                  <div class="msg-body muted">-</div>
+                <% } %>
+
+                <% const anexosMsg = anexosDaInteracao(h); %>
+                <% if (anexosMsg.length) { %>
+                  <div class="anexos">
+                    <% anexosMsg.forEach((a) => { %>
+                      <div class="anexo-item">
+                        <a class="anexo-link" href="/anexos/<%= a.id %>" target="_blank" rel="noopener">
+                          <strong><%= a.nomeOriginal || "anexo" %></strong>
+                          <span><%= tamanhoAnexo(a.tamanhoBytes) %></span>
+                        </a>
+
+                        <% if (isImageAnexo(a)) { %>
+                          <img
+                            class="anexo-preview-img"
+                            src="/anexos/<%= a.id %>"
+                            alt="<%= a.nomeOriginal || "imagem" %>"
+                            loading="lazy"
+                          />
+                        <% } else if (isPdfAnexo(a)) { %>
+                          <iframe
+                            class="anexo-preview-pdf"
+                            src="/anexos/<%= a.id %>#view=FitH"
+                            title="<%= a.nomeOriginal || "PDF" %>"
+                          ></iframe>
+                        <% } %>
+                      </div>
+                    <% }) %>
+                  </div>
                 <% } %>
               </div>
             <% }) %>
@@ -132,12 +226,12 @@
         <% } %>
       </div>
 
-      <!-- FORM DE RESPOSTA: 2 BOTÕES -->
       <form
         action="/tecnico/chamados/<%= chamado._id %>/interacao"
         method="POST"
         class="glpi-form"
         autocomplete="off"
+        enctype="multipart/form-data"
       >
         <div class="form-field">
           <label for="texto">Digite sua resposta</label>
@@ -146,12 +240,23 @@
             name="texto"
             rows="5"
             minlength="2"
-            required
-            placeholder="Escreva uma mensagem…"
+            placeholder="Escreva uma mensagem..."
           ></textarea>
           <small class="hint">
-            Use <strong>Enviar como solução</strong> quando quiser registrar uma solução (pode mover o status para Aguardando usuário).
+            Escreva uma mensagem ou anexe arquivos. Use <strong>Enviar como solução</strong> para mover para Aguardando usuário.
           </small>
+        </div>
+
+        <div class="form-field">
+          <label for="anexosInteracao">Anexos (opcional)</label>
+          <input
+            id="anexosInteracao"
+            name="anexos"
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp"
+          />
+          <small class="hint">Permitidos: imagem, PDF e Office. Maximo 5 arquivos de ate 10MB.</small>
         </div>
 
         <div class="form-actions">
@@ -197,6 +302,30 @@
     color: rgba(15,31,55,.88);
   }
 
+  select {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 10px;
+    border: 1px solid rgba(15,31,55,.14);
+    padding: 8px 10px;
+    background: #fff;
+    color: rgba(15,31,55,.92);
+  }
+  .responsavel-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .responsavel-form input[type="search"] {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 10px;
+    border: 1px solid rgba(15,31,55,.14);
+    padding: 8px 10px;
+    background: #fff;
+    color: rgba(15,31,55,.92);
+  }
+
   .chat-wrap {
     margin-top: 18px;
     border: 1px solid rgba(15,31,55,.10);
@@ -220,6 +349,13 @@
   .msg-type { font-size: 12px; padding: 2px 8px; border-radius: 999px; border:1px solid rgba(15,31,55,.12); background:#fff; }
   .msg-time { margin-left:auto; font-size: 12px; opacity: .75; }
   .msg-body { white-space: pre-wrap; font-size: 13px; line-height: 1.4; }
+
+  .anexos { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .anexo-item { border: 1px solid rgba(15,31,55,.1); border-radius: 10px; padding: 8px; background: rgba(15,31,55,.02); }
+  .anexo-link { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; text-decoration: none; color: #0b3c6b; }
+  .anexo-link span { color: #5b6c80; font-size: 12px; }
+  .anexo-preview-img { margin-top: 8px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(15,31,55,.14); }
+  .anexo-preview-pdf { margin-top: 8px; width: 100%; min-height: 320px; border: 1px solid rgba(15,31,55,.14); border-radius: 8px; background: #fff; }
   .muted { opacity: .7; }
 
   .form-actions {
@@ -236,10 +372,79 @@
 </style>
 <script type="module">
   import { startChamadoPoll } from "/js/chamado-poll.js";
+
+  (function setupAutoResponsavel() {
+    const form = document.getElementById("formResponsavel");
+    const busca = document.getElementById("responsavelBusca");
+    const select = document.getElementById("responsavelId");
+    const status = document.getElementById("responsavelStatus");
+
+    if (!form || !busca || !select) return;
+
+    const currentValue = String(select.dataset.currentValue || "");
+    const baseOptions = Array.from(select.options).map((opt) => ({
+      value: String(opt.value || ""),
+      text: String(opt.textContent || ""),
+      fixed: String(opt.value || "") === "",
+    }));
+
+    let submitting = false;
+
+    const rebuildOptions = (query) => {
+      const q = String(query || "").trim().toLowerCase();
+      const selectedBefore = String(select.value || "");
+      select.innerHTML = "";
+
+      baseOptions.forEach((optData) => {
+        const match = optData.fixed || !q || optData.text.toLowerCase().includes(q);
+        if (!match) return;
+
+        const opt = document.createElement("option");
+        opt.value = optData.value;
+        opt.textContent = optData.text;
+        if (optData.value === selectedBefore) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      if (!select.options.length) {
+        const emptyOpt = document.createElement("option");
+        emptyOpt.value = "";
+        emptyOpt.textContent = "Nenhum resultado encontrado";
+        select.appendChild(emptyOpt);
+      }
+    };
+
+    const submitIfChanged = () => {
+      if (submitting) return;
+
+      const novo = String(select.value || "");
+      if (novo === currentValue) return;
+
+      submitting = true;
+      if (status) status.hidden = false;
+      form.requestSubmit();
+    };
+
+    busca.addEventListener("input", () => rebuildOptions(busca.value));
+    busca.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+
+      const firstMatch = Array.from(select.options).find((o) => String(o.value || "") !== "");
+      if (!firstMatch) return;
+
+      select.value = String(firstMatch.value || "");
+      submitIfChanged();
+    });
+
+    select.addEventListener("change", submitIfChanged);
+    rebuildOptions("");
+  })();
+
   startChamadoPoll({
     chamadoId: "<%= String(chamado._id) %>",
     viewerId: "<%= String(usuarioSessao?.id || '') %>",
     intervalMs: 1000,
-    notifyOnlyWhenHidden: true
+    notifyOnlyWhenHidden: true,
   });
 </script>

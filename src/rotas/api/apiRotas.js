@@ -5,6 +5,7 @@ import { acharPorId } from "../../repos/usuariosRepo.js";
 import { apiPollChamadoGet } from "../../controllers/api/apiChamadosController.js";
 import { apiTecnicoInboxGet } from "../../controllers/api/apiTecnicoController.js";
 import { apiUsuarioInboxGet } from "../../controllers/api/apiUsuarioController.js";
+import { apiAdminHomeGet } from "../../controllers/api/apiAdminController.js";
 
 // +++ NOVO (notificações)
 import * as notif from "../../controllers/api/notificacoesController.js";
@@ -31,6 +32,13 @@ export function criarApiRotas({ auditoria } = {}) {
     "/usuario/inbox",
     exigirPerfis(["usuario", "admin", "tecnico"], { onNegado: auditoria?.registrarTentativaAcessoNegado }),
     apiUsuarioInboxGet
+  );
+
+  // Home admin (cards e módulos)
+  router.get(
+    "/admin/home",
+    exigirPerfis(["admin"], { onNegado: auditoria?.registrarTentativaAcessoNegado }),
+    apiAdminHomeGet
   );
 
   // ===== Notificações (Opção 2) =====

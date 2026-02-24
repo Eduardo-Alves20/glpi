@@ -6,6 +6,7 @@ import {
   listarRecentes,
 } from "../../repos/usuariosRepo.js";
 import { sugerirLoginsDisponiveis } from "../../compartilhado/usuario/sugestaoLogin.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
 
 /**
  * Base de view para telas de admin (mantém seu layout atual)
@@ -109,6 +110,29 @@ export async function usuariosCreatePost(req, res) {
   };
 
   await criarUsuario(doc);
+
+  await registrarEventoSistema({
+    req,
+    nivel: "security",
+    modulo: "admin",
+    evento: "admin.usuario.criado",
+    acao: "criar_usuario",
+    resultado: "sucesso",
+    mensagem: `Usuario ${doc.usuario} criado por administrador.`,
+    alvo: {
+      tipo: "usuario",
+      login: doc.usuario,
+      perfil: doc.perfil,
+    },
+    meta: {
+      status: doc.status,
+      email: doc.email,
+    },
+  });
+
+  if (req.session) {
+    req.session.flash = { tipo: "success", mensagem: "Usuário criado com sucesso." };
+  }
 
   return res.redirect("/admin/usuarios");
 }

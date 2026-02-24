@@ -7,6 +7,7 @@ import {
 import { acharPorId, listarRecentes } from "../../repos/usuariosRepo.js";
 
 import { adminHomeGet } from "../../controllers/admin/adminController.js";
+import { adminLogsGet } from "../../controllers/admin/logsController.js";
 import {
   usuariosIndexGet,
   usuariosNovoGet,
@@ -30,6 +31,7 @@ export function criarAdminRotas({ auditoria } = {}) {
   );
 
   router.get("/admin", adminHomeGet);
+  router.get("/admin/logs", adminLogsGet);
   router.get("/admin/usuarios", usuariosIndexGet);
   router.get("/admin/usuarios/novo", usuariosNovoGet);
   router.get("/admin/usuarios/sugerir-login", usuariosSugerirLoginGet);

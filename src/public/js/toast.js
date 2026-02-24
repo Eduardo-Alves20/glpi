@@ -14,7 +14,7 @@ function escapeHtml(s = "") {
   }[m]));
 }
 
-export function toast({ title, message, href = null, timeout = 6000 } = {}) {
+export function toast({ title, message, href = null, timeout = 15000 } = {}) {
   const host = ensureWrap();
   const el = document.createElement("div");
   el.className = "toast";
@@ -38,7 +38,10 @@ export function toast({ title, message, href = null, timeout = 6000 } = {}) {
     setTimeout(() => el.remove(), 180);
   };
 
-  const t = setTimeout(close, timeout);
-  el.addEventListener("mouseenter", () => clearTimeout(t));
-  el.addEventListener("mouseleave", () => setTimeout(close, 1200));
+  let timer = setTimeout(close, timeout);
+  el.addEventListener("mouseenter", () => clearTimeout(timer));
+  el.addEventListener("mouseleave", () => {
+    clearTimeout(timer);
+    timer = setTimeout(close, Math.max(5000, Math.floor(timeout / 2)));
+  });
 }

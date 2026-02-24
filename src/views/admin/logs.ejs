@@ -1,0 +1,269 @@
+<% const advancedCount = [
+  filtros.nivel,
+  filtros.resultado,
+  filtros.modulo,
+  filtros.evento,
+  filtros.usuarioId,
+  filtros.usuarioLogin,
+  filtros.chamadoId,
+  filtros.dataInicio,
+  filtros.dataFim,
+].filter((v) => String(v || "").trim() !== "").length; %>
+<% const advancedActive = advancedCount > 0; %>
+<% const currentPage = Math.max(1, Number(dados.page || 1)); %>
+<% const totalPages = Math.max(1, Number(dados.pages || 1)); %>
+
+<div class="content-with-pagination-wrapper logs-page">
+  <div class="content-with-pagination">
+    <%- include("../partials/breadcrumb", {
+      crumbs: [
+        { label: "Home", href: "/app" },
+        { label: "Admin", href: "/admin" },
+        { label: "Logs" },
+      ],
+    }) %>
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Logs do sistema</h1>
+        <p class="page-subtitle">Auditoria de seguranca e eventos operacionais.</p>
+      </div>
+    </div>
+
+    <form id="logs-filters-form" method="GET" action="/admin/logs" class="table-card logs-filter-card">
+      <div class="logs-basic-grid">
+        <div class="logs-field logs-field-search">
+          <label for="filtro-q">Pesquisar</label>
+          <div class="logs-search-control">
+            <input
+              id="filtro-q"
+              name="q"
+              value="<%= filtros.q %>"
+              placeholder="Digite evento, modulo, usuario ou mensagem"
+              autocomplete="off"
+            />
+            <button type="submit" class="logs-search-submit" aria-label="Aplicar busca">
+              <span aria-hidden="true">&#128269;</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="logs-field logs-field-limit">
+          <label for="filtro-limit">Itens por pagina</label>
+          <select id="filtro-limit" name="limit">
+            <% [10, 25, 50, 75, 100, 200].forEach((n) => { %>
+              <option value="<%= n %>" <%= Number(filtros.limit) === n ? "selected" : "" %>><%= n %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="logs-field logs-field-summary">
+          <label>Resumo</label>
+          <p class="logs-summary-line">
+            <% if (Number(dados.total || 0) > 0) { %>
+              <strong><%= dados.total %></strong> registro(s) encontrado(s).
+            <% } else { %>
+              Nenhum registro encontrado.
+            <% } %>
+          </p>
+        </div>
+      </div>
+
+      <div class="logs-filter-actions">
+        <button
+          type="button"
+          id="logs-open-advanced"
+          class="button secondary logs-open-advanced <%= advancedActive ? "is-active" : "" %>"
+          aria-haspopup="dialog"
+          aria-controls="logs-advanced-modal"
+          aria-expanded="false"
+        >
+          Filtros avancados
+          <% if (advancedActive) { %>
+            <span class="logs-filter-counter"><%= advancedCount %></span>
+          <% } %>
+        </button>
+
+        <button class="button" type="submit">Aplicar filtros</button>
+        <a class="button tertiary logs-clear-button" href="/admin/logs">Limpar filtros</a>
+      </div>
+
+      <div id="logs-advanced-modal" class="logs-advanced-modal" hidden>
+        <div class="logs-advanced-dialog" role="dialog" aria-modal="true" aria-labelledby="logs-advanced-title">
+          <div class="logs-advanced-header">
+            <h2 id="logs-advanced-title">Filtros avancados</h2>
+            <button type="button" id="logs-close-advanced" class="logs-advanced-close" aria-label="Fechar filtros">&times;</button>
+          </div>
+
+          <div class="logs-advanced-grid">
+            <section class="logs-advanced-card">
+              <h3>Classificacao</h3>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-nivel">Nivel</label>
+                <select id="filtro-nivel" name="nivel" data-advanced-field>
+                  <option value="">Todos</option>
+                  <% (opcoes.niveis || []).forEach((n) => { %>
+                    <option value="<%= n %>" <%= filtros.nivel === n ? "selected" : "" %>><%= n %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-resultado">Resultado</label>
+                <select id="filtro-resultado" name="resultado" data-advanced-field>
+                  <option value="">Todos</option>
+                  <% (opcoes.resultados || []).forEach((r) => { %>
+                    <option value="<%= r %>" <%= filtros.resultado === r ? "selected" : "" %>><%= r %></option>
+                  <% }) %>
+                </select>
+              </div>
+            </section>
+
+            <section class="logs-advanced-card">
+              <h3>Origem do evento</h3>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-modulo">Modulo</label>
+                <select id="filtro-modulo" name="modulo" data-advanced-field>
+                  <option value="">Todos</option>
+                  <% (opcoes.modulos || []).forEach((m) => { %>
+                    <option value="<%= m %>" <%= filtros.modulo === m ? "selected" : "" %>><%= m %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-evento">Evento</label>
+                <select id="filtro-evento" name="evento" data-advanced-field>
+                  <option value="">Todos</option>
+                  <% (opcoes.eventos || []).forEach((e) => { %>
+                    <option value="<%= e %>" <%= filtros.evento === e ? "selected" : "" %>><%= e %></option>
+                  <% }) %>
+                </select>
+              </div>
+            </section>
+
+            <section class="logs-advanced-card">
+              <h3>Relacionamentos</h3>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-usuario-login">Login do usuario</label>
+                <input id="filtro-usuario-login" name="usuarioLogin" value="<%= filtros.usuarioLogin %>" data-advanced-field />
+              </div>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-usuario-id">ID do usuario</label>
+                <input id="filtro-usuario-id" name="usuarioId" value="<%= filtros.usuarioId %>" data-advanced-field />
+              </div>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-chamado-id">ID do chamado</label>
+                <input id="filtro-chamado-id" name="chamadoId" value="<%= filtros.chamadoId %>" data-advanced-field />
+              </div>
+            </section>
+
+            <section class="logs-advanced-card">
+              <h3>Periodo</h3>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-data-inicio">Data inicial</label>
+                <input id="filtro-data-inicio" type="date" name="dataInicio" value="<%= filtros.dataInicio %>" data-advanced-field />
+              </div>
+
+              <div class="logs-advanced-field">
+                <label for="filtro-data-fim">Data final</label>
+                <input id="filtro-data-fim" type="date" name="dataFim" value="<%= filtros.dataFim %>" data-advanced-field />
+              </div>
+            </section>
+          </div>
+
+          <div class="logs-advanced-footer">
+            <button type="button" id="logs-clear-advanced" class="button secondary">Limpar tudo</button>
+
+            <div class="logs-advanced-footer-actions">
+              <button type="button" id="logs-cancel-advanced" class="button secondary">Cancelar</button>
+              <button type="submit" class="button">Aplicar filtros</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="table-card logs-table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-quando">Quando</th>
+            <th class="col-nivel">Nivel</th>
+            <th class="col-modulo">Modulo</th>
+            <th class="col-evento">Evento</th>
+            <th class="col-resultado">Resultado</th>
+            <th class="col-usuario">Usuario</th>
+            <th>Mensagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!dados?.itens?.length) { %>
+            <tr><td colspan="7" class="empty-row">Nenhum log encontrado para os filtros.</td></tr>
+          <% } else { %>
+            <% dados.itens.forEach((l) => { %>
+              <tr>
+                <td><%= l.criadoEm ? new Date(l.criadoEm).toLocaleString("pt-BR") : "-" %></td>
+                <td><span class="pill pill-status"><%= l.nivel || "-" %></span></td>
+                <td><%= l.modulo || "-" %></td>
+                <td><code><%= l.evento || "-" %></code></td>
+                <td><%= l.resultado || "-" %></td>
+                <td><%= l?.usuario?.login || l?.usuario?.nome || "-" %></td>
+                <td class="cell-msg"><%= l.mensagem || "-" %></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="logs-footer">
+      <div class="logs-total">Total: <strong><%= dados.total %></strong> logs</div>
+      <div class="logs-pager">
+        <% const prev = Math.max(1, currentPage - 1); %>
+        <% const next = Math.min(totalPages, currentPage + 1); %>
+        <% const prevDisabled = currentPage <= 1; %>
+        <% const nextDisabled = currentPage >= totalPages; %>
+        <% const qsBase = new URLSearchParams({
+          q: filtros.q || "",
+          nivel: filtros.nivel || "",
+          modulo: filtros.modulo || "",
+          evento: filtros.evento || "",
+          resultado: filtros.resultado || "",
+          usuarioId: filtros.usuarioId || "",
+          usuarioLogin: filtros.usuarioLogin || "",
+          chamadoId: filtros.chamadoId || "",
+          dataInicio: filtros.dataInicio || "",
+          dataFim: filtros.dataFim || "",
+          limit: String(filtros.limit || 50),
+        }); %>
+
+        <% qsBase.set("page", String(prev)); %>
+        <a
+          class="button secondary logs-pager-link <%= prevDisabled ? 'is-disabled' : '' %>"
+          aria-disabled="<%= prevDisabled ? 'true' : 'false' %>"
+          href="/admin/logs?<%= qsBase.toString() %>"
+        >
+          Anterior
+        </a>
+
+        <span class="logs-pager-status">Pagina <strong><%= currentPage %></strong> de <strong><%= totalPages %></strong></span>
+
+        <% qsBase.set("page", String(next)); %>
+        <a
+          class="button secondary logs-pager-link <%= nextDisabled ? 'is-disabled' : '' %>"
+          aria-disabled="<%= nextDisabled ? 'true' : 'false' %>"
+          href="/admin/logs?<%= qsBase.toString() %>"
+        >
+          Proxima
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

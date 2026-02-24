@@ -7,6 +7,7 @@ import {
   sanitizeEnum,
   toObjectId,
 } from "../core/chamadosCoreRepo.js";
+import { sanitizarAnexosHistorico } from "../../../service/anexosService.js";
 
 export async function acharChamadoPorIdDoUsuario(chamadoId, usuarioId) {
   const db = pegarDb();
@@ -165,13 +166,23 @@ export async function usuarioAdicionarInteracao(
   chamadoId,
   usuario,
   texto,
-  { porLogin = "sistema" } = {},
+  { porLogin = "sistema", anexos = [] } = {},
 ) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   const uId = toObjectId(usuario?.id, "usuarioId");
 
-  const msg = assertString(texto, "texto", { min: 2, max: 5000 });
+  const anexosSan = sanitizarAnexosHistorico(anexos);
+  const textoSan = String(texto ?? "").trim();
+
+  let msg = "";
+  if (textoSan) {
+    msg = assertString(textoSan, "texto", { min: 2, max: 5000 });
+  } else if (!anexosSan.length) {
+    throw new Error("Informe uma mensagem ou anexe pelo menos um arquivo.");
+  }
+
+  if (!msg && anexosSan.length) msg = "Anexo enviado.";
   const now = new Date();
 
   const out = await db.collection(COL_CHAMADOS).findOneAndUpdate(
@@ -190,6 +201,7 @@ export async function usuarioAdicionarInteracao(
               nome: String(usuario?.nome || "").trim(),
               login: String(usuario?.usuario || usuario?.login || "").trim(),
             },
+            anexos: anexosSan,
           },
         },
       },
@@ -203,4 +215,3 @@ export async function usuarioAdicionarInteracao(
   }
   return doc;
 }
-

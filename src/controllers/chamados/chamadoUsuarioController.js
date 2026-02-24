@@ -5,6 +5,8 @@ import {
   usuarioAdicionarInteracao,
 } from "../../repos/chamados/usuario/chamadosUsuarioRepo.js";
 import { criarNotificacao } from "../../repos/notificacoesRepo.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
+import { apagarArquivosUpload, mapearArquivosUpload } from "../../service/anexosService.js";
 
 export async function usuarioChamadoShowGet(req, res) {
   const usuarioSessao = req.session?.usuario;
@@ -32,8 +34,22 @@ export async function usuarioChamadoShowGet(req, res) {
 export async function usuarioChamadoConfirmarPost(req, res) {
   const usuarioSessao = req.session?.usuario;
   try {
-    await usuarioConfirmarSolucao(req.params.id, usuarioSessao.id, {
+    const chamado = await usuarioConfirmarSolucao(req.params.id, usuarioSessao.id, {
       porLogin: usuarioSessao.usuario,
+    });
+    await registrarEventoSistema({
+      req,
+      nivel: "info",
+      modulo: "chamados",
+      evento: "chamado.confirmado_usuario",
+      acao: "confirmar",
+      resultado: "sucesso",
+      mensagem: `Chamado #${chamado?.numero || ""} confirmado e fechado pelo usuario.`,
+      alvo: {
+        tipo: "chamado",
+        id: String(chamado?._id || req.params.id),
+        numero: String(chamado?.numero || ""),
+      },
     });
     req.session.flash = {
       tipo: "success",
@@ -53,8 +69,23 @@ export async function usuarioChamadoReabrirPost(req, res) {
   const comentario = String(req.body?.comentario || "").trim();
 
   try {
-    await usuarioReabrirChamado(req.params.id, usuarioSessao.id, comentario, {
+    const chamado = await usuarioReabrirChamado(req.params.id, usuarioSessao.id, comentario, {
       porLogin: usuarioSessao.usuario,
+    });
+    await registrarEventoSistema({
+      req,
+      nivel: "warn",
+      modulo: "chamados",
+      evento: "chamado.reaberto_usuario",
+      acao: "reabrir",
+      resultado: "sucesso",
+      mensagem: `Chamado #${chamado?.numero || ""} reaberto pelo usuario.`,
+      alvo: {
+        tipo: "chamado",
+        id: String(chamado?._id || req.params.id),
+        numero: String(chamado?.numero || ""),
+      },
+      meta: { comentario: comentario.slice(0, 200) },
     });
     req.session.flash = {
       tipo: "success",
@@ -71,9 +102,13 @@ export async function usuarioChamadoReabrirPost(req, res) {
 }
 
 export async function usuarioChamadoInteracaoPost(req, res) {
+  let persistido = false;
   try {
+    if (req.uploadError) throw new Error(req.uploadError);
+
     const usuarioSessao = req.session?.usuario;
-    const { texto } = req.body || {};
+    const texto = String(req.body?.texto || "").trim();
+    const anexos = mapearArquivosUpload(req.files);
 
     const chamadoAtualizado = await usuarioAdicionarInteracao(
       req.params.id,
@@ -83,8 +118,9 @@ export async function usuarioChamadoInteracaoPost(req, res) {
         usuario: usuarioSessao.usuario,
       },
       texto,
-      { porLogin: usuarioSessao.usuario },
+      { porLogin: usuarioSessao.usuario, anexos },
     );
+    persistido = true;
 
     const respId = chamadoAtualizado?.responsavelId
       ? String(chamadoAtualizado.responsavelId)
@@ -111,9 +147,32 @@ export async function usuarioChamadoInteracaoPost(req, res) {
       });
     }
 
+    await registrarEventoSistema({
+      req,
+      nivel: "info",
+      modulo: "chamados",
+      evento: "chamado.interacao_usuario",
+      acao: "interacao",
+      resultado: "sucesso",
+      mensagem: `Mensagem do usuario no chamado #${chamadoAtualizado?.numero || ""}.`,
+      alvo: {
+        tipo: "chamado",
+        id: String(chamadoAtualizado?._id || req.params.id),
+        numero: String(chamadoAtualizado?.numero || ""),
+      },
+      meta: {
+        tamanhoMensagem: texto.length,
+        qtdAnexos: anexos.length,
+      },
+    });
+
     req.session.flash = { tipo: "success", mensagem: "Mensagem enviada." };
     return res.redirect(`/chamados/${req.params.id}`);
   } catch (err) {
+    if (!persistido) {
+      await apagarArquivosUpload(req.files);
+    }
+
     console.error(err);
     req.session.flash = {
       tipo: "error",

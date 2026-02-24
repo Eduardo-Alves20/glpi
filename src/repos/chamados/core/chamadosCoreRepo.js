@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { pegarDb } from "../../../compartilhado/db/mongo.js";
+import { sanitizarAnexosHistorico } from "../../../service/anexosService.js";
 
 export const COL_CHAMADOS = "chamados";
 export const COL_COUNTERS = "counters";
@@ -62,6 +63,7 @@ export async function criarChamado({
   descricao,
   categoria,
   prioridade,
+  anexos = [],
 } = {}) {
   const db = pegarDb();
   const userOid = toObjectId(usuarioId, "usuarioId");
@@ -77,6 +79,7 @@ export async function criarChamado({
 
   const now = new Date();
   const numero = await nextChamadoNumero(db);
+  const anexosSan = sanitizarAnexosHistorico(anexos);
 
   const doc = {
     numero,
@@ -107,6 +110,7 @@ export async function criarChamado({
         em: now,
         por: String(usuarioLogin || "usuario"),
         mensagem: "Chamado criado",
+        meta: anexosSan.length ? { anexos: anexosSan } : {},
       },
     ],
     createdAt: now,
@@ -121,6 +125,26 @@ export async function acharChamadoPorId(chamadoId) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
   return db.collection(COL_CHAMADOS).findOne({ _id });
+}
+
+export async function acharChamadoPorAnexoId(anexoId) {
+  const db = pegarDb();
+  const id = String(anexoId || "").trim();
+  if (!id) return null;
+
+  return db.collection(COL_CHAMADOS).findOne(
+    { "historico.meta.anexos.id": id },
+    {
+      projection: {
+        _id: 1,
+        numero: 1,
+        titulo: 1,
+        status: 1,
+        "criadoPor.usuarioId": 1,
+        historico: 1,
+      },
+    },
+  );
 }
 
 export async function listarChamados({
@@ -286,4 +310,3 @@ export async function garantirIndicesChamados() {
     .collection(COL_CHAMADOS)
     .createIndex({ responsavelId: 1, status: 1, updatedAt: -1 });
 }
-

@@ -16,17 +16,28 @@ function getDestinatario(req) {
   return { tipo: "usuario", id: String(u.id) };
 }
 
+function getTiposIgnoradosPorPerfil(req) {
+  const perfil = String(req.session?.usuario?.perfil || "");
+  if (perfil === "tecnico" || perfil === "admin") {
+    // evento de atribuicao fica restrito ao solicitante no app
+    return ["atribuido"];
+  }
+  return [];
+}
+
 export async function listar(req, res) {
   const destinatario = getDestinatario(req);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
 
   const { since, unread, limit } = req.query;
+  const tiposIgnorados = getTiposIgnoradosPorPerfil(req);
 
   const itens = await listarNotificacoes({
     destinatario,
     since: since || null,
     unread: unread === "1" || unread === "true",
     limit: Number(limit || 20),
+    tiposIgnorados,
   });
 
   res.json({
@@ -38,8 +49,9 @@ export async function listar(req, res) {
 export async function unreadCount(req, res) {
   const destinatario = getDestinatario(req);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
+  const tiposIgnorados = getTiposIgnoradosPorPerfil(req);
 
-  const count = await contarNaoLidas(destinatario);
+  const count = await contarNaoLidas(destinatario, { tiposIgnorados });
   res.json({ count });
 }
 
@@ -58,3 +70,4 @@ export async function marcarTodas(req, res) {
   const out = await marcarTodasComoLidas(destinatario);
   res.json(out);
 }
+

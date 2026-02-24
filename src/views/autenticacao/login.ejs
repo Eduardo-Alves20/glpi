@@ -11,13 +11,6 @@
     <center>
       <div class="titulo-sistema">GLPI</div>
     </center>
-
-    <div class="alert" style="color: red">
-      <% if (mensagemErro) { %>
-        <%= mensagemErro %>
-      <% } %>
-    </div>
-
     <label for="username">Usuário de Rede:</label>
     <input type="text" name="username" id="username" placeholder="Insira seu usuário de rede..." required />
 
@@ -45,3 +38,4 @@
     auth.classList.add("loading");
   });
 </script>
+

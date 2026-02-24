@@ -8,6 +8,8 @@ import {
 } from "../../repos/chamados/usuario/chamadosUsuarioRepo.js";
 import { listarUsuariosPorPerfis } from "../../repos/usuariosRepo.js";
 import { notificarNovoChamadoFila } from "../../service/notificacoesService.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
+import { apagarArquivosUpload, mapearArquivosUpload } from "../../service/anexosService.js";
 
 export async function chamadoNovoGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
@@ -33,26 +35,36 @@ export async function chamadoNovoPost(req, res) {
     categoria: String(req.body?.categoria ?? "").trim(),
     prioridade: String(req.body?.prioridade ?? "").trim(),
   };
+  let chamadoCriado = null;
+  let anexos = [];
 
   try {
+    if (req.uploadError) throw new Error(req.uploadError);
+    anexos = mapearArquivosUpload(req.files);
+
     // validações mínimas
-    if (valores.titulo.length < 6 || valores.titulo.length > 120)
+    if (valores.titulo.length < 6 || valores.titulo.length > 120) {
       throw new Error("Título deve ter entre 6 e 120 caracteres.");
-    if (valores.descricao.length < 20 || valores.descricao.length > 5000)
+    }
+    if (valores.descricao.length < 20 || valores.descricao.length > 5000) {
       throw new Error("Descrição deve ter entre 20 e 5000 caracteres.");
+    }
 
     const categoriasPermitidas = ["acesso", "incidente", "solicitacao", "infra", "outros"];
-    if (!categoriasPermitidas.includes(valores.categoria))
+    if (!categoriasPermitidas.includes(valores.categoria)) {
       throw new Error("Selecione uma categoria válida.");
+    }
 
     const prioridadesPermitidas = ["baixa", "media", "alta", "critica"];
-    if (!prioridadesPermitidas.includes(valores.prioridade))
+    if (!prioridadesPermitidas.includes(valores.prioridade)) {
       throw new Error("Selecione uma prioridade válida.");
+    }
 
-    const chamadoCriado = await criarChamado({
+    chamadoCriado = await criarChamado({
       usuarioId: usuarioSessao.id,
       usuarioNome: usuarioSessao.nome,
       usuarioLogin: usuarioSessao.usuario,
+      anexos,
       ...valores,
     });
 
@@ -79,9 +91,33 @@ export async function chamadoNovoPost(req, res) {
       });
     }
 
+    await registrarEventoSistema({
+      req,
+      nivel: "info",
+      modulo: "chamados",
+      evento: "chamado.criado",
+      acao: "criar",
+      resultado: "sucesso",
+      mensagem: `Chamado #${chamadoCriado.numero} criado por usuario.`,
+      alvo: {
+        tipo: "chamado",
+        id: String(chamadoCriado._id),
+        numero: String(chamadoCriado.numero),
+      },
+      meta: {
+        categoria: chamadoCriado.categoria,
+        prioridade: chamadoCriado.prioridade,
+        qtdAnexos: anexos.length,
+      },
+    });
+
     req.session.flash = { tipo: "success", mensagem: "Chamado criado com sucesso!" };
     return res.redirect("/chamados/meus");
   } catch (e) {
+    if (!chamadoCriado) {
+      await apagarArquivosUpload(req.files);
+    }
+
     console.error("Erro ao criar chamado:", e);
     return res.status(400).render("chamados/novo", {
       layout: "layout-app",
@@ -143,7 +179,6 @@ export async function meusChamadosGet(req, res) {
     });
   }
 }
-
 
 export async function chamadoEditarGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
@@ -226,7 +261,30 @@ export async function chamadoEditarPost(req, res) {
   }
 
   try {
-    await editarChamadoDoUsuario(req.params.id, usuarioSessao.id, valores, { porLogin: usuarioSessao.usuario });
+    const chamadoEditado = await editarChamadoDoUsuario(
+      req.params.id,
+      usuarioSessao.id,
+      valores,
+      { porLogin: usuarioSessao.usuario },
+    );
+
+    await registrarEventoSistema({
+      req,
+      nivel: "info",
+      modulo: "chamados",
+      evento: "chamado.editado_usuario",
+      acao: "editar",
+      resultado: "sucesso",
+      mensagem: `Chamado #${chamadoEditado?.numero || ""} editado pelo solicitante.`,
+      alvo: {
+        tipo: "chamado",
+        id: String(chamadoEditado?._id || req.params.id),
+        numero: String(chamadoEditado?.numero || ""),
+      },
+      meta: {
+        campos: Object.keys(valores || {}),
+      },
+    });
 
     req.session.flash = { tipo: "success", mensagem: "Chamado atualizado com sucesso!" };
     return res.redirect("/chamados/meus");

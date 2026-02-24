@@ -1,4 +1,5 @@
 import { acharUsuarioPorId, atualizarPerfilUsuario } from "../../repos/usuario/usuariosRepo.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
 
 export async function perfilGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
@@ -59,12 +60,47 @@ const atualizado = await atualizarPerfilUsuario(usuarioSessao.id, {
   senhaNova: querTrocarSenha ? valores.senhaNova : "",
 });
 
+    await registrarEventoSistema({
+      req,
+      nivel: "security",
+      modulo: "usuario",
+      evento: "usuario.perfil.atualizado",
+      acao: "atualizar_perfil",
+      resultado: "sucesso",
+      mensagem: `Perfil atualizado por ${usuarioSessao.usuario}.`,
+      alvo: {
+        tipo: "usuario",
+        id: String(usuarioSessao.id),
+        login: String(usuarioSessao.usuario || ""),
+      },
+      meta: {
+        alterouSenha: Boolean(querTrocarSenha),
+      },
+    });
+
     // manter sessão coerente (nome pode mudar)
     req.session.usuario.nome = atualizado.nome;
 
     req.session.flash = { tipo: "success", mensagem: "Perfil atualizado com sucesso!" };
     return res.redirect("/usuario/perfil");
   } catch (e) {
+    await registrarEventoSistema({
+      req,
+      nivel: "warn",
+      modulo: "usuario",
+      evento: "usuario.perfil.atualizado",
+      acao: "atualizar_perfil",
+      resultado: "erro",
+      mensagem: e?.message || "Falha ao atualizar perfil.",
+      alvo: {
+        tipo: "usuario",
+        id: String(usuarioSessao.id),
+      },
+      meta: {
+        alterouSenha: Boolean(valores.senhaNova),
+      },
+    });
+
     console.error("Erro ao atualizar perfil:", e);
 
     return res.status(400).render("usuario/perfil", {

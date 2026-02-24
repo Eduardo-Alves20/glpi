@@ -18,5 +18,16 @@
 
   <body class="<%= (typeof bodyClass !== "undefined" && bodyClass) ? bodyClass : "" %>">
     <%- body %>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <% if (typeof flash !== "undefined" && flash) { %>
+      <script>
+        window.__FLASH__ = <%- JSON.stringify({
+          tipo: String(flash.tipo || "info").toLowerCase(),
+          mensagem: String(flash.mensagem || "").slice(0, 300),
+        }) %>;
+      </script>
+    <% } %>
+    <script src="/js/alerts.js"></script>
   </body>
 </html>

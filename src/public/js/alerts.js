@@ -15,10 +15,15 @@
       tipo === "error" ? "error" :
       tipo === "warning" ? "warning" : "info";
 
+    const title =
+      icon === "success" ? "Sucesso" :
+      icon === "error" ? "Erro" :
+      icon === "warning" ? "Aviso" : "Informação";
+
     if (mensagem) {
       Swal.fire({
         icon,
-        title: icon === "success" ? "Sucesso" : "Aviso",
+        title,
         text: mensagem,
         confirmButtonText: "OK",
       });

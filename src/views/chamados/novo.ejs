@@ -10,7 +10,7 @@
       </nav>
 
       <h1 class="page__title">Abrir chamado</h1>
-      <p class="page__subtitle">Preencha os dados abaixo para registrar um novo atendimento.</p>
+      <p class="page__subtitle">Preencha os dados para registrar um novo atendimento.</p>
     </div>
 
     <div class="page__actions">
@@ -25,13 +25,20 @@
   <div class="card">
     <div class="card__header">
       <h2 class="card__title">Novo chamado</h2>
-      <p class="card__hint">Título objetivo + descrição com passos e impacto</p>
+      <p class="card__hint">Titulo objetivo + descricao com passos e impacto.</p>
     </div>
 
-    <form class="form" method="post" action="/chamados/novo" autocomplete="off" novalidate>
+    <form
+      class="form"
+      method="post"
+      action="/chamados/novo"
+      enctype="multipart/form-data"
+      autocomplete="off"
+      novalidate
+    >
       <div class="form__grid">
         <div class="form__field form__field--full">
-          <label class="form__label" for="titulo">Título</label>
+          <label class="form__label" for="titulo">Titulo</label>
           <input
             class="form__input"
             id="titulo"
@@ -40,10 +47,10 @@
             minlength="6"
             maxlength="120"
             required
-            placeholder="Ex.: Não consigo acessar o sistema"
+            placeholder="Ex.: Nao consigo acessar o sistema"
             value="<%= valores?.titulo || '' %>"
           />
-          <small class="form__help">Seja direto: o que aconteceu + onde.</small>
+          <small class="form__help">Seja direto: o que aconteceu e onde.</small>
         </div>
 
         <div class="form__field">
@@ -52,7 +59,7 @@
             <option value="" <%= !valores?.categoria ? "selected" : "" %>>Selecione</option>
             <option value="acesso" <%= valores?.categoria === "acesso" ? "selected" : "" %>>Acesso</option>
             <option value="incidente" <%= valores?.categoria === "incidente" ? "selected" : "" %>>Incidente</option>
-            <option value="solicitacao" <%= valores?.categoria === "solicitacao" ? "selected" : "" %>>Solicitação</option>
+            <option value="solicitacao" <%= valores?.categoria === "solicitacao" ? "selected" : "" %>>Solicitacao</option>
             <option value="infra" <%= valores?.categoria === "infra" ? "selected" : "" %>>Infra</option>
             <option value="outros" <%= valores?.categoria === "outros" ? "selected" : "" %>>Outros</option>
           </select>
@@ -63,27 +70,44 @@
           <select class="form__input" id="prioridade" name="prioridade" required>
             <option value="" <%= !valores?.prioridade ? "selected" : "" %>>Selecione</option>
             <option value="baixa" <%= valores?.prioridade === "baixa" ? "selected" : "" %>>Baixa</option>
-            <option value="media" <%= valores?.prioridade === "media" ? "selected" : "" %>>Média</option>
+            <option value="media" <%= valores?.prioridade === "media" ? "selected" : "" %>>Media</option>
             <option value="alta" <%= valores?.prioridade === "alta" ? "selected" : "" %>>Alta</option>
-            <option value="critica" <%= valores?.prioridade === "critica" ? "selected" : "" %>>Crítica</option>
+            <option value="critica" <%= valores?.prioridade === "critica" ? "selected" : "" %>>Critica</option>
           </select>
         </div>
 
         <div class="form__field form__field--full">
-          <label class="form__label" for="descricao">Descrição</label>
+          <label class="form__label" for="descricao">Descricao</label>
           <textarea
-  class="form__input form__textarea"
-  id="descricao"
-  name="descricao"
-  minlength="20"
-  maxlength="5000"
-  required
-  placeholder="Inclua: passos para reproduzir, impacto, urgência, e se ocorre sempre."
-  rows="7"
-><%= valores?.descricao || '' %></textarea>
+            class="form__input form__textarea"
+            id="descricao"
+            name="descricao"
+            minlength="20"
+            maxlength="5000"
+            required
+            placeholder="Inclua passos para reproduzir, impacto, urgencia e frequencia."
+            rows="7"
+          ><%= valores?.descricao || '' %></textarea>
+        </div>
+
+        <div class="form__field form__field--full">
+          <label class="form__label" for="anexos">Anexos (opcional)</label>
+          <input
+            class="form__input"
+            id="anexos"
+            name="anexos"
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp"
+          />
+          <small class="form__help">Permitidos: imagens, PDF e Office. Maximo 5 arquivos de ate 10MB cada.</small>
+        </div>
+      </div>
 
       <div class="form__actions">
         <button class="btn btn--primary" type="submit">Criar chamado</button>
         <a class="btn btn--ghost" href="/chamados/meus">Cancelar</a>
       </div>
     </form>
+  </div>
+</section>

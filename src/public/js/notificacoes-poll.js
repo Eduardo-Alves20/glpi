@@ -42,6 +42,7 @@ export function startNotificacoesPoll({ perfil }) {
 
   const keySince = "notif_since_v1";
   let since = localStorage.getItem(keySince) || new Date().toISOString();
+  let initialized = false;
 
   bell.addEventListener("click", () => {
     dropdown.hidden = !dropdown.hidden;
@@ -90,10 +91,13 @@ export function startNotificacoesPoll({ perfil }) {
       localStorage.setItem(keySince, since);
 
       // toast pros NÃO lidos novos
-      novos
-        .filter(n => !n.lidoEm)
-        .reverse()
-        .forEach(n => toast({ titulo: n.titulo, mensagem: n.mensagem, url: n.url }));
+      if (initialized) {
+        novos
+          .filter(n => !n.lidoEm)
+          .reverse()
+          .forEach(n => toast({ titulo: n.titulo, mensagem: n.mensagem, url: n.url }));
+      }
+      initialized = true;
 
       // badge + dropdown (últimas)
       await atualizarBadge();

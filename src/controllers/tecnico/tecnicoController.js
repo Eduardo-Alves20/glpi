@@ -4,6 +4,7 @@ import {
 } from "../../repos/chamados/core/chamadosCoreRepo.js";
 import { assumirChamado } from "../../repos/chamados/tecnico/chamadosTecnicoRepo.js";
 import { criarNotificacao } from "../../repos/notificacoesRepo.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
 
 import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";
 
@@ -27,6 +28,7 @@ export async function tecnicoFilaGet(req, res) {
       quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "—",
       solicitante: c?.criadoPor?.login ? `${c.criadoPor.nome || ""} (${c.criadoPor.login})` : "—",
       responsavel: c.responsavelLogin ? `${c.responsavelNome || ""} (${c.responsavelLogin})` : "—",
+      temResponsavel: Boolean(c.responsavelId),
       isMeu: c.responsavelLogin && c.responsavelLogin === usuarioSessao.usuario,
     }));
 
@@ -59,24 +61,31 @@ export async function tecnicoAssumirPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
 
+  let chamado = null;
   try {
-    const chamado = await assumirChamado(
+    chamado = await assumirChamado(
       req.params.id,
       { id: usuarioSessao.id, nome: usuarioSessao.nome, usuario: usuarioSessao.usuario },
       { porLogin: usuarioSessao.usuario }
     );
+  } catch (e) {
+    console.error("Erro ao assumir chamado:", e);
+    req.session.flash = { tipo: "error", mensagem: e?.message || "Não foi possível assumir o chamado." };
+    return res.redirect(`/tecnico/chamados/${req.params.id}`);
+  }
 
-    const usuarioDestinoId = chamado?.criadoPor?.usuarioId
-      ? String(chamado.criadoPor.usuarioId)
-      : "";
-    const autorId = String(usuarioSessao.id);
+  const usuarioDestinoId = chamado?.criadoPor?.usuarioId
+    ? String(chamado.criadoPor.usuarioId)
+    : "";
+  const autorId = String(usuarioSessao.id);
 
-    if (usuarioDestinoId && usuarioDestinoId !== autorId) {
+  if (usuarioDestinoId && usuarioDestinoId !== autorId) {
+    try {
       await criarNotificacao({
         destinatarioTipo: "usuario",
         destinatarioId: usuarioDestinoId,
         chamadoId: String(chamado._id),
-        tipo: "chamado_assumido",
+        tipo: "atribuido",
         titulo: `Chamado #${chamado.numero}: ${chamado.titulo}`,
         mensagem: `Seu chamado foi assumido por ${usuarioSessao.nome}.`,
         url: `/chamados/${String(chamado._id)}`,
@@ -89,15 +98,32 @@ export async function tecnicoAssumirPost(req, res) {
           },
         },
       });
+    } catch (errNotif) {
+      console.error("[notificacao] falha ao notificar usuário sobre assunção:", errNotif);
     }
-
-    req.session.flash = { tipo: "success", mensagem: "Chamado assumido." };
-    return res.redirect("/tecnico/chamados");
-  } catch (e) {
-    console.error("Erro ao assumir chamado:", e);
-    req.session.flash = { tipo: "error", mensagem: e?.message || "Não foi possível assumir o chamado." };
-    return res.redirect(`/tecnico/chamados/${req.params.id}`);
   }
+
+  await registrarEventoSistema({
+    req,
+    nivel: "info",
+    modulo: "tecnico",
+    evento: "chamado.assumido",
+    acao: "assumir",
+    resultado: "sucesso",
+    mensagem: `Chamado #${chamado?.numero || ""} assumido por tecnico.`,
+    alvo: {
+      tipo: "chamado",
+      id: String(chamado?._id || req.params.id),
+      numero: String(chamado?.numero || ""),
+    },
+    meta: {
+      responsavelId: String(usuarioSessao.id),
+      responsavelLogin: String(usuarioSessao.usuario || ""),
+    },
+  });
+
+  req.session.flash = { tipo: "success", mensagem: "Chamado assumido." };
+  return res.redirect("/tecnico/chamados");
 }
 
 export async function tecnicoHomeGet(req, res) {

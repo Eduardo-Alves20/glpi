@@ -31,12 +31,27 @@ export async function totalUsuarios() {
   return col().countDocuments({});
 }
 
+export async function contarUsuariosBloqueados() {
+  return col().countDocuments({ status: "bloqueado" });
+}
+
 export async function listarRecentes(limit = 5) {
   return col()
     .find({}, { projection: { senhaHash: 0 } })
     .sort({ criadoEm: -1 })
     .limit(limit)
     .toArray();
+}
+
+export async function obterUltimoUsuarioCriadoEm() {
+  const [doc] = await col()
+    .find({}, { projection: { criadoEm: 1, updatedAt: 1, atualizadoEm: 1 } })
+    .sort({ criadoEm: -1 })
+    .limit(1)
+    .toArray();
+
+  const d = doc?.criadoEm || doc?.updatedAt || doc?.atualizadoEm || null;
+  return d ? new Date(d) : null;
 }
 
 export async function acharPorId(id) {

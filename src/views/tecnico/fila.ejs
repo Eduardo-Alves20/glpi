@@ -65,9 +65,13 @@
 
                 <td>
                   <div class="btn-items">
-                    <form method="post" action="/tecnico/chamados/<%= c.id %>/assumir" style="display:inline;">
-                      <button class="btn-primary" type="submit">Assumir</button>
-                    </form>
+                    <% if (!c.temResponsavel) { %>
+                      <form method="post" action="/tecnico/chamados/<%= c.id %>/assumir" style="display:inline;">
+                        <button class="btn-primary" type="submit">Assumir</button>
+                      </form>
+                    <% } else { %>
+                      <a class="btn-primary" href="/tecnico/chamados/<%= c.id %>" style="text-decoration:none; display:inline-flex; align-items:center;">Abrir</a>
+                    <% } %>
                   </div>
                 </td>
               </tr>
@@ -81,3 +85,4 @@
 </div>
 
 <script type="module" src="/js/tecnico-live.js"></script>
+

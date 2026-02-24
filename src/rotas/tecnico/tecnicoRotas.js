@@ -4,6 +4,7 @@ import {
   exigirUsuarioAtivo,
   exigirPerfis,
 } from "../../compartilhado/middlewares/seguranca.js";
+import { uploadAnexos } from "../../compartilhado/middlewares/uploadAnexos.js";
 import { acharPorId } from "../../repos/usuariosRepo.js";
 
 import {
@@ -15,6 +16,7 @@ import {
 
 import {
   tecnicoChamadoShowGet,
+  tecnicoChamadoResponsavelPost,
   tecnicoChamadoSolucaoPost,
   tecnicoChamadoInteracaoPost,
 } from "../../controllers/tecnico/chamadosTecnicoController.js";
@@ -47,8 +49,9 @@ export function criarTecnicoRotas({ auditoria } = {}) {
 
   // ações
   router.post("/tecnico/chamados/:id/assumir", tecnicoAssumirPost);
-  router.post("/tecnico/chamados/:id/solucao", tecnicoChamadoSolucaoPost);
-  router.post("/tecnico/chamados/:id/interacao", tecnicoChamadoInteracaoPost);
+  router.post("/tecnico/chamados/:id/responsavel", tecnicoChamadoResponsavelPost);
+  router.post("/tecnico/chamados/:id/solucao", uploadAnexos, tecnicoChamadoSolucaoPost);
+  router.post("/tecnico/chamados/:id/interacao", uploadAnexos, tecnicoChamadoInteracaoPost);
 
   return router;
 }

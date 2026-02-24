@@ -17,5 +17,16 @@ export function injetarLocalsLayout(req, res, next) {
   // ambiente opcional (LOCAL/HOMOLOG/PROD)
   res.locals.ambiente = process.env.AMBIENTE || "";
 
+  // flash global para qualquer render (success/error/info)
+  res.locals.flash = req.session?.flash || null;
+
+  // consome flash apenas quando a resposta realmente renderiza HTML;
+  // em redirects ele permanece para o próximo request.
+  const renderOriginal = res.render.bind(res);
+  res.render = function renderComFlash(...args) {
+    if (req.session) req.session.flash = null;
+    return renderOriginal(...args);
+  };
+
   next();
 }

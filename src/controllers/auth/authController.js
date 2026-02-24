@@ -1,28 +1,42 @@
 import { acharPorUsuarioOuEmail } from "../../repos/usuariosRepo.js";
 import { compararSenha } from "../../compartilhado/seguranca/senha.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
 
 const NODE_ENV = process.env.NODE_ENV || "development";
 const isProd = NODE_ENV === "production";
-
-
 const TECNICO_HOME = "/tecnico/home";
 
-function renderLogin(res, { mensagemErro = "" } = {}) {
-  return res.status(mensagemErro ? 400 : 200).render("autenticacao/login", {
+function renderLogin(
+  res,
+  {
+    status = 200,
+    flash = null,
+  } = {},
+) {
+  return res.status(status).render("autenticacao/login", {
     layout: "layout-public",
     titulo: "GLPI",
     bodyClass: "login-layout",
     cssExtra: "/styles/auth.css",
-    mensagemErro,
+    flash,
   });
 }
 
-// Regenera sessão para evitar session fixation (boa prática)
 function regenerarSessao(req) {
   return new Promise((resolve, reject) => {
     if (!req.session) return resolve();
     req.session.regenerate((err) => (err ? reject(err) : resolve()));
   });
+}
+
+function usuarioLogPayload(usuario) {
+  if (!usuario) return null;
+  return {
+    id: String(usuario._id || usuario.id || ""),
+    login: String(usuario.usuario || ""),
+    nome: String(usuario.nome || ""),
+    perfil: String(usuario.perfil || ""),
+  };
 }
 
 export function authGet(req, res) {
@@ -35,37 +49,64 @@ export async function authPost(req, res) {
   const senha = String(req.body?.password ?? "").trim();
 
   if (!login || !senha) {
-    return renderLogin(res, { mensagemErro: "Informe usuário/e-mail e senha." });
+    await registrarEventoSistema({
+      req,
+      nivel: "warn",
+      modulo: "auth",
+      evento: "auth.login.input_invalido",
+      acao: "login",
+      resultado: "erro",
+      mensagem: "Tentativa de login sem usuario/senha.",
+      meta: { loginInformado: Boolean(login) },
+    });
+    return renderLogin(res, {
+      status: 400,
+      flash: { tipo: "error", mensagem: "Informe usuario/e-mail e senha." },
+    });
   }
 
   try {
-    // 1) Mongo
     const usuario = await acharPorUsuarioOuEmail(login);
 
     if (usuario) {
       if (usuario.status === "bloqueado") {
-        return res.status(403).render("autenticacao/login", {
-          layout: "layout-public",
-          titulo: "GLPI",
-          bodyClass: "login-layout",
-          cssExtra: "/styles/auth.css",
-          mensagemErro: "Usuário bloqueado. Contate a administração.",
+        await registrarEventoSistema({
+          req,
+          nivel: "security",
+          modulo: "auth",
+          evento: "auth.login.usuario_bloqueado",
+          acao: "login",
+          resultado: "negado",
+          mensagem: "Tentativa de login de usuario bloqueado.",
+          usuario: usuarioLogPayload(usuario),
+        });
+        return renderLogin(res, {
+          status: 403,
+          flash: {
+            tipo: "error",
+            mensagem: "Usuario bloqueado. Contate a administracao.",
+          },
         });
       }
 
       const ok = await compararSenha(senha, usuario.senhaHash);
       if (!ok) {
-        // não diferenciar usuário inexistente x senha errada (evita enumeração)
-        return res.status(401).render("autenticacao/login", {
-          layout: "layout-public",
-          titulo: "GLPI",
-          bodyClass: "login-layout",
-          cssExtra: "/styles/auth.css",
-          mensagemErro: "Usuário ou senha inválidos.",
+        await registrarEventoSistema({
+          req,
+          nivel: "warn",
+          modulo: "auth",
+          evento: "auth.login.credencial_invalida",
+          acao: "login",
+          resultado: "erro",
+          mensagem: "Senha invalida para usuario existente.",
+          usuario: usuarioLogPayload(usuario),
+        });
+        return renderLogin(res, {
+          status: 401,
+          flash: { tipo: "error", mensagem: "Usuario ou senha invalidos." },
         });
       }
 
-      // segurança: regenera sessão antes de setar autenticação
       await regenerarSessao(req);
 
       req.session.usuario = {
@@ -74,20 +115,43 @@ export async function authPost(req, res) {
         usuario: usuario.usuario,
         perfil: usuario.perfil,
       };
+      req.session.flash = {
+        tipo: "success",
+        mensagem: "Login realizado com sucesso.",
+      };
+
+      await registrarEventoSistema({
+        req,
+        nivel: "info",
+        modulo: "auth",
+        evento: "auth.login.sucesso",
+        acao: "login",
+        resultado: "sucesso",
+        mensagem: "Usuario autenticado com sucesso.",
+        usuario: usuarioLogPayload(usuario),
+      });
 
       return res.redirect("/app");
     }
 
-    // 2) Bootstrap (somente DEV)
     const bootstrapOk = login === "admin" && senha === "admin123";
     if (bootstrapOk) {
       if (isProd) {
-        return res.status(403).render("autenticacao/login", {
-          layout: "layout-public",
-          titulo: "GLPI",
-          bodyClass: "login-layout",
-          cssExtra: "/styles/auth.css",
-          mensagemErro: "Login temporário desabilitado em produção.",
+        await registrarEventoSistema({
+          req,
+          nivel: "security",
+          modulo: "auth",
+          evento: "auth.login.bootstrap_bloqueado",
+          acao: "login",
+          resultado: "negado",
+          mensagem: "Tentativa de login bootstrap em producao.",
+        });
+        return renderLogin(res, {
+          status: 403,
+          flash: {
+            tipo: "error",
+            mensagem: "Login temporario desabilitado em producao.",
+          },
         });
       }
 
@@ -99,32 +163,83 @@ export async function authPost(req, res) {
         usuario: "admin",
         perfil: "admin",
       };
+      req.session.flash = {
+        tipo: "success",
+        mensagem: "Login realizado com sucesso.",
+      };
+
+      await registrarEventoSistema({
+        req,
+        nivel: "warn",
+        modulo: "auth",
+        evento: "auth.login.bootstrap_sucesso",
+        acao: "login",
+        resultado: "sucesso",
+        mensagem: "Login bootstrap executado em ambiente de desenvolvimento.",
+        usuario: {
+          id: "admin-bootstrap",
+          login: "admin",
+          nome: "Administrador (Bootstrap)",
+          perfil: "admin",
+        },
+      });
 
       return res.redirect("/app");
     }
 
-    // login não encontrado
-    return res.status(401).render("autenticacao/login", {
-      layout: "layout-public",
-      titulo: "GLPI",
-      bodyClass: "login-layout",
-      cssExtra: "/styles/auth.css",
-      mensagemErro: "Usuário ou senha inválidos.",
+    await registrarEventoSistema({
+      req,
+      nivel: "warn",
+      modulo: "auth",
+      evento: "auth.login.usuario_nao_encontrado",
+      acao: "login",
+      resultado: "erro",
+      mensagem: "Tentativa de login com usuario/email inexistente.",
+      meta: { login: login.slice(0, 80) },
+    });
+    return renderLogin(res, {
+      status: 401,
+      flash: { tipo: "error", mensagem: "Usuario ou senha invalidos." },
     });
   } catch (err) {
     console.error("[auth] erro:", err);
-    return res.status(500).render("autenticacao/login", {
-      layout: "layout-public",
-      titulo: "GLPI",
-      bodyClass: "login-layout",
-      cssExtra: "/styles/auth.css",
-      mensagemErro: "Erro interno. Tente novamente.",
+    await registrarEventoSistema({
+      req,
+      nivel: "error",
+      modulo: "auth",
+      evento: "auth.login.excecao",
+      acao: "login",
+      resultado: "erro",
+      mensagem: "Falha interna durante autenticacao.",
+      meta: { erro: String(err?.message || err || "").slice(0, 300) },
+    });
+    return renderLogin(res, {
+      status: 500,
+      flash: { tipo: "error", mensagem: "Erro interno. Tente novamente." },
     });
   }
 }
 
 export function logoutPost(req, res) {
-  // boa prática: destruir sessão e limpar cookie
+  const usuarioSessao = req.session?.usuario || null;
+  registrarEventoSistema({
+    req,
+    nivel: "info",
+    modulo: "auth",
+    evento: "auth.logout",
+    acao: "logout",
+    resultado: "sucesso",
+    mensagem: "Usuario encerrou sessao.",
+    usuario: usuarioSessao
+      ? {
+          id: String(usuarioSessao.id || ""),
+          login: String(usuarioSessao.usuario || ""),
+          nome: String(usuarioSessao.nome || ""),
+          perfil: String(usuarioSessao.perfil || ""),
+        }
+      : null,
+  });
+
   req.session?.destroy(() => {
     res.clearCookie("glpi.sid");
     res.redirect("/auth");
@@ -139,3 +254,4 @@ export function appGet(req, res) {
   if (perfil === "tecnico") return res.redirect(TECNICO_HOME);
   return res.redirect("/usuario");
 }
+
