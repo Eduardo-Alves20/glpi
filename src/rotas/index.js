@@ -5,6 +5,7 @@ import { criarTecnicoRotas } from "./tecnico/tecnicoRotas.js";
 import { criarUsuarioRotas } from "./usuario/usuarioRotas.js";
 import { criarChamadosRotas } from "./chamados/chamadosRotas.js";
 import { criarApiRotas } from "./api/apiRotas.js";
+import { criarNotificacoesRotas } from "./notificacoes/notificacoesRotas.js";
 
 export function montarRotas(app, { auditoria } = {}) {
   app.use(criarAuthRotas());
@@ -17,6 +18,7 @@ export function montarRotas(app, { auditoria } = {}) {
   app.use(criarTecnicoRotas({ auditoria }));
   app.use(criarUsuarioRotas({ auditoria }));
   app.use(criarChamadosRotas({ auditoria }));
+  app.use(criarNotificacoesRotas({ auditoria }));
 
   app.get("/", (req, res) => res.redirect("/auth"));
 }

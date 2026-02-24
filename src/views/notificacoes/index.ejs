@@ -1,0 +1,137 @@
+<%
+  const estadoAtual = String(filtros?.estado || "todas");
+  const tipoAtual = String(filtros?.tipo || "todos");
+  const limitAtual = Number(filtros?.limit || 80);
+  const totalListadas = Number(totais?.listadas || 0);
+  const totalNaoLidas = Number(totais?.naoLidas || 0);
+  const temNotificacoes = Array.isArray(notificacoes) && notificacoes.length > 0;
+%>
+
+<section class="notificacoes-page">
+  <%- include('../partials/breadcrumb', {
+    crumbs: [
+      { label: 'Home', href: '/app' },
+      { label: 'Notificacoes' }
+    ]
+  }) %>
+
+  <header class="notificacoes-head">
+    <div class="notificacoes-head-main">
+      <h1 class="notificacoes-title">Notificacoes</h1>
+      <p class="notificacoes-subtitle">
+        Acompanhe os alertas do seu usuario logado em tempo real e acesse rapidamente cada chamado.
+      </p>
+    </div>
+
+    <form class="notificacoes-mark-all" action="/notificacoes/marcar-todas-lidas" method="POST">
+      <input type="hidden" name="returnTo" value="<%= retornoAtual %>" />
+      <button type="submit" class="btn-primary" <%= totalNaoLidas <= 0 ? "disabled" : "" %>>
+        Marcar todas como lidas
+      </button>
+    </form>
+  </header>
+
+  <section class="notificacoes-kpis">
+    <article class="notificacoes-kpi">
+      <span class="kpi-label">Nao lidas</span>
+      <strong class="kpi-value"><%= totalNaoLidas %></strong>
+    </article>
+    <article class="notificacoes-kpi">
+      <span class="kpi-label">Listadas</span>
+      <strong class="kpi-value"><%= totalListadas %></strong>
+    </article>
+    <article class="notificacoes-kpi">
+      <span class="kpi-label">Perfil ativo</span>
+      <strong class="kpi-value"><%= usuarioSessao?.perfil || "-" %></strong>
+    </article>
+  </section>
+
+  <% if (typeof erroGeral !== "undefined" && erroGeral) { %>
+    <div class="notificacoes-alert"><%= erroGeral %></div>
+  <% } %>
+
+  <form class="notificacoes-filtros table-card" method="GET" action="/notificacoes">
+    <div class="filtro-item">
+      <label for="estado">Estado</label>
+      <select id="estado" name="estado">
+        <option value="todas" <%= estadoAtual === "todas" ? "selected" : "" %>>Todas</option>
+        <option value="nao_lidas" <%= estadoAtual === "nao_lidas" ? "selected" : "" %>>Somente nao lidas</option>
+        <option value="lidas" <%= estadoAtual === "lidas" ? "selected" : "" %>>Somente lidas</option>
+      </select>
+    </div>
+
+    <div class="filtro-item">
+      <label for="tipo">Tipo</label>
+      <select id="tipo" name="tipo">
+        <option value="todos" <%= tipoAtual === "todos" ? "selected" : "" %>>Todos os tipos</option>
+        <% (opcoesTipo || []).forEach((op) => { %>
+          <option value="<%= op.valor %>" <%= tipoAtual === op.valor ? "selected" : "" %>>
+            <%= op.label %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="filtro-item">
+      <label for="limit">Limite</label>
+      <select id="limit" name="limit">
+        <% [20, 50, 80, 100].forEach((n) => { %>
+          <option value="<%= n %>" <%= limitAtual === n ? "selected" : "" %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="filtro-actions">
+      <button type="submit" class="btn-primary">Aplicar</button>
+      <a href="/notificacoes" class="btn-ghost">Limpar</a>
+    </div>
+  </form>
+
+  <section class="notificacoes-lista">
+    <% if (!temNotificacoes) { %>
+      <article class="notificacoes-empty table-card">
+        <h2>Nenhuma notificacao para os filtros selecionados</h2>
+        <p>
+          Novos eventos sobre chamados aparecerao aqui automaticamente para este usuario.
+        </p>
+      </article>
+    <% } else { %>
+      <% notificacoes.forEach((n) => { %>
+        <article class="notificacao-card <%= n.lido ? "is-read" : "is-unread" %>">
+          <div class="notificacao-top">
+            <div class="notificacao-badges">
+              <span class="notif-tipo"><%= n.tipoLabel %></span>
+              <span class="notif-status"><%= n.lido ? "Lida" : "Nao lida" %></span>
+            </div>
+            <time class="notif-data" datetime="<%= n.criadoEmIso %>"><%= n.criadoEm %></time>
+          </div>
+
+          <h2 class="notificacao-titulo"><%= n.titulo %></h2>
+          <% if (n.mensagem) { %>
+            <p class="notificacao-mensagem"><%= n.mensagem %></p>
+          <% } %>
+
+          <div class="notificacao-footer">
+            <div class="notificacao-meta">
+              <% if (n.lido && n.lidoEm) { %>
+                <span>Lida em <strong><%= n.lidoEm %></strong></span>
+              <% } else { %>
+                <span>Pendente de leitura</span>
+              <% } %>
+            </div>
+
+            <div class="notificacao-actions">
+              <% if (!n.lido) { %>
+                <form action="/notificacoes/<%= n.id %>/lida" method="POST">
+                  <input type="hidden" name="returnTo" value="<%= retornoAtual %>" />
+                  <button type="submit" class="btn-ghost">Marcar como lida</button>
+                </form>
+              <% } %>
+              <a href="<%= n.url %>" class="btn-primary">Abrir</a>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    <% } %>
+  </section>
+</section>

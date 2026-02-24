@@ -4,33 +4,17 @@ import {
   marcarComoLida,
   marcarTodasComoLidas,
 } from "../../repos/notificacoesRepo.js";
-
-function getDestinatario(req) {
-  // Ajuste conforme seu session shape:
-  // Ex.: req.session.usuario = { id, perfil, tecnicoId, ... }
-  const u = req.session?.usuario;
-  if (!u) return null;
-
-  if (u.perfil === "tecnico") return { tipo: "tecnico", id: String(u.tecnicoId || u.id) };
-  if (u.perfil === "admin") return { tipo: "admin", id: String(u.id) };
-  return { tipo: "usuario", id: String(u.id) };
-}
-
-function getTiposIgnoradosPorPerfil(req) {
-  const perfil = String(req.session?.usuario?.perfil || "");
-  if (perfil === "tecnico" || perfil === "admin") {
-    // evento de atribuicao fica restrito ao solicitante no app
-    return ["atribuido"];
-  }
-  return [];
-}
+import {
+  resolverDestinatarioNotificacoes,
+  obterTiposIgnoradosNotificacoes,
+} from "../../service/notificacoesDestinatarioService.js";
 
 export async function listar(req, res) {
-  const destinatario = getDestinatario(req);
+  const destinatario = resolverDestinatarioNotificacoes(req.session?.usuario);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
 
   const { since, unread, limit } = req.query;
-  const tiposIgnorados = getTiposIgnoradosPorPerfil(req);
+  const tiposIgnorados = obterTiposIgnoradosNotificacoes(req.session?.usuario);
 
   const itens = await listarNotificacoes({
     destinatario,
@@ -47,16 +31,16 @@ export async function listar(req, res) {
 }
 
 export async function unreadCount(req, res) {
-  const destinatario = getDestinatario(req);
+  const destinatario = resolverDestinatarioNotificacoes(req.session?.usuario);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
-  const tiposIgnorados = getTiposIgnoradosPorPerfil(req);
+  const tiposIgnorados = obterTiposIgnoradosNotificacoes(req.session?.usuario);
 
   const count = await contarNaoLidas(destinatario, { tiposIgnorados });
   res.json({ count });
 }
 
 export async function marcarLida(req, res) {
-  const destinatario = getDestinatario(req);
+  const destinatario = resolverDestinatarioNotificacoes(req.session?.usuario);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
 
   const out = await marcarComoLida({ notifId: req.params.id, destinatario });
@@ -64,7 +48,7 @@ export async function marcarLida(req, res) {
 }
 
 export async function marcarTodas(req, res) {
-  const destinatario = getDestinatario(req);
+  const destinatario = resolverDestinatarioNotificacoes(req.session?.usuario);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
 
   const out = await marcarTodasComoLidas(destinatario);

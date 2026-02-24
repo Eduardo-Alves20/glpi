@@ -119,6 +119,8 @@ export async function listarNotificacoes({
   destinatario,
   since,
   unread,
+  readState = "all",
+  tipo = null,
   limit = 20,
   tiposIgnorados = [],
 }) {
@@ -130,9 +132,23 @@ export async function listarNotificacoes({
   };
 
   if (since) filtro.criadoEm = { $gt: new Date(since) };
-  if (unread) filtro.lidoEm = null;
-  if (Array.isArray(tiposIgnorados) && tiposIgnorados.length) {
-    filtro.tipo = { $nin: tiposIgnorados.map((t) => String(t || "").trim()).filter(Boolean) };
+  const estadoLida = texto(readState, { max: 20 }).toLowerCase();
+  if (estadoLida === "unread" || unread) {
+    filtro.lidoEm = null;
+  } else if (estadoLida === "read") {
+    filtro.lidoEm = { $ne: null };
+  }
+
+  const tipoFiltro = texto(tipo, { max: 40 }).toLowerCase();
+  const ignorados = Array.isArray(tiposIgnorados)
+    ? tiposIgnorados.map((t) => String(t || "").trim().toLowerCase()).filter(Boolean)
+    : [];
+
+  if (tipoFiltro) {
+    if (ignorados.includes(tipoFiltro)) return [];
+    filtro.tipo = tipoFiltro;
+  } else if (ignorados.length) {
+    filtro.tipo = { $nin: ignorados };
   }
 
   return db.collection("notificacoes")
@@ -155,7 +171,11 @@ export async function contarNaoLidas(destinatario, { tiposIgnorados = [] } = {})
     lidoEm: null,
   };
   if (Array.isArray(tiposIgnorados) && tiposIgnorados.length) {
-    filtro.tipo = { $nin: tiposIgnorados.map((t) => String(t || "").trim()).filter(Boolean) };
+    filtro.tipo = {
+      $nin: tiposIgnorados
+        .map((t) => String(t || "").trim().toLowerCase())
+        .filter(Boolean),
+    };
   }
   return db.collection("notificacoes").countDocuments(filtro);
 }
