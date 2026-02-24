@@ -1,5 +1,6 @@
 import {
   listarFilaChamados,
+  listarMeusAtendimentos,
   assumirChamado,
 } from "../../repos/chamados/chamadosRepo.js";
 
@@ -93,4 +94,50 @@ export async function tecnicoHomeGet(req, res) {
     ultimosChamados,
     ultimosUsuarios: [], // não quebra view
   });
+}
+
+export async function tecnicoMeusChamadosGet(req, res) {
+  const usuarioSessao = req.session?.usuario || null;
+  if (!usuarioSessao?.id) return res.redirect("/auth");
+
+  const flash = req.session?.flash || null;
+  if (req.session) req.session.flash = null;
+
+  try {
+    const lista = await listarMeusAtendimentos(usuarioSessao.id, { limit: 80 });
+
+    const chamados = (lista || []).map((c) => ({
+      id: String(c._id),
+      numero: c.numero,
+      titulo: c.titulo,
+      categoria: c.categoria || "—",
+      prioridade: c.prioridade || "—",
+      status: c.status || "—",
+      quando: c.updatedAt ? new Date(c.updatedAt).toLocaleString("pt-BR") : (c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "—"),
+      solicitante: c?.criadoPor?.login || c?.criadoPor?.nome || "—",
+    }));
+
+    return res.render("tecnico/meus-chamados", {
+      layout: "layout-app",
+      titulo: "Meus chamados",
+      cssPortal: "/styles/usuario.css",
+      cssExtra: "/styles/chamados.css",
+      usuarioSessao,
+      chamados,
+      erroGeral: null,
+      flash,
+    });
+  } catch (e) {
+    console.error("Erro ao carregar chamados atribuídos:", e);
+    return res.status(500).render("tecnico/meus-chamados", {
+      layout: "layout-app",
+      titulo: "Meus chamados",
+      cssPortal: "/styles/usuario.css",
+      cssExtra: "/styles/chamados.css",
+      usuarioSessao,
+      chamados: [],
+      erroGeral: "Não foi possível carregar seus chamados.",
+      flash: flash || { tipo: "error", mensagem: "Não foi possível carregar seus chamados." },
+    });
+  }
 }

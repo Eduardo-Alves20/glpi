@@ -75,7 +75,6 @@
               <a class="accordion-item <%= isAtivo('/tecnico/chamados') ? 'active' : '' %>"
                  href="/tecnico/chamados" title="Fila de chamados">
                 Fila de chamados
-                <!-- Badge da fila (atualizado via inbox polling). Começa oculto. -->
                 <span
                   class="nav-badge"
                   data-hook="fila-count"
@@ -86,9 +85,6 @@
 
               <a class="accordion-item <%= isAtivo('/tecnico/meus-chamados') ? 'active' : '' %>"
                  href="/tecnico/meus-chamados" title="Meus chamados">Meus chamados</a>
-
-              <a class="accordion-item <%= isAtivo('/tecnico/atendimentos') ? 'active' : '' %>"
-                 href="/tecnico/atendimentos" title="Atendimentos">Atendimentos</a>
 
               <a class="accordion-item <%= isAtivo('/artigos') ? 'active' : '' %>"
                  href="/artigos" title="Base de conhecimento">Base de conhecimento</a>
@@ -106,35 +102,27 @@
             <div class="accordion-content">
               <a class="accordion-item <%= isAtivo('/admin') ? 'active' : '' %>"
                  href="/admin" title="Dashboard">Dashboard</a>
-
               <a class="accordion-item <%= isAtivo('/admin/usuarios') ? 'active' : '' %>"
                  href="/admin/usuarios" title="Usuários">Usuários</a>
-
               <a class="accordion-item <%= isAtivo('/admin/usuarios/novo') ? 'active' : '' %>"
                  href="/admin/usuarios/novo" title="Novo usuário">Novo usuário</a>
-
               <a class="accordion-item <%= isAtivo('/admin/chamados') ? 'active' : '' %>"
                  href="/admin/chamados" title="Chamados">Chamados</a>
-
               <a class="accordion-item <%= isAtivo('/admin/tecnicos') ? 'active' : '' %>"
                  href="/admin/tecnicos" title="Técnicos">Técnicos</a>
-
               <a class="accordion-item <%= isAtivo('/admin/categorias') ? 'active' : '' %>"
                  href="/admin/categorias" title="Categorias">Categorias</a>
-
               <a class="accordion-item <%= isAtivo('/admin/artigos') ? 'active' : '' %>"
                  href="/admin/artigos" title="Artigos">Artigos</a>
-
               <a class="accordion-item <%= isAtivo('/admin/logs') ? 'active' : '' %>"
                  href="/admin/logs" title="Logs">Logs</a>
-
               <a class="accordion-item <%= isAtivo('/admin/config') ? 'active' : '' %>"
                  href="/admin/config" title="Configurações">Configurações</a>
             </div>
           </div>
         <% } %>
 
-        <!-- CONTA (todos logados) -->
+        <!-- CONTA -->
         <div class="main-anchor-wrapper" id="nav-conta" title="Clique para expandir">
           <p class="accordion-main-item <%= isAtivo('/conta') ? 'active' : '' %>">
             <img src="/assets/perfil.png" alt="" class="main-anchor-icon">
@@ -149,7 +137,6 @@
       </nav>
     </div>
 
-    <!-- Rodapé (usuário + sair) -->
     <div class="sidebar-footer-buttons-wrapper">
       <button
         id="profile-menu-button"
