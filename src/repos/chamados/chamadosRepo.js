@@ -541,6 +541,7 @@ export async function fecharChamadosVencidosAguardandoUsuario({
   return { fechados: r.modifiedCount || 0 };
 }
 
+
 /** Assumir (atribuir) */
 export async function assumirChamado(
   chamadoId,
@@ -549,6 +550,7 @@ export async function assumirChamado(
 ) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
+  const tId = toObjectId(tecnico?.id, "tecnicoId");
 
   const now = new Date();
 
@@ -594,6 +596,8 @@ export async function assumirChamado(
 
   return doc;
 }
+
+
 
 /** Chat/interações do técnico */
 export async function adicionarInteracaoTecnico(
