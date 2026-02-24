@@ -1,4 +1,10 @@
-import { contarChamados, listarChamados } from "../../repos/chamados/chamadosRepo.js";
+import { contarChamados, listarChamados, obterUltimaAtualizacaoChamados } from "../../repos/chamados/chamadosRepo.js";
+
+function inicioDeHoje() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 function parseSince(req) {
   const raw = String(req.query?.since || "").trim();
@@ -9,19 +15,42 @@ function parseSince(req) {
 
 export async function apiTecnicoInboxGet(req, res) {
   try {
+    const usuarioSessao = req.session?.usuario;
     const since = parseSince(req);
 
-    const filaGeralCount = await contarChamados({ status: "aberto", somenteSemResponsavel: true });
+    const hoje = inicioDeHoje();
 
-    // Eventos simples: últimos abertos sem responsável (top 5)
+    const [
+      filaGeralCount,
+      chamadosAbertos,
+      emAtendimento,
+      aguardandoUsuario,
+      minhaFila,
+      criadosHoje,
+      chamadosCriticos,
+      ultimaMudanca,
+    ] = await Promise.all([
+      contarChamados({ status: "aberto", somenteSemResponsavel: true }),
+      contarChamados({ status: "aberto" }),
+      contarChamados({ status: "em_atendimento" }),
+      contarChamados({ status: "aguardando_usuario" }),
+      contarChamados({ responsavelId: usuarioSessao?.id, status: ["em_atendimento", "aguardando_usuario"] }),
+      contarChamados({ createdFrom: hoje }),
+      contarChamados({ prioridade: "alta", status: ["aberto", "em_atendimento", "aguardando_usuario"] }),
+      obterUltimaAtualizacaoChamados(),
+    ]);
+
     const fila = await listarChamados({ status: "aberto", limit: 10 });
     const semResp = (fila || []).filter((c) => !c.responsavelId).slice(0, 5);
 
-    // "changed" simples: sempre true (MVP). Se quiser otimizar depois, a gente usa max(updatedAt).
+    const changed = !since || (!!ultimaMudanca && ultimaMudanca > since);
+
     return res.json({
-      changed: true,
+      changed,
       serverTime: new Date().toISOString(),
+      lastChangeAt: ultimaMudanca ? new Date(ultimaMudanca).toISOString() : null,
       filaGeralCount,
+      kpis: { chamadosAbertos, emAtendimento, aguardandoUsuario, minhaFila, filaGeral: filaGeralCount, criadosHoje, chamadosCriticos },
       eventos: semResp.map((c) => ({
         tipo: "novo_chamado",
         chamadoId: String(c._id),

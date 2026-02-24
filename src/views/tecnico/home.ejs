@@ -16,7 +16,7 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
       <span class="admin-home__updated">
         Atualizado em: <%= (new Date()).toLocaleString("pt-BR") %>
       </span>
-      <a href="/admin" class="admin-home__btn admin-home__btn--secondary">Atualizar</a>
+      <a href="/tecnico" class="admin-home__btn admin-home__btn--secondary">Atualizar</a>
     </div>
   </header>
 
@@ -24,22 +24,22 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
   <section class="admin-home__kpis" aria-label="Indicadores">
     <article class="kpi">
       <div class="kpi__title">Chamados abertos</div>
-      <div class="kpi__value"><%= kpis?.chamadosAbertos ?? 0 %></div>
+      <div class="kpi__value" data-hook="kpi-abertos"><%= kpis?.chamadosAbertos ?? 0 %></div>
     </article>
 
     <article class="kpi">
       <div class="kpi__title">Chamados críticos</div>
-      <div class="kpi__value"><%= kpis?.chamadosCriticos ?? 0 %></div>
+      <div class="kpi__value" data-hook="kpi-criticos"><%= kpis?.chamadosCriticos ?? 0 %></div>
     </article>
 
     <article class="kpi">
       <div class="kpi__title">Aguardando técnico</div>
-      <div class="kpi__value"><%= kpis?.aguardandoTecnico ?? 0 %></div>
+      <div class="kpi__value" data-hook="kpi-fila-geral"><%= kpis?.aguardandoTecnico ?? 0 %></div>
     </article>
 
     <article class="kpi">
       <div class="kpi__title">Criados hoje</div>
-      <div class="kpi__value"><%= kpis?.criadosHoje ?? 0 %></div>
+      <div class="kpi__value" data-hook="kpi-criados-hoje"><%= kpis?.criadosHoje ?? 0 %></div>
     </article>
   </section>
 
@@ -91,11 +91,11 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
           <div class="mini__label">Abertos</div>
         </div>
         <div class="mini">
-          <div class="mini__value"><%= kpis?.emAndamento ?? 0 %></div>
+          <div class="mini__value" data-hook="kpi-em-atendimento"><%= kpis?.emAtendimento ?? kpis?.emAndamento ?? 0 %></div>
           <div class="mini__label">Em andamento</div>
         </div>
         <div class="mini">
-          <div class="mini__value"><%= kpis?.aguardandoUsuario ?? 0 %></div>
+          <div class="mini__value" data-hook="kpi-aguardando-usuario"><%= kpis?.aguardandoUsuario ?? 0 %></div>
           <div class="mini__label">Aguardando usuário</div>
         </div>
         <div class="mini">
@@ -216,3 +216,6 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
     .admin-home__modules { grid-template-columns: 1fr; }
   }
 </style>
+
+
+<script type="module" src="/js/tecnico-live.js"></script>

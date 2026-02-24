@@ -5,23 +5,33 @@ function fmtQuando(d) {
   return new Date(d).toLocaleString("pt-BR");
 }
 
+function inicioDeHoje() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export async function obterHomeTecnicoData(tecnicoId) {
-  // KPIs (100% reais)
+  const hoje = inicioDeHoje();
+
   const [
     chamadosAbertos,
     emAtendimento,
     minhaFila,
     filaGeral,
     aguardandoUsuario,
+    criadosHoje,
+    chamadosCriticos,
   ] = await Promise.all([
     contarChamados({ status: "aberto" }),
     contarChamados({ status: "em_atendimento" }),
-    contarChamados({ responsavelId: tecnicoId, status: ["aberto", "em_atendimento"] }),
+    contarChamados({ responsavelId: tecnicoId, status: ["em_atendimento", "aguardando_usuario"] }),
     contarChamados({ status: "aberto", somenteSemResponsavel: true }),
-    contarChamados({ responsavelId: tecnicoId, status: "aguardando_usuario" }),
+    contarChamados({ status: "aguardando_usuario" }),
+    contarChamados({ createdFrom: hoje }),
+    contarChamados({ prioridade: "alta", status: ["aberto", "em_atendimento", "aguardando_usuario"] }),
   ]);
 
-  // Últimos chamados (reaproveita sua listagem com projeção mínima)
   const ultimosChamadosRaw = await listarChamados({ limit: 10 });
 
   const ultimosChamados = (ultimosChamadosRaw || []).slice(0, 5).map((c) => ({
@@ -30,14 +40,24 @@ export async function obterHomeTecnicoData(tecnicoId) {
     titulo: c.titulo ?? "(sem título)",
     status: c.status ?? "-",
     solicitante: c?.criadoPor?.nome || c?.criadoPor?.login || "-",
-    quando: fmtQuando(c.createdAt),
+    quando: fmtQuando(c.updatedAt || c.createdAt),
   }));
 
-  // logs: você ainda não tem repo/collection? então manda vazio SEM quebrar view
   const logs = [];
 
   return {
-    kpis: { chamadosAbertos, emAtendimento, minhaFila, filaGeral, aguardandoUsuario },
+    kpis: {
+      chamadosAbertos,
+      chamadosCriticos,
+      aguardandoTecnico: filaGeral,
+      criadosHoje,
+      emAtendimento,
+      emAndamento: emAtendimento,
+      minhaFila,
+      filaGeral,
+      aguardandoUsuario,
+      vencendoSla: 0,
+    },
     ultimosChamados,
     logs,
   };

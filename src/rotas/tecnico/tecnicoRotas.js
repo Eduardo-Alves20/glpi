@@ -10,6 +10,7 @@ import {
   tecnicoHomeGet,
   tecnicoFilaGet,
   tecnicoAssumirPost,
+  tecnicoMeusChamadosGet,
 } from "../../controllers/tecnico/tecnicoController.js";
 
 import {
@@ -34,9 +35,12 @@ export function criarTecnicoRotas({ auditoria } = {}) {
 
   // home do técnico
   router.get("/tecnico", tecnicoHomeGet);
+  router.get("/tecnico/home", tecnicoHomeGet);
 
   // fila (coloca antes do :id por clareza; não conflita, mas fica mais legível)
   router.get("/tecnico/chamados", tecnicoFilaGet);
+
+  router.get("/tecnico/meus-chamados", tecnicoMeusChamadosGet);
 
   // detalhe do chamado (ABRIR)
   router.get("/tecnico/chamados/:id", tecnicoChamadoShowGet);
