@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import expressLayouts from "express-ejs-layouts";
 import session from "express-session";
 import MongoStore from "connect-mongo";
-import { garantirIndicesChamados } from "./src/repos/chamados/chamadosRepo.js";
+import { garantirIndicesChamados } from "./src/repos/chamados/core/chamadosCoreRepo.js";
 
 import { injetarLocalsLayout } from "./src/compartilhado/middlewares/viewLocals.js";
 import { conectarMongo, pegarDb } from "./src/compartilhado/db/mongo.js";

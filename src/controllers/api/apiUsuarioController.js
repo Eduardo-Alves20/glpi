@@ -1,4 +1,4 @@
-import { listarChamados } from "../../repos/chamados/chamadosRepo.js";
+import { listarChamados } from "../../repos/chamados/core/chamadosCoreRepo.js";
 
 export async function apiUsuarioInboxGet(req, res) {
   try {

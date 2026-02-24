@@ -1,9 +1,13 @@
 import {
   criarChamado,
   listarChamados,
+} from "../../repos/chamados/core/chamadosCoreRepo.js";
+import {
   acharChamadoPorIdDoUsuario,
   editarChamadoDoUsuario,
-} from "../../repos/chamados/chamadosRepo.js";
+} from "../../repos/chamados/usuario/chamadosUsuarioRepo.js";
+import { listarUsuariosPorPerfis } from "../../repos/usuariosRepo.js";
+import { notificarNovoChamadoFila } from "../../service/notificacoesService.js";
 
 export async function chamadoNovoGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
@@ -45,12 +49,35 @@ export async function chamadoNovoPost(req, res) {
     if (!prioridadesPermitidas.includes(valores.prioridade))
       throw new Error("Selecione uma prioridade válida.");
 
-    await criarChamado({
+    const chamadoCriado = await criarChamado({
       usuarioId: usuarioSessao.id,
       usuarioNome: usuarioSessao.nome,
       usuarioLogin: usuarioSessao.usuario,
       ...valores,
     });
+
+    const recipients = await listarUsuariosPorPerfis(["tecnico", "admin"]);
+    const destinatarios = (recipients || [])
+      .map((u) => ({
+        tipo: u.perfil === "admin" ? "admin" : "tecnico",
+        id: String(u._id),
+        perfilDestinatario: u.perfil,
+      }))
+      .filter((d) => d.id !== String(usuarioSessao.id));
+
+    if (destinatarios.length) {
+      await notificarNovoChamadoFila({
+        chamadoId: String(chamadoCriado._id),
+        tituloChamado: chamadoCriado.titulo,
+        destinatarios,
+        autor: {
+          tipo: "usuario",
+          id: String(usuarioSessao.id),
+          nome: usuarioSessao.nome,
+          login: usuarioSessao.usuario,
+        },
+      });
+    }
 
     req.session.flash = { tipo: "success", mensagem: "Chamado criado com sucesso!" };
     return res.redirect("/chamados/meus");

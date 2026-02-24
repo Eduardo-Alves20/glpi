@@ -1,8 +1,9 @@
 import {
   listarFilaChamados,
   listarMeusAtendimentos,
-  assumirChamado,
-} from "../../repos/chamados/chamadosRepo.js";
+} from "../../repos/chamados/core/chamadosCoreRepo.js";
+import { assumirChamado } from "../../repos/chamados/tecnico/chamadosTecnicoRepo.js";
+import { criarNotificacao } from "../../repos/notificacoesRepo.js";
 
 import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";
 
@@ -59,11 +60,36 @@ export async function tecnicoAssumirPost(req, res) {
   if (!usuarioSessao?.id) return res.redirect("/auth");
 
   try {
-    await assumirChamado(
+    const chamado = await assumirChamado(
       req.params.id,
       { id: usuarioSessao.id, nome: usuarioSessao.nome, usuario: usuarioSessao.usuario },
       { porLogin: usuarioSessao.usuario }
     );
+
+    const usuarioDestinoId = chamado?.criadoPor?.usuarioId
+      ? String(chamado.criadoPor.usuarioId)
+      : "";
+    const autorId = String(usuarioSessao.id);
+
+    if (usuarioDestinoId && usuarioDestinoId !== autorId) {
+      await criarNotificacao({
+        destinatarioTipo: "usuario",
+        destinatarioId: usuarioDestinoId,
+        chamadoId: String(chamado._id),
+        tipo: "chamado_assumido",
+        titulo: `Chamado #${chamado.numero}: ${chamado.titulo}`,
+        mensagem: `Seu chamado foi assumido por ${usuarioSessao.nome}.`,
+        url: `/chamados/${String(chamado._id)}`,
+        meta: {
+          autor: {
+            tipo: "tecnico",
+            id: autorId,
+            nome: usuarioSessao.nome,
+            login: usuarioSessao.usuario,
+          },
+        },
+      });
+    }
 
     req.session.flash = { tipo: "success", mensagem: "Chamado assumido." };
     return res.redirect("/tecnico/chamados");

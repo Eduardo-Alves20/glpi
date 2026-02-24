@@ -43,3 +43,27 @@ export async function acharPorId(id) {
   if (!ObjectId.isValid(id)) return null;
   return col().findOne({ _id: new ObjectId(id) });
 }
+
+export async function listarUsuariosPorPerfis(perfis = []) {
+  const listaPerfis = Array.isArray(perfis)
+    ? perfis.map((p) => String(p || "").trim()).filter(Boolean)
+    : [];
+  if (!listaPerfis.length) return [];
+
+  return col()
+    .find(
+      {
+        perfil: { $in: listaPerfis },
+        status: { $ne: "bloqueado" },
+      },
+      {
+        projection: {
+          _id: 1,
+          perfil: 1,
+          nome: 1,
+          usuario: 1,
+        },
+      },
+    )
+    .toArray();
+}

@@ -1,4 +1,4 @@
-import { listarChamados, contarChamados } from "../chamados/chamadosRepo.js";
+import { listarChamados, contarChamados } from "../chamados/core/chamadosCoreRepo.js";
 
 function fmtQuando(d) {
   if (!d) return "";

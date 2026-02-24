@@ -1,9 +1,8 @@
-import { ObjectId } from "mongodb";
+import { acharChamadoPorId } from "../../repos/chamados/core/chamadosCoreRepo.js";
 import {
-  acharChamadoPorId,
   assumirChamado,
   adicionarInteracaoTecnico,
-} from "../../repos/chamados/chamadosRepo.js";
+} from "../../repos/chamados/tecnico/chamadosTecnicoRepo.js";
 import { criarNotificacao } from "../../repos/notificacoesRepo.js";
 
 function podeTecnicoVerChamado(usuarioSessao, chamado) {
@@ -51,7 +50,7 @@ export async function tecnicoChamadoShowGet(req, res) {
 export async function tecnicoChamadoAssumirPost(req, res) {
   const usuarioSessao = req.session?.usuario;
   try {
-    await assumirChamado(
+    const chamado = await assumirChamado(
       req.params.id,
       {
         id: usuarioSessao.id,
@@ -60,6 +59,32 @@ export async function tecnicoChamadoAssumirPost(req, res) {
       },
       { porLogin: usuarioSessao.usuario },
     );
+
+    const usuarioDestinoId = chamado?.criadoPor?.usuarioId
+      ? String(chamado.criadoPor.usuarioId)
+      : "";
+    const autorId = String(usuarioSessao.id);
+
+    if (usuarioDestinoId && usuarioDestinoId !== autorId) {
+      await criarNotificacao({
+        destinatarioTipo: "usuario",
+        destinatarioId: usuarioDestinoId,
+        chamadoId: String(chamado._id),
+        tipo: "chamado_assumido",
+        titulo: `Chamado #${chamado.numero}: ${chamado.titulo}`,
+        mensagem: `Seu chamado foi assumido por ${usuarioSessao.nome}.`,
+        url: `/chamados/${String(chamado._id)}`,
+        meta: {
+          autor: {
+            tipo: "tecnico",
+            id: autorId,
+            nome: usuarioSessao.nome,
+            login: usuarioSessao.usuario,
+          },
+        },
+      });
+    }
+
     req.session.flash = { tipo: "success", mensagem: "Chamado assumido." };
   } catch (e) {
     req.session.flash = {

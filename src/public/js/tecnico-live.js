@@ -27,10 +27,14 @@ function updateHomeKpis(kpis = {}) {
 
 (function startTecnicoLive() {
   const body = document.body;
-  if (!body || body.dataset?.perfil !== "tecnico") return;
+  const perfil = String(body?.dataset?.perfil || "");
+  if (!body || (perfil !== "tecnico" && perfil !== "admin")) return;
 
   const path = window.location.pathname;
+  const isListaTecnico =
+    path === "/tecnico/chamados" || path === "/tecnico/meus-chamados";
   let since = new Date(Date.now() - 15000).toISOString();
+  const reloadKey = `tecnico_live_reload_${path}`;
 
   async function loop() {
     try {
@@ -38,9 +42,14 @@ function updateHomeKpis(kpis = {}) {
       since = data.serverTime || new Date().toISOString();
       if (data.kpis) updateHomeKpis(data.kpis);
 
-      if (data.changed && (path.startsWith('/tecnico/chamados') || path.startsWith('/tecnico/meus-chamados'))) {
-        window.location.reload();
-        return;
+      if (data.changed && isListaTecnico) {
+        const marker = String(data.lastChangeAt || "");
+        const lastReloadMarker = sessionStorage.getItem(reloadKey) || "";
+        if (marker && marker !== lastReloadMarker) {
+          sessionStorage.setItem(reloadKey, marker);
+          window.location.reload();
+          return;
+        }
       }
     } catch (_) {
       // silencioso

@@ -1,4 +1,8 @@
-import { contarChamados, listarChamados, obterUltimaAtualizacaoChamados } from "../../repos/chamados/chamadosRepo.js";
+import {
+  contarChamados,
+  listarChamados,
+  obterUltimaAtualizacaoChamados,
+} from "../../repos/chamados/core/chamadosCoreRepo.js";
 
 function inicioDeHoje() {
   const d = new Date();

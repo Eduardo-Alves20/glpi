@@ -1,4 +1,5 @@
-import { acharChamadoPorId, acharChamadoPorIdDoUsuario } from "../../repos/chamados/chamadosRepo.js";
+import { acharChamadoPorId } from "../../repos/chamados/core/chamadosCoreRepo.js";
+import { acharChamadoPorIdDoUsuario } from "../../repos/chamados/usuario/chamadosUsuarioRepo.js";
 
 function parseSince(req) {
   const raw = String(req.query?.since || "").trim();

@@ -2,8 +2,8 @@ import {
   acharChamadoPorIdDoUsuario,
   usuarioConfirmarSolucao,
   usuarioReabrirChamado,
-} from "../../repos/chamados/chamadosRepo.js";
-import { usuarioAdicionarInteracao } from "../../repos/chamados/chamadosRepo.js";
+  usuarioAdicionarInteracao,
+} from "../../repos/chamados/usuario/chamadosUsuarioRepo.js";
 import { criarNotificacao } from "../../repos/notificacoesRepo.js";
 
 export async function usuarioChamadoShowGet(req, res) {
