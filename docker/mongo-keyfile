@@ -1,4 +1,1 @@
-New-Item -Force -ItemType Directory .\docker | Out-Null
-# Gera um keyfile com string aleatória
-$rand = -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 80 | ForEach-Object {[char]$_})
-Set-Content -Path .\docker\mongo-keyfile -Value $rand -NoNewline
+c9Q0M8v3X5k1N7t2A4r6B8y0D3f5G7h9J2k4L6m8P0q2S4u6W8x0Z2b4d6F8g0H2j4K6n8R0t2V4y6
