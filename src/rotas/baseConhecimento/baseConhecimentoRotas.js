@@ -7,6 +7,8 @@ import {
 import { acharPorId } from "../../repos/usuariosRepo.js";
 import {
   baseConhecimentoIndexGet,
+  baseConhecimentoNovoGet,
+  baseConhecimentoNovoPost,
   baseConhecimentoShowGet,
 } from "../../controllers/baseConhecimento/baseConhecimentoController.js";
 
@@ -26,6 +28,20 @@ export function criarBaseConhecimentoRotas({ auditoria } = {}) {
   router.get("/artigos", (req, res) => res.redirect("/base-conhecimento"));
   router.get("/admin/artigos", (req, res) => res.redirect("/base-conhecimento"));
   router.get("/base-conhecimento", baseConhecimentoIndexGet);
+  router.get(
+    "/base-conhecimento/novo",
+    exigirPerfis(["tecnico", "admin"], {
+      onNegado: auditoria?.registrarTentativaAcessoNegado,
+    }),
+    baseConhecimentoNovoGet,
+  );
+  router.post(
+    "/base-conhecimento/novo",
+    exigirPerfis(["tecnico", "admin"], {
+      onNegado: auditoria?.registrarTentativaAcessoNegado,
+    }),
+    baseConhecimentoNovoPost,
+  );
   router.get("/base-conhecimento/:slug", baseConhecimentoShowGet);
 
   return router;

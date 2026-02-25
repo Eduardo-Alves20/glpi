@@ -10,8 +10,24 @@
   <header class="base-head">
     <div>
       <span class="base-item__tag"><%= artigo?.categoria || "Geral" %></span>
+      <span class="base-item__source source-<%= artigo?.origem === 'interna' ? 'interna' : 'faq' %>">
+        <%= artigo?.origem === "interna" ? "Interno" : "FAQ" %>
+      </span>
       <h1 class="page-title"><%= artigo?.titulo || "-" %></h1>
       <p class="page-subtitle"><%= artigo?.resumo || "" %></p>
+      <% if (Array.isArray(artigo?.tags) && artigo.tags.length) { %>
+        <div class="base-item__tags">
+          <% artigo.tags.forEach((tag) => { %>
+            <span>#<%= tag %></span>
+          <% }) %>
+        </div>
+      <% } %>
+      <% if (artigo?.origem === "interna" && artigo?.autor) { %>
+        <p class="page-subtitle">
+          Criado por <strong><%= artigo?.autor?.nome || artigo?.autor?.login || "equipe interna" %></strong>
+          em <%= artigo?.createdAt ? new Date(artigo.createdAt).toLocaleString("pt-BR") : "-" %>.
+        </p>
+      <% } %>
     </div>
     <div class="base-show-actions">
       <a class="button secondary" href="/base-conhecimento">Voltar</a>

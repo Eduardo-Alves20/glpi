@@ -14,14 +14,19 @@
           Guias e passo a passo do FAQ para resolver solicitacoes comuns antes de abrir chamado.
         </p>
       </div>
-      <div class="base-kpis">
-        <div class="base-kpi">
-          <span>Total de artigos</span>
-          <strong><%= Number(stats?.total || totalBase || 0) %></strong>
-        </div>
-        <div class="base-kpi">
-          <span>Filtrados</span>
-          <strong><%= Number(totalFiltrados || 0) %></strong>
+      <div class="base-head-actions">
+        <% if (podeGerirTopicos) { %>
+          <a class="button button-filter-apply base-head-create-btn" href="/base-conhecimento/novo">+ Novo topico</a>
+        <% } %>
+        <div class="base-kpis">
+          <div class="base-kpi">
+            <span>Total de artigos</span>
+            <strong><%= Number(stats?.total || totalBase || 0) %></strong>
+          </div>
+          <div class="base-kpi">
+            <span>Filtrados</span>
+            <strong><%= Number(totalFiltrados || 0) %></strong>
+          </div>
         </div>
       </div>
     </header>
@@ -62,9 +67,19 @@
           <article class="table-card base-item">
             <div class="base-item__top">
               <span class="base-item__tag"><%= artigo?.categoria || "Geral" %></span>
+              <span class="base-item__source source-<%= artigo?.origem === 'interna' ? 'interna' : 'faq' %>">
+                <%= artigo?.origem === "interna" ? "Interno" : "FAQ" %>
+              </span>
               <h2><a href="/base-conhecimento/<%= artigo.slug %>"><%= artigo?.titulo || "-" %></a></h2>
             </div>
             <p><%= artigo?.resumo || "-" %></p>
+            <% if (Array.isArray(artigo?.tags) && artigo.tags.length) { %>
+              <div class="base-item__tags">
+                <% artigo.tags.slice(0, 6).forEach((tag) => { %>
+                  <span>#<%= tag %></span>
+                <% }) %>
+              </div>
+            <% } %>
             <% if (Array.isArray(artigo?.passos) && artigo.passos.length) { %>
               <ul class="base-item__steps">
                 <% artigo.passos.slice(0, 3).forEach((passo) => { %>

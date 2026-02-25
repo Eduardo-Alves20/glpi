@@ -1,0 +1,65 @@
+<section class="base-page base-novo-page">
+  <%- include("../partials/breadcrumb", {
+    crumbs: [
+      { label: "Home", href: "/app" },
+      { label: "Base de conhecimento", href: "/base-conhecimento" },
+      { label: "Novo topico" },
+    ],
+  }) %>
+
+  <header class="base-head">
+    <div>
+      <h1 class="page-title">Novo topico da base</h1>
+      <p class="page-subtitle">Crie um guia para ajudar em solucoes recorrentes e melhorar a busca automatica.</p>
+    </div>
+    <div class="base-show-actions">
+      <a class="button secondary" href="/base-conhecimento">Voltar</a>
+    </div>
+  </header>
+
+  <% if (erroGeral) { %>
+    <div class="alert alert--danger"><%= erroGeral %></div>
+  <% } %>
+
+  <form class="table-card base-form" method="POST" action="/base-conhecimento/novo" autocomplete="off">
+    <div class="base-form-grid">
+      <div class="base-filtro base-filtro--search">
+        <label for="titulo">Titulo</label>
+        <input id="titulo" name="titulo" value="<%= valores?.titulo || '' %>" minlength="6" maxlength="180" required />
+      </div>
+
+      <div class="base-filtro">
+        <label for="categoria">Categoria</label>
+        <input id="categoria" name="categoria" value="<%= valores?.categoria || '' %>" minlength="2" maxlength="60" placeholder="Ex.: Rede, Email, VPN..." required />
+      </div>
+
+      <div class="base-filtro base-filtro--full">
+        <label for="resumo">Resumo</label>
+        <textarea id="resumo" name="resumo" rows="3" minlength="20" maxlength="400" required><%= valores?.resumo || '' %></textarea>
+      </div>
+
+      <div class="base-filtro base-filtro--full">
+        <label for="conteudo">Conteudo (passo a passo)</label>
+        <textarea
+          id="conteudo"
+          name="conteudo"
+          rows="10"
+          minlength="30"
+          maxlength="12000"
+          placeholder="- Passo 1 ...&#10;- Passo 2 ...&#10;- Passo 3 ..."
+          required
+        ><%= valores?.conteudo || '' %></textarea>
+      </div>
+
+      <div class="base-filtro base-filtro--full">
+        <label for="tags">Tags (separadas por virgula)</label>
+        <input id="tags" name="tags" value="<%= valores?.tags || '' %>" maxlength="800" placeholder="pdf, assinador, certificado, login..." />
+      </div>
+    </div>
+
+    <div class="base-filtros-actions">
+      <button class="button" type="submit">Criar topico</button>
+      <a class="button tertiary" href="/base-conhecimento">Cancelar</a>
+    </div>
+  </form>
+</section>
