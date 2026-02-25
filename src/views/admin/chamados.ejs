@@ -79,6 +79,14 @@
                     <% } else { %>
                       <a class="btn-primary" href="/tecnico/chamados/<%= c.id %>" style="text-decoration:none; display:inline-flex; align-items:center;">Abrir</a>
                     <% } %>
+                    <form
+                      method="post"
+                      action="/admin/chamados/<%= c.id %>/excluir"
+                      style="display:inline;"
+                      onsubmit="return window.confirm('Excluir este chamado permanentemente? Esta acao nao pode ser desfeita.');"
+                    >
+                      <button class="btn-danger" type="submit">Excluir</button>
+                    </form>
                   </div>
                 </td>
               </tr>

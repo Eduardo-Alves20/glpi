@@ -28,6 +28,7 @@ function updateHomeKpis(kpis = {}) {
 (function startTecnicoLive() {
   const body = document.body;
   const perfil = String(body?.dataset?.perfil || "");
+  const hasFlash = String(body?.dataset?.hasFlash || "0") === "1";
   if (!body || (perfil !== "tecnico" && perfil !== "admin")) return;
 
   const path = window.location.pathname;
@@ -38,6 +39,18 @@ function updateHomeKpis(kpis = {}) {
   let since = new Date(Date.now() - 15000).toISOString();
   const reloadKey = `tecnico_live_reload_${path}`;
 
+  function sweetAlertVisivel() {
+    try {
+      return Boolean(
+        window.Swal
+        && typeof window.Swal.isVisible === "function"
+        && window.Swal.isVisible(),
+      );
+    } catch {
+      return false;
+    }
+  }
+
   async function loop() {
     try {
       const data = await apiGet(`/api/tecnico/inbox?since=${encodeURIComponent(since)}`);
@@ -45,6 +58,11 @@ function updateHomeKpis(kpis = {}) {
       if (data.kpis) updateHomeKpis(data.kpis);
 
       if (data.changed && isListaTecnico) {
+        if (hasFlash || sweetAlertVisivel()) {
+          setTimeout(loop, 4000);
+          return;
+        }
+
         const marker = String(data.lastChangeAt || "");
         const lastReloadMarker = sessionStorage.getItem(reloadKey) || "";
         if (marker && marker !== lastReloadMarker) {

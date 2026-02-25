@@ -51,6 +51,26 @@
   transform: translateY(1px);
 }
 
+.btn-danger {
+  background: #fff1f2;
+  border: 1px solid #f2b8c0;
+  color: #9f1d2f;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+}
+
+.btn-danger:hover {
+  background: #ffe5e8;
+  border-color: #e79aa6;
+}
+
+.btn-danger:active {
+  transform: translateY(1px);
+}
+
 .alert-error {
   margin-top: 10px;
   background: rgba(255, 61, 87, 0.1);
@@ -582,6 +602,17 @@ body.app-layout.dark-mode .chamados-page .pill-prio-critica {
   background: rgba(244, 63, 94, 0.2);
   color: #fda4af;
   border-color: rgba(251, 113, 133, 0.42);
+}
+
+body.app-layout.dark-mode .btn-danger {
+  background: rgba(190, 24, 93, 0.22);
+  border-color: rgba(244, 114, 182, 0.42);
+  color: #ffd7e7;
+}
+
+body.app-layout.dark-mode .btn-danger:hover {
+  background: rgba(219, 39, 119, 0.28);
+  border-color: rgba(251, 113, 133, 0.52);
 }
 
 @media (max-width: 1080px) {

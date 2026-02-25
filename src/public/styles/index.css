@@ -47,7 +47,7 @@ html.dark-mode{
 html{ overflow:hidden auto; }
 body{
   margin:0;
-  font-family:"Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family:"Rubik", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color:var(--text);
   background:#f3f6fb;
 }
@@ -69,12 +69,20 @@ html::-webkit-scrollbar-thumb{ background:#666; }
 html::-webkit-scrollbar-track{ background:#ddd; }
 html.dark-mode::-webkit-scrollbar-thumb{ background:#42536b; }
 html.dark-mode::-webkit-scrollbar-track{ background:#172336; }
-.toast-notif{
+#notif-toast-wrap{
   position: fixed;
   right: 16px;
   top: 16px;
-  z-index: 9999;
-  width: 320px;
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(320px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.toast-notif{
+  width: 100%;
   background: #111827;
   color: #fff;
   border-radius: 12px;
@@ -84,6 +92,7 @@ html.dark-mode::-webkit-scrollbar-track{ background:#172336; }
   transform: translateY(-10px);
   transition: all .2s ease;
   cursor: pointer;
+  pointer-events: auto;
 }
 .toast-notif.show{
   opacity: 1;

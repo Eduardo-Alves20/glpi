@@ -7,6 +7,12 @@
 
     <link rel="icon" href="/assets/favicon.ico" />
     <title><%= (typeof titulo !== "undefined" && titulo) ? titulo : "GLPI" %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap"
+    />
 
     <script>
       (function () {
@@ -38,7 +44,11 @@
     <% } %>
   </head>
 
-  <body class="app-layout" data-perfil="<%= usuarioSessao?.perfil || '' %>">
+  <body
+    class="app-layout"
+    data-perfil="<%= usuarioSessao?.perfil || '' %>"
+    data-has-flash="<%= (typeof flash !== 'undefined' && flash) ? '1' : '0' %>"
+  >
     <button id="notifBell" type="button" class="notif-btn" aria-label="Notificacoes" hidden>
       &#128276; <span id="notifBadge" hidden>0</span>
     </button>

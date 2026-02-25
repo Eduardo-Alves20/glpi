@@ -3,9 +3,26 @@ import { toast } from "/js/toast.js";
 
 function getAutorId(h) {
   const a = h?.meta?.autor || {};
+  const id = a.id ? String(a.id) : "";
   const tec = a.tecnicoId ? String(a.tecnicoId) : "";
   const usu = a.usuarioId ? String(a.usuarioId) : "";
-  return tec || usu || "";
+  return id || tec || usu || "";
+}
+
+function classificarLadoMensagem(h, viewerId, viewerLogin = "") {
+  const autorId = getAutorId(h);
+  const viewer = String(viewerId || "").trim();
+  if (autorId && viewer) {
+    return autorId === viewer ? "is-mine" : "is-other";
+  }
+
+  const autorLogin = String(h?.meta?.autor?.login || h?.por || "").trim().toLowerCase();
+  const loginViewer = String(viewerLogin || "").trim().toLowerCase();
+  if (autorLogin && loginViewer) {
+    return autorLogin === loginViewer ? "is-mine" : "is-other";
+  }
+
+  return "is-system";
 }
 
 function formatBytes(bytes) {
@@ -75,6 +92,7 @@ function renderAnexosHtml(anexos = []) {
 export function startChamadoPoll({
   chamadoId,
   viewerId,
+  viewerLogin = "",
   intervalMs = 1000,
   notifyOnlyWhenHidden = true,
   reloadOnChange = true,
@@ -85,6 +103,7 @@ export function startChamadoPoll({
   }
 
   const viewer = String(viewerId || "").trim();
+  const viewerLoginSan = String(viewerLogin || "").trim().toLowerCase();
   let since = new Date().toISOString();
 
   const poll = async () => {
@@ -118,7 +137,7 @@ export function startChamadoPoll({
         const anexos = Array.isArray(h?.meta?.anexos) ? h.meta.anexos : [];
 
         const item = document.createElement("div");
-        item.className = "msg";
+        item.className = `msg ${classificarLadoMensagem(h, viewer, viewerLoginSan)}`;
         item.innerHTML = `
           <div class="msg-top">
             <span class="msg-author">${escapeHtml(autor)}</span>

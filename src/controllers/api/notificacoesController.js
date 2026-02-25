@@ -9,6 +9,13 @@ import {
   obterTiposIgnoradosNotificacoes,
 } from "../../service/notificacoesDestinatarioService.js";
 
+function mapearNotificacaoApi(item = {}) {
+  return {
+    ...item,
+    _id: String(item?._id || ""),
+  };
+}
+
 export async function listar(req, res) {
   const destinatario = resolverDestinatarioNotificacoes(req.session?.usuario);
   if (!destinatario) return res.status(401).json({ error: "unauthorized" });
@@ -26,7 +33,7 @@ export async function listar(req, res) {
 
   res.json({
     serverNow: new Date().toISOString(),
-    itens,
+    itens: (itens || []).map(mapearNotificacaoApi),
   });
 }
 

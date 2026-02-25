@@ -8,6 +8,7 @@ export function resolverDestinatarioNotificacoes(usuarioSessao) {
   const perfil = normalizarTexto(usuarioSessao.perfil, 20).toLowerCase();
   const idBase = normalizarTexto(usuarioSessao.id);
   const tecnicoId = normalizarTexto(usuarioSessao.tecnicoId);
+  const isAdminBootstrap = idBase === "admin-bootstrap" || idBase === "admin-local";
 
   if (!idBase && !tecnicoId) return null;
 
@@ -16,6 +17,9 @@ export function resolverDestinatarioNotificacoes(usuarioSessao) {
   }
 
   if (perfil === "admin") {
+    if (isAdminBootstrap) {
+      return { tipo: "admin", id: "*" };
+    }
     return { tipo: "admin", id: idBase };
   }
 

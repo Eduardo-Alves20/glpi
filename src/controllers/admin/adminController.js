@@ -1,11 +1,16 @@
+import fs from "fs/promises";
 import { obterAdminDashboardData } from "../../repos/admin/adminDashboardRepo.js";
 import {
   lerFiltrosAdminTecnicos,
   obterDashboardTecnicosAdmin,
   opcoesAdminTecnicos,
 } from "../../repos/admin/adminTecnicosDashboardRepo.js";
-import { listarChamados } from "../../repos/chamados/core/chamadosCoreRepo.js";
+import {
+  listarChamados,
+  excluirChamadoPorIdAdmin,
+} from "../../repos/chamados/core/chamadosCoreRepo.js";
 import { obterClassificacoesAtivasChamados } from "../../repos/chamados/classificacoesChamadosRepo.js";
+import { excluirNotificacoesPorChamadoId } from "../../repos/notificacoesRepo.js";
 import {
   aplicarFiltrosListaChamados,
   lerFiltrosListaChamados,
@@ -14,6 +19,8 @@ import {
   rotuloPrioridadeChamado,
   rotuloStatusChamado,
 } from "../../service/chamadosListaFiltrosService.js";
+import { resolverCaminhoAnexo } from "../../service/anexosService.js";
+import { registrarEventoSistema } from "../../service/logsService.js";
 
 async function carregarClassificacoesChamados() {
   try {
@@ -51,6 +58,40 @@ function mapearChamadoAdmin(c, classificacoes) {
       : "-",
     temResponsavel: Boolean(c.responsavelId),
   };
+}
+
+function extrairCaminhosAnexosChamado(chamado = {}) {
+  const hist = Array.isArray(chamado?.historico) ? chamado.historico : [];
+  const caminhos = new Set();
+
+  hist.forEach((evento) => {
+    const anexos = Array.isArray(evento?.meta?.anexos) ? evento.meta.anexos : [];
+    anexos.forEach((anexo) => {
+      const caminhoRelativo = String(anexo?.caminhoRelativo || "").trim();
+      if (caminhoRelativo) caminhos.add(caminhoRelativo);
+    });
+  });
+
+  return [...caminhos];
+}
+
+async function apagarAnexosChamado(chamado = {}) {
+  const caminhos = extrairCaminhosAnexosChamado(chamado);
+  if (!caminhos.length) return 0;
+
+  await Promise.all(
+    caminhos.map(async (rel) => {
+      const abs = resolverCaminhoAnexo(rel);
+      if (!abs) return;
+      try {
+        await fs.unlink(abs);
+      } catch {
+        // best effort
+      }
+    }),
+  );
+
+  return caminhos.length;
 }
 
 export async function adminHomeGet(req, res) {
@@ -192,4 +233,69 @@ export async function adminTecnicosGet(req, res) {
       limit: painel.paginacao?.limit || filtros.limit,
     },
   });
+}
+
+export async function adminChamadoExcluirPost(req, res) {
+  const chamadoId = String(req.params?.id || "").trim();
+  if (!chamadoId) {
+    req.session.flash = { tipo: "error", mensagem: "Chamado invalido para exclusao." };
+    return res.redirect("/admin/chamados");
+  }
+
+  try {
+    const chamado = await excluirChamadoPorIdAdmin(chamadoId);
+    if (!chamado) {
+      req.session.flash = { tipo: "info", mensagem: "Chamado nao encontrado ou ja excluido." };
+      return res.redirect("/admin/chamados");
+    }
+
+    const chamadoIdReal = String(chamado?._id || chamadoId);
+    const [anexosRemovidos, notifOut] = await Promise.all([
+      apagarAnexosChamado(chamado),
+      excluirNotificacoesPorChamadoId(chamadoIdReal),
+    ]);
+
+    await registrarEventoSistema({
+      req,
+      nivel: "security",
+      modulo: "admin",
+      evento: "admin.chamado.excluido",
+      acao: "excluir_chamado",
+      resultado: "sucesso",
+      mensagem: `Chamado #${chamado?.numero || ""} excluido pelo administrador.`,
+      alvo: {
+        tipo: "chamado",
+        id: chamadoIdReal,
+        numero: String(chamado?.numero || ""),
+      },
+      meta: {
+        statusAnterior: String(chamado?.status || ""),
+        anexosRemovidos: Number(anexosRemovidos || 0),
+        notificacoesRemovidas: Number(notifOut?.deleted || 0),
+        responsavelLogin: String(chamado?.responsavelLogin || ""),
+      },
+    });
+
+    req.session.flash = { tipo: "success", mensagem: "Chamado excluido com sucesso." };
+    return res.redirect("/admin/chamados");
+  } catch (err) {
+    console.error("Erro ao excluir chamado (admin):", err);
+
+    await registrarEventoSistema({
+      req,
+      nivel: "warn",
+      modulo: "admin",
+      evento: "admin.chamado.excluido",
+      acao: "excluir_chamado",
+      resultado: "erro",
+      mensagem: err?.message || "Falha ao excluir chamado.",
+      alvo: {
+        tipo: "chamado",
+        id: chamadoId,
+      },
+    });
+
+    req.session.flash = { tipo: "error", mensagem: "Nao foi possivel excluir o chamado." };
+    return res.redirect("/admin/chamados");
+  }
 }

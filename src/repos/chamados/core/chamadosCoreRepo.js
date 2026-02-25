@@ -233,6 +233,15 @@ export async function acharChamadoPorId(chamadoId) {
   return db.collection(COL_CHAMADOS).findOne({ _id });
 }
 
+export async function excluirChamadoPorIdAdmin(chamadoId) {
+  const db = pegarDb();
+  const _id = toObjectId(chamadoId, "chamadoId");
+
+  const out = await db.collection(COL_CHAMADOS).findOneAndDelete({ _id });
+  const doc = out?.value ?? out ?? null;
+  return doc && doc._id ? doc : null;
+}
+
 export async function acharChamadoPorAnexoId(anexoId) {
   const db = pegarDb();
   const id = String(anexoId || "").trim();

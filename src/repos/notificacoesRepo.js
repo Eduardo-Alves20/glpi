@@ -1,8 +1,14 @@
 import { ObjectId } from "mongodb";
 import { pegarDb } from "../compartilhado/db/mongo.js";
+import { publicarAtualizacaoNotificacoes } from "../service/notificacoesRealtimeService.js";
 
 function oid(id) {
   return ObjectId.isValid(id) ? new ObjectId(id) : null;
+}
+
+function isDestinoWildcard(destinatario = {}) {
+  return String(destinatario?.tipo || "").trim().toLowerCase() === "admin"
+    && String(destinatario?.id || "").trim() === "*";
 }
 
 const DESTINATARIOS_VALIDOS = new Set(["usuario", "tecnico", "admin"]);
@@ -112,6 +118,7 @@ export async function criarNotificacao({
   };
 
   const out = await db.collection(COL).insertOne(doc);
+  publicarAtualizacaoNotificacoes(doc.destinatario);
   return { ...doc, _id: out.insertedId };
 }
 
@@ -123,10 +130,12 @@ function montarFiltroNotificacoes({
   tipo = null,
   tiposIgnorados = [],
 } = {}) {
-  const filtro = {
-    "destinatario.tipo": destinatario.tipo,
-    "destinatario.id": destinatario.id,
-  };
+  const filtro = isDestinoWildcard(destinatario)
+    ? { "destinatario.tipo": destinatario.tipo }
+    : {
+        "destinatario.tipo": destinatario.tipo,
+        "destinatario.id": destinatario.id,
+      };
 
   if (since) {
     const dataSince = new Date(since);
@@ -275,11 +284,16 @@ export async function listarNotificacoesPaginado({
 
 export async function contarNaoLidas(destinatario, { tiposIgnorados = [] } = {}) {
   const db = await pegarDb();
-  const filtro = {
-    "destinatario.tipo": destinatario.tipo,
-    "destinatario.id": destinatario.id,
-    lidoEm: null,
-  };
+  const filtro = isDestinoWildcard(destinatario)
+    ? {
+        "destinatario.tipo": destinatario.tipo,
+        lidoEm: null,
+      }
+    : {
+        "destinatario.tipo": destinatario.tipo,
+        "destinatario.id": destinatario.id,
+        lidoEm: null,
+      };
   if (Array.isArray(tiposIgnorados) && tiposIgnorados.length) {
     filtro.tipo = {
       $nin: tiposIgnorados
@@ -295,28 +309,81 @@ export async function marcarComoLida({ notifId, destinatario }) {
   const _id = oid(notifId);
   if (!_id) return { ok: false, motivo: "id_invalido" };
 
+  const filtroDestino = isDestinoWildcard(destinatario)
+    ? { "destinatario.tipo": destinatario.tipo }
+    : {
+        "destinatario.tipo": destinatario.tipo,
+        "destinatario.id": destinatario.id,
+      };
+
   const res = await db.collection("notificacoes").updateOne(
     {
       _id,
-      "destinatario.tipo": destinatario.tipo,
-      "destinatario.id": destinatario.id,
+      ...filtroDestino,
       lidoEm: null,
     },
     { $set: { lidoEm: new Date() } }
   );
 
-  return { ok: res.modifiedCount === 1 };
+  const ok = res.modifiedCount === 1;
+  if (ok) publicarAtualizacaoNotificacoes(destinatario);
+  return { ok };
 }
 
 export async function marcarTodasComoLidas(destinatario) {
   const db = await pegarDb();
+  const filtroDestino = isDestinoWildcard(destinatario)
+    ? { "destinatario.tipo": destinatario.tipo }
+    : {
+        "destinatario.tipo": destinatario.tipo,
+        "destinatario.id": destinatario.id,
+      };
+
   const res = await db.collection("notificacoes").updateMany(
     {
-      "destinatario.tipo": destinatario.tipo,
-      "destinatario.id": destinatario.id,
+      ...filtroDestino,
       lidoEm: null,
     },
     { $set: { lidoEm: new Date() } }
   );
+  if (res.modifiedCount > 0) publicarAtualizacaoNotificacoes(destinatario);
   return { ok: true, modified: res.modifiedCount };
+}
+
+export async function excluirNotificacoesPorChamadoId(chamadoId) {
+  const db = await pegarDb();
+  const chamadoIdSan = textoOuNulo(chamadoId, { max: 80 });
+  if (!chamadoIdSan) return { ok: false, deleted: 0 };
+
+  const docsDestinatarios = await db.collection("notificacoes")
+    .find(
+      { chamadoId: chamadoIdSan },
+      {
+        projection: {
+          _id: 0,
+          destinatario: 1,
+        },
+      },
+    )
+    .toArray();
+
+  const destinatarios = new Map();
+  (docsDestinatarios || []).forEach((doc) => {
+    const tipo = texto(doc?.destinatario?.tipo, { max: 20 }).toLowerCase();
+    const id = texto(doc?.destinatario?.id, { max: 80 });
+    if (!tipo || !id) return;
+    destinatarios.set(`${tipo}:${id}`, { tipo, id });
+  });
+
+  const res = await db.collection("notificacoes").deleteMany({
+    chamadoId: chamadoIdSan,
+  });
+
+  if (res.deletedCount > 0) {
+    for (const destino of destinatarios.values()) {
+      publicarAtualizacaoNotificacoes(destino);
+    }
+  }
+
+  return { ok: true, deleted: Number(res.deletedCount || 0) };
 }

@@ -31,6 +31,27 @@
         const fmtData = (d) => {
           try { return d ? new Date(d).toLocaleString("pt-BR") : "-"; } catch { return "-"; }
         };
+        const viewerIdAtual = String(usuarioSessao?.id || "").trim();
+        const viewerLoginAtual = String(usuarioSessao?.usuario || "").trim().toLowerCase();
+
+        const autorIdInteracao = (h) => {
+          const autor = h?.meta?.autor || {};
+          return String(autor?.id || autor?.tecnicoId || autor?.usuarioId || "").trim();
+        };
+
+        const classeLadoMensagem = (h) => {
+          const autorId = autorIdInteracao(h);
+          if (autorId && viewerIdAtual) {
+            return autorId === viewerIdAtual ? "is-mine" : "is-other";
+          }
+
+          const autorLogin = String(h?.meta?.autor?.login || h?.por || "").trim().toLowerCase();
+          if (autorLogin && viewerLoginAtual) {
+            return autorLogin === viewerLoginAtual ? "is-mine" : "is-other";
+          }
+
+          return "is-system";
+        };
 
         const autorLinha = (h) => {
           const a = h?.meta?.autor;
@@ -274,7 +295,7 @@
         <% } else { %>
           <div class="chat" data-chat-wrap>
             <% historico.forEach((h) => { %>
-              <div class="msg">
+              <div class="msg <%= classeLadoMensagem(h) %>">
                 <div class="msg-top">
                   <span class="msg-author"><%= autorLinha(h) %></span>
                   <span class="msg-type"><%= tipoLabel(h.tipo) %></span>
@@ -675,7 +696,44 @@
   .chat-empty { padding: 14px 16px; opacity:.8; }
 
   .chat { padding: 12px 14px; display:flex; flex-direction:column; gap:10px; max-height: 360px; overflow:auto; }
-  .msg { border: 1px solid rgba(15,31,55,.10); border-radius: 12px; padding: 10px 12px; background: rgba(15,31,55,.02); }
+  .msg {
+    border: 1px solid rgba(15,31,55,.10);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(15,31,55,.02);
+    width: fit-content;
+    min-width: min(280px, 100%);
+    max-width: min(82%, 760px);
+  }
+  .msg.is-mine {
+    align-self: flex-start;
+    background: #e8f2ff;
+    border-color: rgba(4, 76, 141, .22);
+  }
+  .msg.is-other {
+    align-self: flex-end;
+    background: #f5f7fb;
+    border-color: rgba(15,31,55,.14);
+  }
+  .msg.is-system {
+    align-self: center;
+    min-width: min(220px, 100%);
+    max-width: min(90%, 820px);
+    background: #eef2f7;
+    border-style: dashed;
+  }
+  body.app-layout.dark-mode .msg.is-mine {
+    background: #173051;
+    border-color: #3d6795;
+  }
+  body.app-layout.dark-mode .msg.is-other {
+    background: #112034;
+    border-color: #2f4663;
+  }
+  body.app-layout.dark-mode .msg.is-system {
+    background: #1a2d44;
+    border-color: #476181;
+  }
   .msg-top { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom: 6px; }
   .msg-author { font-weight: 800; font-size: 13px; }
   .msg-type { font-size: 12px; padding: 2px 8px; border-radius: 999px; border:1px solid rgba(15,31,55,.12); background:#fff; }
@@ -809,6 +867,10 @@
     .form-actions .button { width: 100%; justify-content: center; }
     .apoio-add-form { grid-template-columns: 1fr; }
     .apoio-add-form .button { width: 100%; justify-content: center; }
+    .msg {
+      min-width: 0;
+      max-width: 100%;
+    }
   }
 
   body.app-layout.dark-mode .avaliacao-admin-card {
@@ -961,9 +1023,10 @@
   startChamadoPoll({
     chamadoId: "<%= String(chamado._id) %>",
     viewerId: "<%= String(usuarioSessao?.id || '') %>",
+    viewerLogin: "<%= String(usuarioSessao?.usuario || '') %>",
     intervalMs: 1000,
     notifyOnlyWhenHidden: true,
-    reloadOnChange: true,
+    reloadOnChange: false,
   });
 
 </script>

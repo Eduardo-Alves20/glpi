@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import expressLayouts from "express-ejs-layouts";
@@ -10,6 +11,7 @@ import { garantirIndicesLogs } from "./src/repos/logsRepo.js";
 import { injetarLocalsLayout } from "./src/compartilhado/middlewares/viewLocals.js";
 import { conectarMongo, pegarDb } from "./src/compartilhado/db/mongo.js";
 import { montarRotas } from "./src/rotas/index.js";
+import { anexarWebSocketNotificacoes } from "./src/app/notificacoesWebSocket.js";
 
 import { criarAuditoriaRepo } from "./src/repos/auditoriaRepo.js";
 import { criarAuditoriaSeguranca } from "./src/compartilhado/middlewares/auditoria.js";
@@ -66,28 +68,30 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   console.warn("[warn] SESSION_SECRET ausente/fraca (ok em dev, não em produção).");
 }
 
-app.use(
-  session({
-    name: "glpi.sid",
-    secret: process.env.SESSION_SECRET || "dev-secret-troque-isso",
-    resave: false,
-    saveUninitialized: false,
-    rolling: true,
-    store: MongoStore.create({
-      mongoUrl: MONGO_URI,
-      dbName: MONGO_DB,
-      collectionName: "sessoes",
-      ttl: 60 * 60 * 8,
-      stringify: false,
-    }),
-    cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProd,
-      maxAge: 1000 * 60 * 60 * 8,
-    },
-  })
-);
+const sessionStore = MongoStore.create({
+  mongoUrl: MONGO_URI,
+  dbName: MONGO_DB,
+  collectionName: "sessoes",
+  ttl: 60 * 60 * 8,
+  stringify: false,
+});
+
+const sessionMiddleware = session({
+  name: "glpi.sid",
+  secret: process.env.SESSION_SECRET || "dev-secret-troque-isso",
+  resave: false,
+  saveUninitialized: false,
+  rolling: true,
+  store: sessionStore,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isProd,
+    maxAge: 1000 * 60 * 60 * 8,
+  },
+});
+
+app.use(sessionMiddleware);
 
 app.use(injetarLocalsLayout);
 
@@ -115,4 +119,6 @@ app.use((err, req, res, next) => {
 
 // --------- Start
 const porta = Number(process.env.PORT || 3000);
-app.listen(porta, () => console.log(`Rodando em http://localhost:${porta}/auth (env=${NODE_ENV})`));
+const server = http.createServer(app);
+anexarWebSocketNotificacoes({ server, sessionMiddleware });
+server.listen(porta, () => console.log(`Rodando em http://localhost:${porta}/auth (env=${NODE_ENV})`));

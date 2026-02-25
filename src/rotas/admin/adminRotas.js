@@ -8,6 +8,7 @@ import { acharPorId } from "../../repos/usuariosRepo.js";
 
 import {
   adminChamadosGet,
+  adminChamadoExcluirPost,
   adminHomeGet,
   adminTecnicosGet,
 } from "../../controllers/admin/adminController.js";
@@ -60,6 +61,7 @@ export function criarAdminRotas({ auditoria } = {}) {
 
   router.post("/admin/usuarios", usuariosCreatePost);
   router.post("/admin/usuarios/:id/editar", usuariosEditarPost);
+  router.post("/admin/chamados/:id/excluir", adminChamadoExcluirPost);
   router.post("/admin/categorias", categoriasCreatePost);
   router.post("/admin/categorias/:id/editar", categoriasEditarPost);
   router.post("/admin/categorias/:id/excluir", categoriasExcluirPost);

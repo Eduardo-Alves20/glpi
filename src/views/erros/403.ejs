@@ -1,0 +1,14 @@
+<div class="card" style="max-width:760px;margin:40px auto;padding:24px;">
+  <h1 style="margin:0 0 12px 0;"><%= titulo || "Acesso nao autorizado" %></h1>
+  <p style="margin:0 0 16px 0;">
+    <%= mensagem || "Voce nao tem permissao para acessar este recurso." %>
+  </p>
+
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <a class="btn" href="/app">Voltar</a>
+    <a class="btn btn-outline" href="/notificacoes">Notificacoes</a>
+    <form method="post" action="/logout" style="margin:0;">
+      <button class="btn btn-outline" type="submit">Sair</button>
+    </form>
+  </div>
+</div>
