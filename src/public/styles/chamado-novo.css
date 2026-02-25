@@ -149,3 +149,150 @@ textarea.form__input {
   justify-content: flex-end;
   flex-wrap: wrap;
 }
+
+.kb-suggest {
+  border: 1px solid #d8e6f5;
+  border-radius: 12px;
+  background: #f6fbff;
+  padding: 14px;
+  gap: 10px;
+}
+
+.kb-suggest__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kb-suggest__title {
+  margin: 0;
+  font-size: 16px;
+  color: #0f355c;
+}
+
+.kb-suggest__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #456380;
+}
+
+.kb-suggest__all {
+  min-width: 180px;
+}
+
+.kb-suggest__state {
+  font-size: 13px;
+  color: #486783;
+  border: 1px dashed #c4d9ef;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.kb-suggest__list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.kb-card {
+  border: 1px solid #d7e4f2;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.kb-card__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kb-card__tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid #c8daee;
+  background: #eef6ff;
+  color: #255683;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  text-transform: uppercase;
+}
+
+.kb-card__title {
+  color: #123d67;
+  font-size: 14px;
+}
+
+.kb-card__summary {
+  margin: 8px 0 0;
+  color: #355977;
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.kb-card__steps {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  color: #355977;
+  font-size: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.kb-card__actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kb-open-link,
+.kb-resolve-btn {
+  min-width: 130px;
+}
+
+body.app-layout.dark-mode .kb-suggest {
+  border-color: #2d4966;
+  background: #122339;
+}
+
+body.app-layout.dark-mode .kb-suggest__title {
+  color: #d8e8ff;
+}
+
+body.app-layout.dark-mode .kb-suggest__subtitle {
+  color: #9eb4cf;
+}
+
+body.app-layout.dark-mode .kb-suggest__state {
+  border-color: #355071;
+  background: #0f1d2f;
+  color: #b8cce6;
+}
+
+body.app-layout.dark-mode .kb-card {
+  border-color: #304a67;
+  background: #0f1d2f;
+}
+
+body.app-layout.dark-mode .kb-card__tag {
+  border-color: #3d6287;
+  background: #173150;
+  color: #bcd7fa;
+}
+
+body.app-layout.dark-mode .kb-card__title {
+  color: #dceaff;
+}
+
+body.app-layout.dark-mode .kb-card__summary,
+body.app-layout.dark-mode .kb-card__steps {
+  color: #afc4de;
+}

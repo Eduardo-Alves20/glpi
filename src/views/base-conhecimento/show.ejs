@@ -1,0 +1,37 @@
+<section class="base-page base-show-page">
+  <%- include("../partials/breadcrumb", {
+    crumbs: [
+      { label: "Home", href: "/app" },
+      { label: "Base de conhecimento", href: "/base-conhecimento" },
+      { label: artigo?.titulo || "Artigo" },
+    ],
+  }) %>
+
+  <header class="base-head">
+    <div>
+      <span class="base-item__tag"><%= artigo?.categoria || "Geral" %></span>
+      <h1 class="page-title"><%= artigo?.titulo || "-" %></h1>
+      <p class="page-subtitle"><%= artigo?.resumo || "" %></p>
+    </div>
+    <div class="base-show-actions">
+      <a class="button secondary" href="/base-conhecimento">Voltar</a>
+      <a class="button" href="/chamados/novo">Abrir chamado</a>
+    </div>
+  </header>
+
+  <% if (Array.isArray(artigo?.passos) && artigo.passos.length) { %>
+    <article class="table-card base-show-card">
+      <h2>Passos recomendados</h2>
+      <ol class="base-show-steps">
+        <% artigo.passos.forEach((passo) => { %>
+          <li><%= passo %></li>
+        <% }) %>
+      </ol>
+    </article>
+  <% } %>
+
+  <article class="table-card base-show-card">
+    <h2>Resumo do guia</h2>
+    <pre class="base-show-text"><%= artigo?.trecho || "Sem conteudo disponivel." %></pre>
+  </article>
+</section>

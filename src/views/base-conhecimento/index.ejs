@@ -1,0 +1,90 @@
+<section class="base-page content-with-pagination-wrapper">
+  <div class="content-with-pagination">
+    <%- include("../partials/breadcrumb", {
+      crumbs: [
+        { label: "Home", href: "/app" },
+        { label: "Base de conhecimento" },
+      ],
+    }) %>
+
+    <header class="base-head">
+      <div>
+        <h1 class="page-title">Base de conhecimento</h1>
+        <p class="page-subtitle">
+          Guias e passo a passo do FAQ para resolver solicitacoes comuns antes de abrir chamado.
+        </p>
+      </div>
+      <div class="base-kpis">
+        <div class="base-kpi">
+          <span>Total de artigos</span>
+          <strong><%= Number(stats?.total || totalBase || 0) %></strong>
+        </div>
+        <div class="base-kpi">
+          <span>Filtrados</span>
+          <strong><%= Number(totalFiltrados || 0) %></strong>
+        </div>
+      </div>
+    </header>
+
+    <% if (erroGeral) { %>
+      <div class="alert alert--danger"><%= erroGeral %></div>
+    <% } %>
+
+    <form class="table-card base-filtros" method="GET" action="/base-conhecimento">
+      <div class="base-filtros-grid">
+        <div class="base-filtro base-filtro--search">
+          <label for="q">Pesquisar</label>
+          <input id="q" name="q" value="<%= filtros?.q || "" %>" placeholder="Ex.: wifi, zimbra, impressora..." />
+        </div>
+        <div class="base-filtro">
+          <label for="limit">Itens por pagina</label>
+          <select id="limit" name="limit">
+            <% [10, 25, 50, 100].forEach((n) => { %>
+              <option value="<%= n %>" <%= Number(filtros?.limit || 10) === n ? "selected" : "" %>><%= n %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="base-filtros-actions">
+        <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+        <a class="button tertiary" href="/base-conhecimento">Limpar filtros</a>
+      </div>
+    </form>
+
+    <% if (!artigos || !artigos.length) { %>
+      <article class="table-card base-empty">
+        <h2>Nenhum artigo encontrado</h2>
+        <p>Tente outro termo de busca para ampliar os resultados.</p>
+      </article>
+    <% } else { %>
+      <section class="base-list">
+        <% artigos.forEach((artigo) => { %>
+          <article class="table-card base-item">
+            <div class="base-item__top">
+              <span class="base-item__tag"><%= artigo?.categoria || "Geral" %></span>
+              <h2><a href="/base-conhecimento/<%= artigo.slug %>"><%= artigo?.titulo || "-" %></a></h2>
+            </div>
+            <p><%= artigo?.resumo || "-" %></p>
+            <% if (Array.isArray(artigo?.passos) && artigo.passos.length) { %>
+              <ul class="base-item__steps">
+                <% artigo.passos.slice(0, 3).forEach((passo) => { %>
+                  <li><%= passo %></li>
+                <% }) %>
+              </ul>
+            <% } %>
+            <div class="base-item__actions">
+              <a class="button secondary" href="/base-conhecimento/<%= artigo.slug %>">Abrir guia</a>
+              <a class="button tertiary" href="/chamados/novo">Abrir chamado</a>
+            </div>
+          </article>
+        <% }) %>
+      </section>
+
+      <%- include("../partials/paginacao", {
+        basePath: "/base-conhecimento",
+        paginacao: paginacao,
+        query: paginacaoQuery || {},
+      }) %>
+    <% } %>
+  </div>
+</section>

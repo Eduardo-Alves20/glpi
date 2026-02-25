@@ -87,6 +87,24 @@
           ><%= valores?.descricao || '' %></textarea>
         </div>
 
+        <section class="kb-suggest form__field form__field--full" id="kbSuggest" aria-live="polite">
+          <header class="kb-suggest__head">
+            <div>
+              <h3 class="kb-suggest__title">Sugestoes da base de conhecimento</h3>
+              <p class="kb-suggest__subtitle">
+                Antes de abrir o chamado, veja se algum passo a passo ja resolve seu problema.
+              </p>
+            </div>
+            <a class="btn btn--ghost kb-suggest__all" href="/base-conhecimento">Abrir base completa</a>
+          </header>
+
+          <div id="kbSuggestState" class="kb-suggest__state">
+            Digite titulo e descricao para receber recomendacoes automaticas.
+          </div>
+
+          <div id="kbSuggestList" class="kb-suggest__list" hidden></div>
+        </section>
+
         <div class="form__field form__field--full">
           <label class="form__label" for="anexos">Anexos (opcional)</label>
           <input
@@ -100,6 +118,8 @@
           <small class="form__help">Permitidos: imagens, PDF e Office. Maximo 5 arquivos de ate 10MB cada.</small>
         </div>
       </div>
+
+      <input type="hidden" id="kbRefsInput" name="baseConhecimentoReferencias" value="" />
 
       <div class="form__actions">
         <button class="btn btn--primary" type="submit">Criar chamado</button>

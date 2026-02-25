@@ -63,6 +63,7 @@ export async function criarChamado({
   categoria,
   prioridade,
   anexos = [],
+  baseConhecimento = null,
 } = {}) {
   const db = pegarDb();
   const userOid = toObjectId(usuarioId, "usuarioId");
@@ -75,6 +76,14 @@ export async function criarChamado({
   const now = new Date();
   const numero = await nextChamadoNumero(db);
   const anexosSan = sanitizarAnexosHistorico(anexos);
+  const refsBaseConhecimento = Array.isArray(baseConhecimento?.referencias)
+    ? Array.from(new Set(
+      baseConhecimento.referencias
+        .map((item) => String(item || "").trim().toLowerCase())
+        .filter(Boolean)
+        .map((item) => item.slice(0, 120)),
+    )).slice(0, 12)
+    : [];
 
   const doc = {
     numero,
@@ -107,9 +116,21 @@ export async function criarChamado({
         em: now,
         por: String(usuarioLogin || "usuario"),
         mensagem: "Chamado criado",
-        meta: anexosSan.length ? { anexos: anexosSan } : {},
+        meta: {
+          ...(anexosSan.length ? { anexos: anexosSan } : {}),
+          ...(refsBaseConhecimento.length ? { baseConhecimento: { referencias: refsBaseConhecimento } } : {}),
+        },
       },
     ],
+    baseConhecimento: refsBaseConhecimento.length
+      ? {
+          referencias: refsBaseConhecimento,
+          sugeridoEm: now,
+        }
+      : {
+          referencias: [],
+          sugeridoEm: null,
+        },
     createdAt: now,
     updatedAt: now,
   };

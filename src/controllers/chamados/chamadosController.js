@@ -20,6 +20,19 @@ import {
   rotuloStatusChamado,
 } from "../../service/chamadosListaFiltrosService.js";
 
+function parseReferenciasBaseConhecimento(raw = "") {
+  const texto = String(raw || "").trim();
+  if (!texto) return [];
+
+  return Array.from(new Set(
+    texto
+      .split(",")
+      .map((item) => String(item || "").trim().toLowerCase())
+      .filter(Boolean)
+      .map((item) => item.slice(0, 120)),
+  )).slice(0, 12);
+}
+
 async function carregarClassificacoesChamados() {
   try {
     return await obterClassificacoesAtivasChamados();
@@ -45,6 +58,7 @@ export async function chamadoNovoGet(req, res) {
     titulo: "Abrir chamado",
     cssPortal: "/styles/usuario.css",
     cssExtra: "/styles/chamado-novo.css",
+    jsExtra: "/js/chamado-novo-kb.js",
     usuarioSessao,
     opcoesClassificacao: classificacoes,
     erroGeral: null,
@@ -63,6 +77,9 @@ export async function chamadoNovoPost(req, res) {
     categoria: String(req.body?.categoria ?? "").trim(),
     prioridade: String(req.body?.prioridade ?? "").trim(),
   };
+  const referenciasBaseConhecimento = parseReferenciasBaseConhecimento(
+    req.body?.baseConhecimentoReferencias,
+  );
   let chamadoCriado = null;
   let anexos = [];
 
@@ -90,6 +107,9 @@ export async function chamadoNovoPost(req, res) {
       usuarioNome: usuarioSessao.nome,
       usuarioLogin: usuarioSessao.usuario,
       anexos,
+      baseConhecimento: {
+        referencias: referenciasBaseConhecimento,
+      },
       ...valores,
     });
 
@@ -133,6 +153,7 @@ export async function chamadoNovoPost(req, res) {
         categoria: chamadoCriado.categoria,
         prioridade: chamadoCriado.prioridade,
         qtdAnexos: anexos.length,
+        qtdReferenciasBase: referenciasBaseConhecimento.length,
       },
     });
 
@@ -149,6 +170,7 @@ export async function chamadoNovoPost(req, res) {
       titulo: "Abrir chamado",
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamado-novo.css",
+      jsExtra: "/js/chamado-novo-kb.js",
       usuarioSessao,
       opcoesClassificacao: classificacoes,
       erroGeral: e?.message || "Nao foi possivel registrar o chamado.",

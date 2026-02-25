@@ -6,6 +6,10 @@ import { apiPollChamadoGet } from "../../controllers/api/apiChamadosController.j
 import { apiTecnicoInboxGet } from "../../controllers/api/apiTecnicoController.js";
 import { apiUsuarioInboxGet } from "../../controllers/api/apiUsuarioController.js";
 import { apiAdminHomeGet } from "../../controllers/api/apiAdminController.js";
+import {
+  apiBaseConhecimentoSugestoesGet,
+  apiBaseConhecimentoEventoPost,
+} from "../../controllers/api/apiBaseConhecimentoController.js";
 
 // +++ NOVO (notificações)
 import * as notif from "../../controllers/api/notificacoesController.js";
@@ -46,6 +50,8 @@ export function criarApiRotas({ auditoria } = {}) {
   router.get("/notificacoes/unread-count", notif.unreadCount);
   router.patch("/notificacoes/:id/lida", notif.marcarLida);
   router.post("/notificacoes/marcar-todas-lidas", notif.marcarTodas);
+  router.get("/base-conhecimento/sugestoes", apiBaseConhecimentoSugestoesGet);
+  router.post("/base-conhecimento/evento", apiBaseConhecimentoEventoPost);
 
   return router;
 }
