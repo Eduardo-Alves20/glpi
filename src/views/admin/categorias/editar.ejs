@@ -1,0 +1,91 @@
+<section class="usuarios-page categorias-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Editar classificacao</h1>
+          <p class="page-subtitle">Atualize nome, tipo, status e ordem da classificacao.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button secondary" href="/admin/categorias">Voltar</a>
+        </div>
+      </div>
+
+      <% if (erros && erros.length) { %>
+        <div class="alert alert-error">
+          <strong>Verifique os campos:</strong>
+          <ul>
+            <% erros.forEach((e) => { %>
+              <li><%= e %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form class="glpi-form" action="/admin/categorias/<%= classificacaoId %>/editar" method="POST" autocomplete="off">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" name="tipo" required>
+              <% (tiposClassificacao || []).forEach((tipo) => { %>
+                <option value="<%= tipo.value %>" <%= valores?.tipo === tipo.value ? 'selected' : '' %>><%= tipo.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="nome">Nome exibido</label>
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              placeholder="Ex.: Rede interna"
+              value="<%= (valores && valores.nome) ? valores.nome : '' %>"
+              required
+              maxlength="60"
+            />
+            <small class="hint">Nome que aparece para o usuario na tela.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="chave">Chave tecnica</label>
+            <input
+              id="chave"
+              name="chave"
+              type="text"
+              placeholder="Ex.: rede_interna"
+              value="<%= (valores && valores.chave) ? valores.chave : '' %>"
+              maxlength="60"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="ordem">Ordem</label>
+            <input
+              id="ordem"
+              name="ordem"
+              type="number"
+              min="0"
+              max="9999"
+              value="<%= Number.isFinite(Number(valores?.ordem)) ? Number(valores.ordem) : 100 %>"
+              required
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+              <option value="ativo" <%= (!valores || !valores.status || valores.status === 'ativo') ? 'selected' : '' %>>Ativo</option>
+              <option value="inativo" <%= (valores && valores.status === 'inativo') ? 'selected' : '' %>>Inativo</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="button" type="submit">Salvar alteracoes</button>
+          <a class="button tertiary" href="/admin/categorias">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

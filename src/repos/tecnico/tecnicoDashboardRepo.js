@@ -1,4 +1,10 @@
 import { listarChamados, contarChamados } from "../chamados/core/chamadosCoreRepo.js";
+import {
+  contarPorPerfil,
+  contarUsuariosBloqueados,
+  listarRecentes,
+  totalUsuarios,
+} from "../usuariosRepo.js";
 
 function fmtQuando(d) {
   if (!d) return "";
@@ -22,6 +28,11 @@ export async function obterHomeTecnicoData(tecnicoId) {
     aguardandoUsuario,
     criadosHoje,
     chamadosCriticos,
+    totalUsuariosCount,
+    totalTecnicos,
+    totalAdmins,
+    usuariosBloqueados,
+    ultimosUsuariosRaw,
   ] = await Promise.all([
     contarChamados({ status: "aberto" }),
     contarChamados({ status: "em_atendimento" }),
@@ -30,6 +41,11 @@ export async function obterHomeTecnicoData(tecnicoId) {
     contarChamados({ status: "aguardando_usuario" }),
     contarChamados({ createdFrom: hoje }),
     contarChamados({ prioridade: "alta", status: ["aberto", "em_atendimento", "aguardando_usuario"] }),
+    totalUsuarios(),
+    contarPorPerfil("tecnico"),
+    contarPorPerfil("admin"),
+    contarUsuariosBloqueados(),
+    listarRecentes(10),
   ]);
 
   const ultimosChamadosRaw = await listarChamados({ limit: 10 });
@@ -44,6 +60,12 @@ export async function obterHomeTecnicoData(tecnicoId) {
   }));
 
   const logs = [];
+  const ultimosUsuarios = (ultimosUsuariosRaw || []).slice(0, 5).map((u) => ({
+    id: String(u._id),
+    nome: String(u.nome || "-"),
+    perfil: String(u.perfil || "-"),
+    quando: fmtQuando(u.criadoEm || u.updatedAt),
+  }));
 
   return {
     kpis: {
@@ -57,8 +79,13 @@ export async function obterHomeTecnicoData(tecnicoId) {
       filaGeral,
       aguardandoUsuario,
       vencendoSla: 0,
+      totalUsuarios: totalUsuariosCount,
+      totalTecnicos,
+      totalAdmins,
+      usuariosBloqueados,
     },
     ultimosChamados,
+    ultimosUsuarios,
     logs,
   };
 }

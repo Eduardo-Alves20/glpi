@@ -1,0 +1,68 @@
+<%
+  const basePathSafe = String(basePath || "/").trim() || "/";
+  const pagina = paginacao || {};
+  const total = Math.max(0, Number(pagina.total || 0));
+  const pages = Math.max(1, Number(pagina.pages || 1));
+  const page = Math.min(pages, Math.max(1, Number(pagina.page || 1)));
+  const limit = Math.max(1, Number(pagina.limit || 10));
+  const from = total === 0 ? 0 : ((page - 1) * limit) + 1;
+  const to = total === 0 ? 0 : Math.min(page * limit, total);
+
+  const hasPrev = page > 1;
+  const hasNext = page < pages;
+
+  const prevParams = new URLSearchParams();
+  const nextParams = new URLSearchParams();
+  const querySafe = query || {};
+
+  Object.entries(querySafe).forEach(([key, value]) => {
+    if (key === "page") return;
+
+    if (value === null || value === undefined) return;
+    const text = String(value).trim();
+    if (text === "") return;
+
+    prevParams.set(key, text);
+    nextParams.set(key, text);
+  });
+
+  prevParams.set("page", String(Math.max(1, page - 1)));
+  nextParams.set("page", String(Math.min(pages, page + 1)));
+
+  const prevHref = `${basePathSafe}?${prevParams.toString()}`;
+  const nextHref = `${basePathSafe}?${nextParams.toString()}`;
+%>
+
+<div class="table-pagination" data-pagination>
+  <div class="table-pagination__summary">
+    <% if (total > 0) { %>
+      Mostrando <strong><%= from %></strong> a <strong><%= to %></strong> de <strong><%= total %></strong> registro(s).
+    <% } else { %>
+      Nenhum registro encontrado.
+    <% } %>
+  </div>
+
+  <div class="table-pagination__actions">
+    <a
+      class="button secondary table-pagination__link <%= hasPrev ? "" : "is-disabled" %>"
+      href="<%= hasPrev ? prevHref : "#" %>"
+      aria-disabled="<%= hasPrev ? "false" : "true" %>"
+      tabindex="<%= hasPrev ? "0" : "-1" %>"
+    >
+      Anterior
+    </a>
+
+    <span class="table-pagination__status">
+      Pagina <strong><%= page %></strong> de <strong><%= pages %></strong>
+    </span>
+
+    <a
+      class="button secondary table-pagination__link <%= hasNext ? "" : "is-disabled" %>"
+      href="<%= hasNext ? nextHref : "#" %>"
+      aria-disabled="<%= hasNext ? "false" : "true" %>"
+      tabindex="<%= hasNext ? "0" : "-1" %>"
+    >
+      Proxima
+    </a>
+  </div>
+</div>

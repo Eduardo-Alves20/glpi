@@ -1,0 +1,167 @@
+<div class="content-with-pagination-wrapper avaliacoes-page">
+  <div class="content-with-pagination">
+    <%- include("../partials/breadcrumb", {
+      crumbs: [
+        { label: "Home", href: "/app" },
+        { label: "Conta", href: "/usuario/perfil" },
+        { label: "Avaliacoes" },
+      ],
+    }) %>
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title"><%= head?.titulo || "Avaliacoes" %></h1>
+        <p class="page-subtitle"><%= head?.subtitulo || "" %></p>
+      </div>
+
+      <div class="avaliacoes-kpi">
+        <strong><%= Number(resumo?.media || 0).toFixed(1) %>/5</strong>
+        <span><%= Number(resumo?.total || 0) %> avaliacao(oes)</span>
+      </div>
+    </div>
+
+    <form method="GET" action="/usuario/avaliacoes" class="table-card avaliacoes-filtros-card">
+      <div class="avaliacoes-filtros-grid <%= modo === "admin" ? "is-admin" : "" %>">
+        <div class="avaliacoes-filtro-field avaliacoes-filtro-field--search">
+          <label for="filtro-q">Pesquisar</label>
+          <input id="filtro-q" name="q" value="<%= filtros?.q || "" %>" placeholder="Texto livre" />
+        </div>
+
+        <div class="avaliacoes-filtro-field">
+          <label for="filtro-nota-min">Nota minima</label>
+          <select id="filtro-nota-min" name="notaMin">
+            <option value="">Todas</option>
+            <% [5,4,3,2,1].forEach((n) => { %>
+              <option value="<%= n %>" <%= String(filtros?.notaMin || "") === String(n) ? "selected" : "" %>><%= n %>+</option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="avaliacoes-filtro-field">
+          <label for="filtro-periodo">Periodo</label>
+          <select id="filtro-periodo" name="periodo">
+            <option value="todos" <%= String(filtros?.periodo || "todos") === "todos" ? "selected" : "" %>>Todos</option>
+            <option value="7" <%= String(filtros?.periodo || "") === "7" ? "selected" : "" %>>Ultimos 7 dias</option>
+            <option value="30" <%= String(filtros?.periodo || "") === "30" ? "selected" : "" %>>Ultimos 30 dias</option>
+            <option value="90" <%= String(filtros?.periodo || "") === "90" ? "selected" : "" %>>Ultimos 90 dias</option>
+          </select>
+        </div>
+
+        <% if (modo === "admin") { %>
+          <div class="avaliacoes-filtro-field">
+            <label for="filtro-tecnico-login">Login tecnico</label>
+            <input id="filtro-tecnico-login" name="tecnicoLogin" value="<%= filtros?.tecnicoLogin || "" %>" />
+          </div>
+
+          <div class="avaliacoes-filtro-field">
+            <label for="filtro-avaliador-login">Login avaliador</label>
+            <input id="filtro-avaliador-login" name="avaliadorLogin" value="<%= filtros?.avaliadorLogin || "" %>" />
+          </div>
+        <% } %>
+
+        <div class="avaliacoes-filtro-field">
+          <label for="filtro-limit">Itens por pagina</label>
+          <select id="filtro-limit" name="limit">
+            <% [10, 25, 50, 100, 200].forEach((n) => { %>
+              <option value="<%= n %>" <%= Number(filtros?.limit || 10) === n ? "selected" : "" %>><%= n %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+
+      <div class="avaliacoes-filtros-actions">
+        <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+        <a class="button tertiary" href="/usuario/avaliacoes">Limpar filtros</a>
+      </div>
+    </form>
+
+    <div class="table-card avaliacoes-table-card">
+      <table class="table">
+        <thead>
+          <% if (modo === "admin") { %>
+            <tr>
+              <th style="width: 90px;">Nota</th>
+              <th style="width: 220px;">Chamado</th>
+              <th style="width: 190px;">Avaliador</th>
+              <th style="width: 190px;">Tecnico</th>
+              <th>Feedback e sugestao</th>
+              <th style="width: 180px;">Atualizado</th>
+            </tr>
+          <% } else if (modo === "tecnico") { %>
+            <tr>
+              <th style="width: 90px;">Nota</th>
+              <th>Feedback e sugestao</th>
+              <th style="width: 180px;">Atualizado</th>
+            </tr>
+          <% } else { %>
+            <tr>
+              <th style="width: 90px;">Nota</th>
+              <th style="width: 220px;">Chamado</th>
+              <th style="width: 200px;">Tecnico</th>
+              <th>Feedback e sugestao</th>
+              <th style="width: 180px;">Atualizado</th>
+            </tr>
+          <% } %>
+        </thead>
+        <tbody>
+          <% if (!dados?.itens?.length) { %>
+            <tr>
+              <td colspan="<%= modo === 'admin' ? 6 : (modo === 'tecnico' ? 3 : 5) %>" class="empty-row">Nenhuma avaliacao encontrada.</td>
+            </tr>
+          <% } else { %>
+            <% dados.itens.forEach((item) => { %>
+              <% const resumoTexto = item?.feedback || item?.sugestao || "Sem comentario adicional."; %>
+              <% const atualizadoEm = item?.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString("pt-BR") : "-"; %>
+
+              <% if (modo === "admin") { %>
+                <tr data-row-href="/tecnico/chamados/<%= item?.chamadoId %>">
+                  <td><strong><%= Number(item?.nota || 0).toFixed(1) %>/5</strong></td>
+                  <td>
+                    <div>#<%= item?.chamado?.numero || "-" %></div>
+                    <div class="muted"><%= item?.chamado?.titulo || "-" %></div>
+                  </td>
+                  <td>
+                    <div><%= item?.avaliador?.nome || "-" %></div>
+                    <div class="muted"><%= item?.avaliador?.login || "-" %></div>
+                  </td>
+                  <td>
+                    <div><%= item?.tecnico?.nome || "-" %></div>
+                    <div class="muted"><%= item?.tecnico?.login || "-" %></div>
+                  </td>
+                  <td><%= resumoTexto %></td>
+                  <td><%= atualizadoEm %></td>
+                </tr>
+              <% } else if (modo === "tecnico") { %>
+                <tr>
+                  <td><strong><%= Number(item?.nota || 0).toFixed(1) %>/5</strong></td>
+                  <td><%= resumoTexto %></td>
+                  <td><%= atualizadoEm %></td>
+                </tr>
+              <% } else { %>
+                <tr <%- item?.chamado?.id ? `data-row-href="/chamados/${item.chamado.id}"` : "" %>>
+                  <td><strong><%= Number(item?.nota || 0).toFixed(1) %>/5</strong></td>
+                  <td>
+                    <div>#<%= item?.chamado?.numero || "-" %></div>
+                    <div class="muted"><%= item?.chamado?.titulo || "-" %></div>
+                  </td>
+                  <td>
+                    <div><%= item?.tecnico?.nome || "-" %></div>
+                    <div class="muted"><%= item?.tecnico?.login || "-" %></div>
+                  </td>
+                  <td><%= resumoTexto %></td>
+                  <td><%= atualizadoEm %></td>
+                </tr>
+              <% } %>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <%- include("../partials/paginacao", {
+      basePath: "/usuario/avaliacoes",
+      paginacao: paginacao,
+      query: paginacaoQuery || {},
+    }) %>
+  </div>
+</div>

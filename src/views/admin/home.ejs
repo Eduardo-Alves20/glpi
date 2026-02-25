@@ -7,13 +7,6 @@
         Aqui esta um panorama rapido do GLPI.
       </p>
     </div>
-
-    <div class="home-header-actions">
-      <span id="last-update" class="home-updated">
-        Atualizado em: <%= new Date(serverTime || Date.now()).toLocaleString("pt-BR") %>
-      </span>
-      <a href="/admin" class="button secondary" style="text-decoration:none;">Atualizar</a>
-    </div>
   </div>
 
   <div class="kpi-band">
@@ -99,7 +92,7 @@
           <li class="empty">Nenhum chamado ainda.</li>
         <% } else { %>
           <% ultimosChamados.slice(0, 5).forEach((c) => { %>
-            <li class="clickable">
+            <li class="clickable" data-row-href="/tecnico/chamados/<%= c.id || c._id %>">
               <div class="highlight-title">#<%= c.numero %> - <%= c.titulo %></div>
               <div class="highlight-meta">
                 <span class="highlight-status"><%= c.status %></span>
@@ -165,8 +158,6 @@
   .home-dashboard { gap: 24px; }
   .home-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; }
   .home-header-text p { margin:0; color:#4a5668; }
-  .home-header-actions { display:flex; align-items:center; gap:12px; }
-  .home-updated { font-size:13px; color:#6c7a89; }
   .kpi-band { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; }
   .kpi-card { background:#fff; border:1px solid #e7ecf3; border-radius:10px; padding:16px 18px; box-shadow:0 4px 12px rgba(0,0,0,.05); }
   .kpi-card .kpi-title { font-size:13px; color:#4a5668; text-transform:uppercase; letter-spacing:.02em; }
@@ -201,4 +192,3 @@
 </style>
 
 <script type="module" src="/js/admin-live.js"></script>
-

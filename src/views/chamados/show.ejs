@@ -1,11 +1,11 @@
-<section class="usuarios-page">
+﻿<section class="usuarios-page">
   <div class="container">
     <div class="form-wrapper">
       <%
         const STATUS_UI = {
           aberto: { label: "Aberto", cls: "st-aberto" },
           em_atendimento: { label: "Em atendimento", cls: "st-atendimento" },
-          aguardando_usuario: { label: "Aguardando você", cls: "st-aguardando" },
+          aguardando_usuario: { label: "Aguardando voce", cls: "st-aguardando" },
           fechado: { label: "Fechado", cls: "st-fechado" },
         };
 
@@ -20,7 +20,7 @@
           (chamado.urgencia ? String(chamado.urgencia) : "-");
 
         const responsavelLabel =
-          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "-"));
+          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuido" : "-"));
 
         const solicitanteLabel =
           (chamado.criadoPor?.nome || chamado.criadoPor?.login || "-");
@@ -43,13 +43,34 @@
         };
 
         const tipoLabel = (t) => {
-          if (t === "solucao") return "Solução";
+          if (t === "solucao") return "Solucao";
           if (t === "mensagem") return "Mensagem";
           if (t === "status") return "Status";
-          if (t === "transferencia") return "Transferência";
-          if (t === "criacao") return "Criação";
-          if (t === "atribuicao") return "Atribuição";
+          if (t === "transferencia") return "Transferencia";
+          if (t === "criacao") return "Criacao";
+          if (t === "atribuicao") return "Atribuicao";
           return t ? String(t) : "Evento";
+        };
+
+        const destinoTransferencia = (h) => {
+          const tipo = String(h?.tipo || "");
+          if (!["transferencia", "atribuicao"].includes(tipo)) return "";
+
+          const meta = h?.meta || {};
+          if (meta?.responsavelId === null) {
+            return "Destino: fila (sem responsavel)";
+          }
+
+          const id = String(meta?.responsavelId || "").trim();
+          const nome = String(meta?.responsavelNome || "").trim();
+          const login = String(meta?.responsavelLogin || "").trim();
+
+          if (nome && login) return `Destino: ${nome} (${login})`;
+          if (nome) return `Destino: ${nome}`;
+          if (login) return `Destino: ${login}`;
+          if (id) return "Destino: tecnico atribuido";
+
+          return "";
         };
 
         const normalizarExt = (s) => {
@@ -98,8 +119,10 @@
           return `${(b / (1024 * 1024)).toFixed(1)} MB`;
         };
 
-        const podeComentar = chamado.status !== "fechado";
         const podeConfirmar = chamado.status === "aguardando_usuario";
+        const podeComentar = chamado.status !== "fechado" && !podeConfirmar;
+        const avaliacao = avaliacaoChamado || null;
+        const notaAtual = Number(avaliacao?.nota || 0);
       %>
 
       <div class="page-header">
@@ -114,7 +137,7 @@
 
           <div class="subrow">
             <span class="meta"><strong>Solicitante:</strong> <%= solicitanteLabel %></span>
-            <span class="meta"><strong>Responsável:</strong> <%= responsavelLabel %></span>
+            <span class="meta"><strong>Responsavel:</strong> <%= responsavelLabel %></span>
           </div>
         </div>
 
@@ -126,7 +149,7 @@
       <div class="glpi-form">
         <div class="form-grid">
           <div class="form-field">
-            <label>Título</label>
+            <label>Titulo</label>
             <input type="text" value="<%= chamado.titulo %>" disabled />
           </div>
 
@@ -136,7 +159,7 @@
           </div>
 
           <div class="form-field" style="grid-column: 1 / -1;">
-            <label>Descrição</label>
+            <label>Descricao</label>
             <textarea rows="6" disabled><%= chamado.descricao %></textarea>
           </div>
         </div>
@@ -144,12 +167,12 @@
 
       <div class="chat-wrap">
         <div class="chat-head">
-          <h2 class="chat-title">Interações</h2>
-          <span class="chat-sub">Acompanhe as mensagens dos técnicos e suas respostas.</span>
+          <h2 class="chat-title">Interacoes</h2>
+          <span class="chat-sub">Acompanhe as mensagens dos tecnicos e suas respostas.</span>
         </div>
 
         <% if (!historico.length) { %>
-          <div class="chat-empty">Nenhuma interação ainda.</div>
+          <div class="chat-empty">Nenhuma interacao ainda.</div>
         <% } else { %>
           <div class="chat" data-chat-wrap>
             <% historico.forEach((h) => { %>
@@ -161,6 +184,11 @@
                 </div>
 
                 <div class="msg-body"><%= h.mensagem || "-" %></div>
+
+                <% const destino = destinoTransferencia(h); %>
+                <% if (destino) { %>
+                  <div class="msg-extra"><%= destino %></div>
+                <% } %>
 
                 <% const anexosMsg = anexosDaInteracao(h); %>
                 <% if (anexosMsg.length) { %>
@@ -197,14 +225,48 @@
       </div>
 
       <% if (podeConfirmar) { %>
-        <div class="user-actions">
-          <form method="POST" action="/chamados/<%= chamado._id %>/confirmar">
-            <button class="button" type="submit">Confirmar e fechar</button>
-          </form>
-
-          <form method="POST" action="/chamados/<%= chamado._id %>/reabrir" class="reabrir-form">
-            <input type="text" name="comentario" minlength="5" required placeholder="Explique por que está reabrindo..." />
-            <button class="button secondary" type="submit">Reabrir</button>
+        <div class="user-decision">
+          <h3 class="user-decision__title">Validar solucao</h3>
+          <p class="user-decision__hint">Motivo opcional para confirmar e obrigatorio para reabrir.</p>
+          <form
+            method="POST"
+            action="/chamados/<%= chamado._id %>/confirmar"
+            class="user-decision__form"
+            id="userDecisionForm"
+            enctype="multipart/form-data"
+          >
+            <input
+              id="comentarioDecisao"
+              type="text"
+              name="comentario"
+              maxlength="2000"
+              autocomplete="off"
+              placeholder="Informe o motivo da decisao..."
+            />
+            <div class="form-field">
+              <label for="anexosDecisao">Anexar prova (opcional)</label>
+              <input
+                id="anexosDecisao"
+                name="anexos"
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp"
+              />
+              <small class="hint">Voce pode anexar evidencias de erro ou de que a solucao nao funcionou. Maximo 5 arquivos de ate 10MB.</small>
+            </div>
+            <div class="user-decision__actions">
+              <button class="button" type="submit" formaction="/chamados/<%= chamado._id %>/confirmar">
+                Confirmar e fechar
+              </button>
+              <button
+                class="button secondary"
+                type="submit"
+                formaction="/chamados/<%= chamado._id %>/reabrir"
+                data-reabrir-button="true"
+              >
+                Reabrir
+              </button>
+            </div>
           </form>
         </div>
       <% } %>
@@ -239,8 +301,85 @@
             <button class="button" type="submit">Enviar mensagem</button>
           </div>
         </form>
+      <% } else if (podeConfirmar) { %>
+        <div class="hint muted user-decision-note">Use os botoes acima para confirmar ou reabrir o chamado.</div>
       <% } else { %>
-        <div class="hint muted" style="margin-top:14px;">Este chamado está fechado. Se precisar, reabra o chamado.</div>
+        <div class="hint muted" style="margin-top:14px;">Este chamado esta fechado. Se precisar, reabra o chamado.</div>
+      <% } %>
+
+      <% if (chamado.status === "fechado" && podeAvaliarChamado && String(usuarioSessao?.perfil || "").toLowerCase() === "usuario") { %>
+        <div class="avaliacao-card">
+          <h3 class="avaliacao-title">Avaliacao do atendimento</h3>
+          <p class="avaliacao-hint">
+            Sua nota vai para o tecnico de forma anonima (sem identificar usuario e chamado).
+            O admin visualiza os detalhes completos para auditoria.
+          </p>
+
+          <% if (!avaliacao) { %>
+            <form method="POST" action="/chamados/<%= chamado._id %>/avaliacao" class="avaliacao-form" autocomplete="off">
+              <fieldset class="avaliacao-stars-fieldset">
+                <legend>Nota (1 a 5)</legend>
+                <div class="avaliacao-stars" role="radiogroup" aria-label="Nota do atendimento">
+                  <% [5,4,3,2,1].forEach((n) => { %>
+                    <input
+                      type="radio"
+                      id="nota-<%= n %>"
+                      name="nota"
+                      value="<%= n %>"
+                      required
+                    />
+                    <label for="nota-<%= n %>" title="<%= n %> estrela(s)">&#9733;</label>
+                  <% }) %>
+                </div>
+              </fieldset>
+              <div class="form-field">
+                <label for="feedbackAvaliacao">Feedback para o tecnico (opcional)</label>
+                <textarea
+                  id="feedbackAvaliacao"
+                  name="feedback"
+                  rows="3"
+                  maxlength="1500"
+                  placeholder="Ex.: atendimento rapido, comunicacao clara..."
+                ></textarea>
+              </div>
+              <div class="form-field">
+                <label for="sugestaoAvaliacao">Sugestao de melhoria (opcional)</label>
+                <textarea
+                  id="sugestaoAvaliacao"
+                  name="sugestao"
+                  rows="3"
+                  maxlength="1500"
+                  placeholder="Ex.: poderia detalhar mais os passos da solucao..."
+                ></textarea>
+              </div>
+              <div class="form-actions">
+                <button class="button" type="submit">Enviar avaliacao</button>
+              </div>
+            </form>
+          <% } else { %>
+            <div class="avaliacao-readonly">
+              <div class="avaliacao-readonly__head">
+                <strong>Sua avaliacao:</strong>
+                <span class="avaliacao-readonly__score"><%= notaAtual.toFixed(1) %>/5</span>
+              </div>
+              <div class="avaliacao-stars-static" aria-label="Nota enviada de <%= notaAtual.toFixed(1) %> de 5">
+                <% for (let i = 1; i <= 5; i += 1) { %>
+                  <span class="star <%= i <= Math.round(notaAtual) ? "is-on" : "" %>" aria-hidden="true">&#9733;</span>
+                <% } %>
+              </div>
+              <% if (avaliacao.feedback) { %>
+                <p><strong>Feedback:</strong> <%= avaliacao.feedback %></p>
+              <% } %>
+              <% if (avaliacao.sugestao) { %>
+                <p><strong>Sugestao:</strong> <%= avaliacao.sugestao %></p>
+              <% } %>
+              <% if (!avaliacao.feedback && !avaliacao.sugestao) { %>
+                <p class="muted">Sem comentario adicional.</p>
+              <% } %>
+              <p class="avaliacao-readonly__hint">Avaliacao registrada. Nao e possivel alterar.</p>
+            </div>
+          <% } %>
+        </div>
       <% } %>
     </div>
   </div>
@@ -297,6 +436,7 @@
   .msg-type { font-size: 12px; padding: 2px 8px; border-radius: 999px; border:1px solid rgba(15,31,55,.12); background:#fff; }
   .msg-time { margin-left:auto; font-size: 12px; opacity: .75; }
   .msg-body { white-space: pre-wrap; font-size: 13px; line-height: 1.4; }
+  .msg-extra { margin-top: 6px; font-size: 12px; opacity: .85; font-weight: 600; }
 
   .anexos { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
   .anexo-item { border: 1px solid rgba(15,31,55,.1); border-radius: 10px; padding: 8px; background: rgba(15,31,55,.02); }
@@ -305,19 +445,50 @@
   .anexo-preview-img { margin-top: 8px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(15,31,55,.14); }
   .anexo-preview-pdf { margin-top: 8px; width: 100%; min-height: 320px; border: 1px solid rgba(15,31,55,.14); border-radius: 8px; background: #fff; }
 
-  .user-actions {
+  .user-decision {
     margin-top: 14px;
-    display:flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
+    border: 1px solid rgba(15,31,55,.12);
+    border-radius: 12px;
+    background: rgba(15,31,55,.03);
+    padding: 14px;
   }
-  .reabrir-form { display:flex; gap: 10px; flex: 1; min-width: 260px; }
-  .reabrir-form input {
-    flex: 1;
+  .user-decision__title {
+    margin: 0;
+    font-size: 16px;
+    color: #123;
+  }
+  .user-decision__hint {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #5b6c80;
+  }
+  .user-decision__form {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .user-decision__form input {
+    width: 100%;
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid rgba(15,31,55,.14);
+    background: #fff;
+  }
+  .user-decision__actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .user-decision__actions .button {
+    min-width: 190px;
+    justify-content: center;
+  }
+  .user-decision-note {
+    margin-top: 10px;
+    text-align: center;
   }
 
   .form-actions {
@@ -328,12 +499,180 @@
   }
 
   .muted { opacity: .75; }
+
+  .avaliacao-card {
+    margin-top: 14px;
+    border: 1px solid rgba(15,31,55,.12);
+    border-radius: 12px;
+    background: rgba(15,31,55,.03);
+    padding: 14px;
+  }
+  .avaliacao-title {
+    margin: 0;
+    font-size: 16px;
+    color: #123;
+  }
+  .avaliacao-hint {
+    margin: 6px 0 10px;
+    font-size: 12px;
+    color: #5b6c80;
+    line-height: 1.4;
+  }
+  .avaliacao-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .avaliacao-stars-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .avaliacao-stars-fieldset legend {
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #17324d;
+  }
+  .avaliacao-stars {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 4px;
+  }
+  .avaliacao-stars input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .avaliacao-stars label {
+    font-size: 28px;
+    line-height: 1;
+    color: #c8d4e3;
+    cursor: pointer;
+    transition: transform .12s ease, color .12s ease;
+  }
+  .avaliacao-stars label:hover,
+  .avaliacao-stars label:hover ~ label {
+    color: #f5b301 !important;
+    transform: translateY(-1px);
+  }
+  .avaliacao-stars input:checked + label,
+  .avaliacao-stars input:checked + label ~ label {
+    color: #f5b301 !important;
+  }
+  .avaliacao-stars input:focus-visible + label {
+    outline: 2px solid rgba(4, 76, 141, .35);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  body.app-layout.dark-mode .avaliacao-card {
+    border-color: #2f4663;
+    background: #132235;
+  }
+  body.app-layout.dark-mode .avaliacao-title {
+    color: #dbe9ff;
+  }
+  body.app-layout.dark-mode .avaliacao-hint,
+  body.app-layout.dark-mode .avaliacao-stars-fieldset legend {
+    color: #9cb0cb;
+  }
+  body.app-layout.dark-mode .avaliacao-stars label {
+    color: #365170;
+  }
+  body.app-layout.dark-mode .avaliacao-stars label:hover,
+  body.app-layout.dark-mode .avaliacao-stars label:hover ~ label,
+  body.app-layout.dark-mode .avaliacao-stars input:checked + label,
+  body.app-layout.dark-mode .avaliacao-stars input:checked + label ~ label {
+    color: #f8ca40 !important;
+  }
+  .avaliacao-readonly {
+    border: 1px solid rgba(15,31,55,.12);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .avaliacao-readonly__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .avaliacao-readonly__score {
+    font-weight: 700;
+    color: #0f4d7b;
+  }
+  .avaliacao-stars-static {
+    display: inline-flex;
+    gap: 4px;
+    font-size: 24px;
+    line-height: 1;
+  }
+  .avaliacao-stars-static .star {
+    color: #c8d4e3;
+  }
+  .avaliacao-stars-static .star.is-on {
+    color: #f5b301;
+  }
+  .avaliacao-readonly p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .avaliacao-readonly__hint {
+    font-size: 12px;
+    color: #5b6c80;
+  }
+  body.app-layout.dark-mode .avaliacao-readonly {
+    border-color: #2f4663;
+    background: #102133;
+  }
+  body.app-layout.dark-mode .avaliacao-readonly__score {
+    color: #dbe8fc;
+  }
+  body.app-layout.dark-mode .avaliacao-stars-static .star {
+    color: #365170;
+  }
+  body.app-layout.dark-mode .avaliacao-stars-static .star.is-on {
+    color: #f8ca40;
+  }
+  body.app-layout.dark-mode .avaliacao-readonly p {
+    color: #d5e4fb;
+  }
+  body.app-layout.dark-mode .avaliacao-readonly__hint {
+    color: #9cb0cb;
+  }
+
   @media (max-width: 900px) {
     .usuarios-page .form-wrapper { padding: 18px; }
     .form-actions .button { width: 100%; justify-content: center; }
-    .reabrir-form { flex-direction: column; }
+    .user-decision__actions { flex-direction: column; }
+    .user-decision__actions .button { width: 100%; }
   }
 </style>
+<script>
+  (function () {
+    const form = document.getElementById("userDecisionForm");
+    const input = document.getElementById("comentarioDecisao");
+    if (!form) return;
+
+    form.addEventListener("submit", (event) => {
+      const btn = event.submitter;
+      if (!btn || btn.getAttribute("data-reabrir-button") !== "true") return;
+
+      const texto = String(input?.value || "").trim();
+      if (texto.length >= 5) return;
+
+      event.preventDefault();
+      if (input) input.focus();
+      alert("Para reabrir, informe um motivo com no minimo 5 caracteres.");
+    });
+  })();
+</script>
 <script type="module">
   import { startChamadoPoll } from "/js/chamado-poll.js";
   startChamadoPoll({
@@ -341,5 +680,8 @@
     viewerId: "<%= String(usuarioSessao?.id || '') %>",
     intervalMs: 1000,
     notifyOnlyWhenHidden: true,
+    reloadOnChange: true,
   });
 </script>
+
+

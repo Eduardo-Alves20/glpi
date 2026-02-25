@@ -41,6 +41,11 @@ function usuarioLogPayload(usuario) {
 
 export function authGet(req, res) {
   if (req.session?.usuario) return res.redirect("/app");
+  if (String(req.query?.reason || "").trim() === "senha_alterada") {
+    return renderLogin(res, {
+      flash: { tipo: "info", mensagem: "Senha alterada. Faca login novamente." },
+    });
+  }
   return renderLogin(res);
 }
 
@@ -254,4 +259,3 @@ export function appGet(req, res) {
   if (perfil === "tecnico") return res.redirect(TECNICO_HOME);
   return res.redirect("/usuario");
 }
-

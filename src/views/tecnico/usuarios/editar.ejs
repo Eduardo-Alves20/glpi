@@ -1,0 +1,290 @@
+<section class="usuarios-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Editar usuario</h1>
+          <p class="page-subtitle">Atualize dados permitidos para o perfil tecnico.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button secondary" href="/tecnico/usuarios">Voltar</a>
+        </div>
+      </div>
+
+      <% if (erros && erros.length) { %>
+        <div class="alert alert-error">
+          <strong>Verifique os campos:</strong>
+          <ul>
+            <% erros.forEach((e) => { %>
+              <li><%= e %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form class="glpi-form" id="formEditarUsuarioTecnico" action="/tecnico/usuarios/<%= usuarioId %>/editar" method="POST" autocomplete="off">
+        <input type="hidden" id="usuario" name="usuario" value="<%= (valores && valores.usuario) ? valores.usuario : '' %>" />
+        <input type="hidden" id="confirmarAlteracaoLogin" name="confirmarAlteracaoLogin" value="0" />
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="nome">Nome completo</label>
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              placeholder="Ex.: Eduardo Fernando Silva Alves"
+              value="<%= (valores && valores.nome) ? valores.nome : '' %>"
+              required
+              maxlength="120"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="usuarioView">Usuario (login)</label>
+            <div class="login-lock-row">
+              <input
+                id="usuarioView"
+                type="text"
+                placeholder="Ex.: ealves"
+                value="<%= (valores && valores.usuario) ? valores.usuario : '' %>"
+                required
+                maxlength="40"
+                disabled
+              />
+              <button class="button secondary login-lock-btn" id="btnAlterarLogin" type="button">
+                Alterar login
+              </button>
+            </div>
+            <small class="hint">Campo bloqueado por seguranca. Clique em Alterar login para desbloquear.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="email">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Ex.: ealves@cge.rj.gov.br"
+              value="<%= (valores && valores.email) ? valores.email : '' %>"
+              required
+              maxlength="120"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="perfil">Perfil</label>
+            <select id="perfil" name="perfil" required>
+              <option value="">Selecione...</option>
+              <option value="tecnico" <%= (valores && valores.perfil === 'tecnico') ? 'selected' : '' %>>Tecnico</option>
+              <option value="usuario" <%= (valores && valores.perfil === 'usuario') ? 'selected' : '' %>>Usuario</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+              <option value="ativo" <%= (!valores || !valores.status || valores.status === 'ativo') ? 'selected' : '' %>>Ativo</option>
+              <option value="bloqueado" <%= (valores && valores.status === 'bloqueado') ? 'selected' : '' %>>Bloqueado</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="senhaTemporaria">Nova senha (opcional)</label>
+            <input
+              id="senhaTemporaria"
+              name="senhaTemporaria"
+              type="password"
+              placeholder="Preencha para redefinir a senha"
+              minlength="8"
+              maxlength="72"
+            />
+            <small class="hint">Minimo 8 caracteres. Se preencher, confirme no campo abaixo.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="senhaTemporariaConfirmacao">Confirmar nova senha</label>
+            <input
+              id="senhaTemporariaConfirmacao"
+              name="senhaTemporariaConfirmacao"
+              type="password"
+              placeholder="Repita a nova senha"
+              minlength="8"
+              maxlength="72"
+            />
+            <small class="hint">Ao alterar senha, todas as sessoes deste usuario serao revogadas.</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="button" type="submit">Salvar alteracoes</button>
+          <a class="button tertiary" href="/tecnico/usuarios">Cancelar</a>
+        </div>
+      </form>
+
+      <div class="confirm-login-modal" id="confirmLoginModal" hidden>
+        <div class="confirm-login-modal__backdrop"></div>
+        <div class="confirm-login-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="confirmLoginTitulo">
+          <div class="confirm-login-modal__header">
+            <h2 id="confirmLoginTitulo">Confirmar alteracao de login</h2>
+          </div>
+          <p class="confirm-login-modal__text">
+            Alterar login pode impactar acesso e rastreabilidade. Deseja liberar este campo para edicao?
+          </p>
+          <div class="confirm-login-modal__actions">
+            <button type="button" class="button secondary" id="btnCancelarAlterarLogin">Cancelar</button>
+            <button type="button" class="button" id="btnConfirmarAlterarLogin">Sim, alterar login</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .login-lock-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .login-lock-btn {
+    min-height: 42px;
+    white-space: nowrap;
+  }
+
+  .confirm-login-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1800;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .confirm-login-modal[hidden] {
+    display: none !important;
+  }
+
+  .confirm-login-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(7, 20, 36, 0.58);
+  }
+
+  .confirm-login-modal__dialog {
+    position: relative;
+    width: min(520px, 100%);
+    background: #fff;
+    border: 1px solid rgba(15, 31, 55, .14);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 22px 44px rgba(15, 31, 55, .24);
+  }
+
+  .confirm-login-modal__header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #10263f;
+  }
+
+  .confirm-login-modal__text {
+    margin: 10px 0 0;
+    color: #425b75;
+    line-height: 1.45;
+  }
+
+  .confirm-login-modal__actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  body.app-layout.dark-mode .confirm-login-modal__dialog {
+    background: #12233a;
+    border-color: #2f4663;
+  }
+
+  body.app-layout.dark-mode .confirm-login-modal__header h2 {
+    color: #e6efff;
+  }
+
+  body.app-layout.dark-mode .confirm-login-modal__text {
+    color: #a9bdd8;
+  }
+</style>
+
+<script>
+  (function () {
+    const form = document.getElementById("formEditarUsuarioTecnico");
+    const loginView = document.getElementById("usuarioView");
+    const loginHidden = document.getElementById("usuario");
+    const flagConfirmacao = document.getElementById("confirmarAlteracaoLogin");
+    const btnAbrir = document.getElementById("btnAlterarLogin");
+    const modal = document.getElementById("confirmLoginModal");
+    const btnCancelar = document.getElementById("btnCancelarAlterarLogin");
+    const btnConfirmar = document.getElementById("btnConfirmarAlterarLogin");
+    const senha = document.getElementById("senhaTemporaria");
+    const senhaConf = document.getElementById("senhaTemporariaConfirmacao");
+
+    if (!form || !loginView || !loginHidden || !flagConfirmacao || !btnAbrir || !modal) return;
+
+    function abrirModal() {
+      modal.hidden = false;
+    }
+
+    function fecharModal() {
+      modal.hidden = true;
+    }
+
+    function validarSenhaConfirmacao() {
+      const senhaValor = String(senha?.value || "");
+      const confValor = String(senhaConf?.value || "");
+
+      if (!senhaConf) return;
+
+      if (!senhaValor && !confValor) {
+        senhaConf.setCustomValidity("");
+        return;
+      }
+
+      if (senhaValor !== confValor) {
+        senhaConf.setCustomValidity("A confirmacao da senha nao confere.");
+        return;
+      }
+
+      senhaConf.setCustomValidity("");
+    }
+
+    btnAbrir.addEventListener("click", abrirModal);
+    btnCancelar?.addEventListener("click", fecharModal);
+    modal.querySelector(".confirm-login-modal__backdrop")?.addEventListener("click", fecharModal);
+
+    btnConfirmar?.addEventListener("click", () => {
+      loginView.disabled = false;
+      loginView.focus();
+      flagConfirmacao.value = "1";
+      btnAbrir.disabled = true;
+      btnAbrir.textContent = "Login liberado";
+      fecharModal();
+    });
+
+    loginView.addEventListener("input", () => {
+      loginHidden.value = String(loginView.value || "").trim().toLowerCase();
+    });
+
+    senha?.addEventListener("input", validarSenhaConfirmacao);
+    senhaConf?.addEventListener("input", validarSenhaConfirmacao);
+
+    form.addEventListener("submit", (event) => {
+      loginHidden.value = String(loginView.value || "").trim().toLowerCase();
+      validarSenhaConfirmacao();
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        form.reportValidity();
+      }
+    });
+  })();
+</script>

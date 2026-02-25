@@ -19,7 +19,8 @@ import {
   usuarioChamadoShowGet,
   usuarioChamadoConfirmarPost,
   usuarioChamadoReabrirPost,
-  usuarioChamadoInteracaoPost
+  usuarioChamadoInteracaoPost,
+  usuarioChamadoAvaliacaoPost,
 } from "../../controllers/chamados/chamadoUsuarioController.js";
 
 
@@ -38,11 +39,12 @@ router.get("/chamados/meus", meusChamadosGet);
 router.get("/anexos/:anexoId", baixarAnexoGet);
   router.get("/chamados/novo", chamadoNovoGet);
   router.post("/chamados/novo", uploadAnexos, chamadoNovoPost);
-  router.get("/chamados/:id/editar", chamadoEditarGet);
+router.get("/chamados/:id/editar", chamadoEditarGet);
 router.post("/chamados/:id/editar", chamadoEditarPost);
 router.get("/chamados/:id", usuarioChamadoShowGet);
-router.post("/chamados/:id/confirmar", usuarioChamadoConfirmarPost);
-router.post("/chamados/:id/reabrir", usuarioChamadoReabrirPost);
+router.post("/chamados/:id/confirmar", uploadAnexos, usuarioChamadoConfirmarPost);
+router.post("/chamados/:id/reabrir", uploadAnexos, usuarioChamadoReabrirPost);
 router.post("/chamados/:id/interacao", uploadAnexos, usuarioChamadoInteracaoPost);
+router.post("/chamados/:id/avaliacao", usuarioChamadoAvaliacaoPost);
   return router;
 }

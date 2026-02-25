@@ -1,0 +1,263 @@
+.tecnicos-admin-page .form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tecnicos-admin-page .usuarios-filters-card {
+  background: #ffffff;
+  border: 1px solid #e6edf5;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 5px 16px rgba(15, 31, 55, 0.06);
+}
+
+.tecnicos-admin-page .usuarios-filters-grid {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+}
+
+.tecnicos-admin-page .usuarios-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tecnicos-admin-page .usuarios-filter-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #294a6d;
+}
+
+.tecnicos-admin-page .usuarios-filter-field input,
+.tecnicos-admin-page .usuarios-filter-field select {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #ccd9ea;
+  background: #ffffff;
+  padding: 0 10px;
+  font-size: 13px;
+  color: #0f355c;
+}
+
+.tecnicos-admin-page .usuarios-filter-field input:focus,
+.tecnicos-admin-page .usuarios-filter-field select:focus {
+  outline: none;
+  border-color: #84acd3;
+  box-shadow: 0 0 0 3px rgba(4, 76, 141, 0.14);
+}
+
+.tecnicos-admin-page .usuarios-filters-actions {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tecnicos-admin-page .tecnicos-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.tecnicos-admin-page .tecnicos-kpi {
+  background: #ffffff;
+  border: 1px solid #e6edf5;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 5px 16px rgba(15, 31, 55, 0.06);
+}
+
+.tecnicos-admin-page .tecnicos-kpi__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #55718f;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tecnicos-admin-page .tecnicos-kpi__value {
+  margin-top: 8px;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 800;
+  color: #0a3f73;
+}
+
+.tecnicos-admin-page .tecnicos-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.tecnicos-admin-page .tecnicos-insight-card {
+  background: #ffffff;
+  border: 1px solid #e6edf5;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.tecnicos-admin-page .tecnicos-insight-card h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #123;
+}
+
+.tecnicos-admin-page .tecnicos-insight-card p {
+  margin: 0;
+  color: #495f7a;
+  font-size: 13px;
+}
+
+.tecnicos-admin-page .tecnicos-insight-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #495f7a;
+  font-size: 13px;
+}
+
+.tecnicos-admin-page .tecnicos-insight-list li + li {
+  margin-top: 6px;
+}
+
+.tecnicos-admin-page .tecnicos-filters-grid {
+  grid-template-columns: minmax(260px, 1.6fr) repeat(5, minmax(130px, 1fr));
+}
+
+.tecnicos-admin-page .table-wrapper {
+  border: 1px solid #e6edf5;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: auto;
+}
+
+.tecnicos-admin-page .table thead th,
+.tecnicos-admin-page .table tbody td {
+  font-size: 13px;
+}
+
+.tecnicos-admin-page .tecnico-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tecnicos-admin-page .tecnico-cell strong {
+  color: #16395d;
+}
+
+.tecnicos-admin-page .tecnico-cell span {
+  color: #5b6f87;
+  font-size: 12px;
+}
+
+.tecnicos-admin-page .status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+}
+
+.tecnicos-admin-page .status-pill.ok {
+  background: rgba(12, 207, 45, 0.12);
+  color: #0a7a1c;
+  border-color: rgba(12, 207, 45, 0.25);
+}
+
+.tecnicos-admin-page .status-pill.off {
+  background: rgba(230, 50, 65, 0.12);
+  color: #8b1420;
+  border-color: rgba(230, 50, 65, 0.25);
+}
+
+.tecnicos-admin-page .tecnicos-view-link {
+  min-width: 106px;
+  justify-content: center;
+}
+
+.tecnicos-admin-page .tecnico-health {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tecnicos-admin-page .tecnico-health--destaque {
+  background: rgba(15, 185, 129, 0.16);
+  border-color: rgba(15, 185, 129, 0.28);
+  color: #0f5f48;
+}
+
+.tecnicos-admin-page .tecnico-health--estavel {
+  background: rgba(44, 131, 207, 0.14);
+  border-color: rgba(44, 131, 207, 0.28);
+  color: #0b4f86;
+}
+
+.tecnicos-admin-page .tecnico-health--atencao {
+  background: rgba(243, 113, 26, 0.14);
+  border-color: rgba(243, 113, 26, 0.28);
+  color: #8a3f00;
+}
+
+.tecnicos-admin-page .tecnico-health--critico {
+  background: rgba(230, 50, 65, 0.14);
+  border-color: rgba(230, 50, 65, 0.28);
+  color: #8b1420;
+}
+
+.tecnicos-admin-page .tecnico-health--inativo {
+  background: #eef3f8;
+  border-color: #d0dbe8;
+  color: #4d6279;
+}
+
+.tecnicos-admin-page .empty-state {
+  border: 1px dashed #c9d6e5;
+  border-radius: 12px;
+  padding: 16px;
+  color: #5a6b7a;
+}
+
+@media (max-width: 1200px) {
+  .tecnicos-admin-page .tecnicos-filters-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tecnicos-admin-page .usuarios-filter-field--search {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 900px) {
+  .tecnicos-admin-page .tecnicos-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tecnicos-admin-page .usuarios-filter-field--search {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .tecnicos-admin-page .tecnicos-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tecnicos-admin-page .usuarios-filter-field--search {
+    grid-column: auto;
+  }
+}

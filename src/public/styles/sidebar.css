@@ -12,6 +12,13 @@
   --sidebar-border: rgba(255,255,255,0.20);
 }
 
+body.app-layout.dark-mode{
+  --sidebar-bg: #0c1a2d;
+  --sidebar-bg-2: rgba(148,163,184,0.10);
+  --sidebar-bg-3: rgba(148,163,184,0.20);
+  --sidebar-border: rgba(148,163,184,0.24);
+}
+
 /* Fundo do painel */
 body.app-layout{
   min-height: 100vh;
@@ -55,10 +62,12 @@ body.app-layout{
   align-items: center;
   gap: 10px;
   text-decoration: none;
+  max-width: 100%;
 }
 
 .sidebar-logo{
   max-height: 44px;
+  max-width: 100%;
   width: auto;
 }
 
@@ -111,7 +120,7 @@ body.app-layout{
 .sidebar-options{
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .main-anchor-wrapper{
@@ -124,8 +133,11 @@ body.app-layout{
   display: flex;
   align-items: center;
   gap: 10px;
+  margin: 0;
 
   padding: 12px 14px;
+  min-height: 46px;
+  border-radius: 12px;
 
   color: #fff;
   font-weight: 600;
@@ -152,13 +164,26 @@ body.app-layout{
   object-fit: contain;
 }
 
+.main-anchor-symbol{
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.95;
+}
+
 /* Conteúdo do acordeão */
 .accordion-content{
   display: none;
   flex-direction: column;
   gap: 6px;
-  padding: 10px 14px 14px;
+  padding: 8px 10px 10px;
   background: var(--sidebar-bg-2);
+  border-radius: 0 0 12px 12px;
 }
 
 .main-anchor-wrapper.open .accordion-content{
@@ -213,6 +238,11 @@ body.app-layout{
   gap: 10px;
 }
 
+.my-profile-button{
+  justify-content: center;
+  padding: 10px;
+}
+
 .my-profile-button:hover,
 .exit-button:hover{
   background: rgba(255,255,255,0.16);
@@ -261,16 +291,20 @@ body.app-layout{
   background: rgba(255,255,255,0.14);
 }
 
-/* =========================
-   Área principal do app (conteúdo)
-   IMPORTANTE: offset pelo tamanho da sidebar fixed
-   ========================= */
-.app-main{
-  
-  min-height: 100vh;
-  padding: 24px;
-  width: calc(100% - var(--sidebar-width));
-  box-sizing: border-box;
+.profile-dropdown-item[aria-pressed="true"]{
+  background: rgba(255,255,255,0.20);
+  border: 1px solid rgba(255,255,255,0.24);
+}
+
+.sr-only{
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 /* Collapsed */
@@ -278,9 +312,8 @@ body.sidebar-collapsed .sidebar{
   width: var(--sidebar-collapsed-width);
 }
 
-body.sidebar-collapsed .app-main{
-  margin-left: var(--sidebar-collapsed-width);
-  width: calc(100% - var(--sidebar-collapsed-width));
+body.sidebar-collapsed .accordion-content{
+  display: none !important;
 }
 
 /* Esconde textos no collapsed (mantém ícones) */
@@ -298,12 +331,35 @@ body.sidebar-collapsed .main-anchor-icon{
   margin: 0;
 }
 
+body.sidebar-collapsed .main-anchor-symbol{
+  font-size: 18px;
+}
+
+body.sidebar-collapsed .sidebar-logo-wrapper{
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar-header{
+  justify-content: center;
+  padding: 8px;
+  height: 18px;
+}
+
 body.sidebar-collapsed .sidebar-collapse-icon::before{
   content: "⟩";
 }
 
 /* Responsivo (mobile menu overlay) */
 @media (max-width: 900px){
+  .sidebar-logo-wrapper{
+    display: none;
+  }
+
+  .sidebar-header{
+    height: 18px;
+    padding: 0;
+  }
+
   .sidebar{
     transform: translateX(-100%);
     transition: transform .2s ease;
@@ -311,10 +367,5 @@ body.sidebar-collapsed .sidebar-collapse-icon::before{
 
   body.sidebar-open .sidebar{
     transform: translateX(0);
-  }
-
-  .app-main{
-    margin-left: 0;
-    width: 100%;
   }
 }

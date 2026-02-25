@@ -1,20 +1,24 @@
-
-
 <section class="portal-usuario">
   <header class="home-header">
     <div class="home-header-text">
-      <h1>Bem-vindo, <%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %>.</h1>
-      <p>Use os atalhos abaixo para abrir solicitações e acompanhar seus atendimentos.</p>
+      <h1>Bem-vindo, <%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuario") %>.</h1>
+      <p>Use os atalhos abaixo para abrir solicitacoes e acompanhar seus atendimentos.</p>
     </div>
   </header>
 
+  <% if (typeof erroGeral !== "undefined" && erroGeral) { %>
+    <div class="alert alert-error"><%= erroGeral %></div>
+  <% } %>
+
   <div class="module-grid">
-    <!-- MEUS CHAMADOS -->
     <article class="module-card" id="card-meus-chamados">
       <header class="module-card__header">
         <div>
-          <h2>Meus chamados <span class="badge muted">  <%= (kpisUsuario?.total ?? 0) %> </span></h2>
-          <p class="module-subtitle">Acompanhe status, interações e histórico</p>
+          <h2>
+            Meus chamados
+            <span class="badge muted" data-hook="user-total"><%= (kpisUsuario?.total ?? 0) %></span>
+          </h2>
+          <p class="module-subtitle">Acompanhe status, interacoes e historico</p>
         </div>
         <div class="module-actions">
           <a class="button tertiary" href="/chamados/meus" title="Visualizar">Ver</a>
@@ -22,47 +26,48 @@
       </header>
 
       <div class="metric-grid">
-        <div class="metric"> 
-          <span class="metric-value"><%= kpisUsuario?.abertos ?? 0 %></span>
+        <div class="metric">
+          <span class="metric-value" data-hook="user-abertos"><%= kpisUsuario?.abertos ?? 0 %></span>
           <span class="metric-label">Abertos</span>
         </div>
         <div class="metric">
-          <span class="metric-value"><%= kpisUsuario?.emAndamento ?? 0 %></span>
+          <span class="metric-value" data-hook="user-em-andamento"><%= kpisUsuario?.emAndamento ?? 0 %></span>
           <span class="metric-label">Em andamento</span>
         </div>
         <div class="metric">
-          <span class="metric-value"><%= kpisUsuario?.aguardando ?? 0 %></span>
+          <span class="metric-value" data-hook="user-aguardando"><%= kpisUsuario?.aguardando ?? 0 %></span>
           <span class="metric-label">Aguardando</span>
         </div>
         <div class="metric">
-          <span class="metric-value"><%= kpisUsuario?.fechados ?? 0 %></span>
+          <span class="metric-value" data-hook="user-fechados"><%= kpisUsuario?.fechados ?? 0 %></span>
           <span class="metric-label">Fechados</span>
         </div>
       </div>
 
-      <ul class="highlight-list">
+      <ul class="highlight-list" data-hook="user-chamados-list">
         <% if (!ultimosMeusChamados || ultimosMeusChamados.length === 0) { %>
           <li class="empty">Nenhum chamado ainda.</li>
         <% } else { %>
           <% ultimosMeusChamados.slice(0, 5).forEach((c) => { %>
-            <li class="clickable" onclick="window.location.href='/chamados/<%= c.id %>'">
-              <div class="highlight-title">#<%= c.numero %> — <%= c.titulo %></div>
-              <div class="highlight-meta">
-                <span class="highlight-status"><%= c.status %></span>
-                <span class="highlight-date"><%= c.quando %></span>
-              </div>
+            <li class="clickable">
+              <a class="highlight-link" href="/chamados/<%= c.id %>">
+                <div class="highlight-title">#<%= c.numero %> - <%= c.titulo %></div>
+                <div class="highlight-meta">
+                  <span class="highlight-status"><%= c.statusLabel || c.status %></span>
+                  <span class="highlight-date"><%= c.quando %></span>
+                </div>
+              </a>
             </li>
           <% }) %>
         <% } %>
       </ul>
     </article>
 
-    <!-- ABRIR CHAMADO -->
     <article class="module-card" id="card-abrir-chamado">
       <header class="module-card__header">
         <div>
           <h2>Abrir chamado</h2>
-          <p class="module-subtitle">Registre um novo problema ou solicitação</p>
+          <p class="module-subtitle">Registre um novo problema ou solicitacao</p>
         </div>
         <div class="module-actions">
           <a class="button tertiary" href="/chamados/novo" title="Abrir agora">Abrir</a>
@@ -73,19 +78,19 @@
         <li>
           <div class="highlight-title">Descreva o problema</div>
           <div class="highlight-meta">
-            <span class="highlight-user">Inclua passos, impacto e urgência</span>
+            <span class="highlight-user">Inclua passos, impacto e urgencia</span>
           </div>
         </li>
         <li>
-          <div class="highlight-title">Anexe evidências</div>
+          <div class="highlight-title">Anexe evidencias</div>
           <div class="highlight-meta">
-            <span class="highlight-user">PDF, imagem ou documento (quando necessário)</span>
+            <span class="highlight-user">PDF, imagem ou documento (quando necessario)</span>
           </div>
         </li>
         <li>
-          <div class="highlight-title">Acompanhe as atualizações</div>
+          <div class="highlight-title">Acompanhe as atualizacoes</div>
           <div class="highlight-meta">
-            <span class="highlight-user">Responda interações para não travar o fluxo</span>
+            <span class="highlight-user">Responda interacoes para nao travar o fluxo</span>
           </div>
         </li>
       </ul>
@@ -96,48 +101,47 @@
       </div>
     </article>
 
- <!-- MEU PERFIL -->
-<article class="module-card" id="card-meu-perfil">
-  <header class="module-card__header">
-    <div>
-      <h2>Meu perfil</h2>
-      <p class="module-subtitle">Dados da conta e configurações básicas</p>
-    </div>
-    <div class="module-actions">
-      <a class="button tertiary" href="/usuario/perfil" title="Visualizar">Ver</a>
-    </div>
-  </header>
+    <article class="module-card" id="card-meu-perfil">
+      <header class="module-card__header">
+        <div>
+          <h2>Meu perfil</h2>
+          <p class="module-subtitle">Dados da conta e configuracoes basicas</p>
+        </div>
+        <div class="module-actions">
+          <a class="button tertiary" href="/usuario/perfil" title="Visualizar">Ver</a>
+        </div>
+      </header>
 
-  <ul class="highlight-list">
-    <li>
-      <div class="highlight-title"><%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuário") %></div>
-      <div class="highlight-meta">
-        <span class="highlight-status"><%= (usuarioSessao?.perfil || "usuário") %></span>
-        <% if (usuarioSessao?.email) { %>
-          <span class="highlight-user"><%= usuarioSessao.email %></span>
-        <% } %>
+      <ul class="highlight-list">
+        <li>
+          <div class="highlight-title"><%= (usuarioSessao?.nome || usuarioSessao?.usuario || "Usuario") %></div>
+          <div class="highlight-meta">
+            <span class="highlight-status"><%= (usuarioSessao?.perfil || "usuario") %></span>
+            <% if (usuarioSessao?.email) { %>
+              <span class="highlight-user"><%= usuarioSessao.email %></span>
+            <% } %>
+          </div>
+        </li>
+
+        <li>
+          <div class="highlight-title">Ultimo acesso</div>
+          <div class="highlight-meta">
+            <span class="highlight-date"><%= (usuarioSessao?.ultimoAcessoFmt || "-") %></span>
+          </div>
+        </li>
+
+        <li>
+          <div class="highlight-title">Seguranca</div>
+          <div class="highlight-meta">
+            <span class="highlight-user">Altere sua senha e mantenha seus dados atualizados</span>
+          </div>
+        </li>
+      </ul>
+
+      <div class="portal-actions">
+        <a class="button secondary" href="/usuario/perfil">Editar perfil</a>
+        <a class="button secondary" href="/usuario/perfil?senha=1">Trocar senha</a>
       </div>
-    </li>
-
-    <li>
-      <div class="highlight-title">Último acesso</div>
-      <div class="highlight-meta">
-        <span class="highlight-date"><%= (usuarioSessao?.ultimoAcessoFmt || "—") %></span>
-      </div>
-    </li>
-
-    <li>
-      <div class="highlight-title">Segurança</div>
-      <div class="highlight-meta">
-        <span class="highlight-user">Altere sua senha e mantenha seus dados atualizados</span>
-      </div>
-    </li>
-  </ul>
-
-  <div class="portal-actions">
-    <a class="button secondary" href="/usuario/perfil">Editar perfil</a>
-    <a class="button secondary" href="/usuario/perfil">Trocar senha</a>
-  </div>
-</article>
+    </article>
   </div>
 </section>

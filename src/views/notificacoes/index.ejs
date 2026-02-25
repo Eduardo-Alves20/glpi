@@ -1,10 +1,12 @@
 <%
   const estadoAtual = String(filtros?.estado || "todas");
   const tipoAtual = String(filtros?.tipo || "todos");
-  const limitAtual = Number(filtros?.limit || 80);
+  const limitAtual = Number(filtros?.limit || 10);
   const totalListadas = Number(totais?.listadas || 0);
   const totalNaoLidas = Number(totais?.naoLidas || 0);
   const temNotificacoes = Array.isArray(notificacoes) && notificacoes.length > 0;
+  const paginacaoAtual = paginacao || { total: totalListadas, page: 1, pages: 1, limit: limitAtual };
+  const paginacaoQueryAtual = paginacaoQuery || { estado: estadoAtual, tipo: tipoAtual, limit: limitAtual };
 %>
 
 <section class="notificacoes-page">
@@ -19,7 +21,7 @@
     <div class="notificacoes-head-main">
       <h1 class="notificacoes-title">Notificacoes</h1>
       <p class="notificacoes-subtitle">
-        Acompanhe os alertas do seu usuario logado em tempo real e acesse rapidamente cada chamado.
+        Acompanhe os alertas do seu usuario logado em tempo real e acesse rapidamente cada atualizacao.
       </p>
     </div>
 
@@ -75,7 +77,7 @@
     <div class="filtro-item">
       <label for="limit">Limite</label>
       <select id="limit" name="limit">
-        <% [20, 50, 80, 100].forEach((n) => { %>
+        <% [10, 20, 50, 80, 100].forEach((n) => { %>
           <option value="<%= n %>" <%= limitAtual === n ? "selected" : "" %>><%= n %></option>
         <% }) %>
       </select>
@@ -134,4 +136,10 @@
       <% }) %>
     <% } %>
   </section>
+
+  <%- include('../partials/paginacao', {
+    basePath: '/notificacoes',
+    paginacao: paginacaoAtual,
+    query: paginacaoQueryAtual,
+  }) %>
 </section>

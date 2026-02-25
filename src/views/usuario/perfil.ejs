@@ -1,16 +1,16 @@
-<section class="page">
+<section class="page usuario-perfil-page">
   <div class="page__top">
     <div>
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/app">Home</a>
         <span>/</span>
-        <a href="/usuario">Usuário</a>
+        <a href="/usuario">Usuario</a>
         <span>/</span>
         <strong>Meu perfil</strong>
       </nav>
 
       <h1 class="page__title">Meu perfil</h1>
-      <p class="page__subtitle">Atualize seu nome, e-mail e senha.</p>
+      <p class="page__subtitle">Atualize seus dados e gerencie a senha com seguranca.</p>
     </div>
   </div>
 
@@ -30,13 +30,13 @@
   <div class="card">
     <div class="card__header">
       <h2 class="card__title">Dados da conta</h2>
-      <p class="card__hint">Login e perfil não podem ser alterados aqui.</p>
+      <p class="card__hint">Login e perfil nao podem ser alterados aqui.</p>
     </div>
 
     <form class="form" method="post" action="/usuario/perfil" autocomplete="off" novalidate>
       <div class="form__grid">
         <div class="form__field">
-          <label class="form__label" for="usuario">Usuário (login)</label>
+          <label class="form__label" for="usuario">Usuario (login)</label>
           <input class="form__input" id="usuario" type="text" value="<%= valores?.usuario || '' %>" disabled />
         </div>
 
@@ -47,125 +47,162 @@
 
         <div class="form__field form__field--full">
           <label class="form__label" for="nome">Nome</label>
-          <input class="form__input" id="nome" name="nome" type="text" minlength="3" maxlength="120" required
-            value="<%= valores?.nome || '' %>" />
+          <input
+            class="form__input"
+            id="nome"
+            name="nome"
+            type="text"
+            minlength="3"
+            maxlength="120"
+            required
+            value="<%= valores?.nome || '' %>"
+          />
         </div>
 
         <div class="form__field form__field--full">
           <label class="form__label" for="email">E-mail</label>
-          <input class="form__input" id="email" name="email" type="email" maxlength="254" required
-            value="<%= valores?.email || '' %>" />
+          <input
+            class="form__input"
+            id="email"
+            name="email"
+            type="email"
+            maxlength="254"
+            required
+            value="<%= valores?.email || '' %>"
+          />
         </div>
-
-        <!-- ===== Seção de senha (colapsável) ===== -->
-<div class="form__field form__field--full">
-  <button
-    type="button"
-    class="btn btn--ghost"
-    id="btnToggleSenha"
-    aria-expanded="false"
-    aria-controls="secaoSenha"
-  >
-    Redefinir senha
-  </button>
-  <small class="form__help">Use apenas se você quiser trocar a senha.</small>
-</div>
-
-<div id="secaoSenha" class="senha-section" hidden>
-  <div class="form__grid">
-    <div class="form__field">
-      <label class="form__label" for="senhaAtual">Senha atual</label>
-
-      <div class="pw-field">
-        <input
-          class="form__input pw-input"
-          id="senhaAtual"
-          name="senhaAtual"
-          type="password"
-          autocomplete="current-password"
-        />
-        <button class="pw-toggle" type="button" data-toggle-pw="senhaAtual" aria-label="Mostrar senha">
-          👁
-        </button>
       </div>
 
-      <small class="form__help">Obrigatório para trocar a senha.</small>
-    </div>
-
-    <div class="form__field">
-      <label class="form__label" for="senhaNova">Nova senha</label>
-
-      <div class="pw-field">
-        <input
-          class="form__input pw-input"
-          id="senhaNova"
-          name="senhaNova"
-          type="password"
-          autocomplete="new-password"
-          minlength="8"
-          maxlength="72"
-        />
-        <button class="pw-toggle" type="button" data-toggle-pw="senhaNova" aria-label="Mostrar senha">
-          👁
-        </button>
+      <div class="form__actions">
+        <button class="btn btn--primary" type="submit">Salvar dados</button>
+        <a class="btn btn--ghost" href="/app">Cancelar</a>
       </div>
+    </form>
+  </div>
 
-      <small class="form__help">Mínimo 8 caracteres.</small>
-    </div>
-
-    <div class="form__field">
-      <label class="form__label" for="senhaNovaConfirmacao">Confirmar nova senha</label>
-
-      <div class="pw-field">
-        <input
-          class="form__input pw-input"
-          id="senhaNovaConfirmacao"
-          name="senhaNovaConfirmacao"
-          type="password"
-          autocomplete="new-password"
-          minlength="8"
-          maxlength="72"
-        />
-        <button class="pw-toggle" type="button" data-toggle-pw="senhaNovaConfirmacao" aria-label="Mostrar senha">
-          👁
-        </button>
+  <div class="card">
+    <div class="card__header card__header--inline">
+      <div>
+        <h2 class="card__title">Seguranca</h2>
+        <p class="card__hint">Para alterar senha, abra o modal de redefinicao.</p>
       </div>
-
-      <small class="form__help">Digite novamente para confirmar.</small>
+      <button type="button" class="btn btn--ghost" id="btnAbrirModalSenha">Trocar senha</button>
     </div>
   </div>
-</div>
-<!-- ===== fim seção senha ===== -->
 
-<div class="form__actions">
-  <button class="btn btn--primary" type="submit">Salvar</button>
-  <a class="btn btn--ghost" href="/app">Cancelar</a>
-</div>
+  <div class="senha-modal" id="senhaModal" hidden>
+    <div class="senha-modal__backdrop" data-close-modal="true"></div>
+    <div class="senha-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="senhaModalTitulo">
+      <div class="senha-modal__header">
+        <h2 id="senhaModalTitulo">Redefinir senha</h2>
+        <button type="button" class="senha-modal__close" data-close-modal="true" aria-label="Fechar">x</button>
+      </div>
+
+      <form class="senha-form" method="post" action="/usuario/perfil/senha" autocomplete="off">
+        <div class="form__grid">
+          <div class="form__field form__field--full">
+            <label class="form__label" for="senhaAtual">Senha atual</label>
+            <div class="pw-field">
+              <input
+                class="form__input pw-input"
+                id="senhaAtual"
+                name="senhaAtual"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+              <button class="pw-toggle" type="button" data-toggle-pw="senhaAtual" aria-label="Mostrar senha">
+                👁
+              </button>
+            </div>
+          </div>
+
+          <div class="form__field">
+            <label class="form__label" for="senhaNova">Nova senha</label>
+            <div class="pw-field">
+              <input
+                class="form__input pw-input"
+                id="senhaNova"
+                name="senhaNova"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                maxlength="72"
+                required
+              />
+              <button class="pw-toggle" type="button" data-toggle-pw="senhaNova" aria-label="Mostrar senha">
+                👁
+              </button>
+            </div>
+            <small class="form__help">Minimo de 8 caracteres.</small>
+          </div>
+
+          <div class="form__field">
+            <label class="form__label" for="senhaNovaConfirmacao">Confirmar nova senha</label>
+            <div class="pw-field">
+              <input
+                class="form__input pw-input"
+                id="senhaNovaConfirmacao"
+                name="senhaNovaConfirmacao"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                maxlength="72"
+                required
+              />
+              <button class="pw-toggle" type="button" data-toggle-pw="senhaNovaConfirmacao" aria-label="Mostrar senha">
+                👁
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form__actions">
+          <button class="btn btn--primary" type="submit">Alterar senha</button>
+          <button class="btn btn--ghost" type="button" data-close-modal="true">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
 
 <script>
   (function () {
-    const btn = document.getElementById("btnToggleSenha");
-    const sec = document.getElementById("secaoSenha");
-    if (!btn || !sec) return;
+    const modal = document.getElementById("senhaModal");
+    const openBtn = document.getElementById("btnAbrirModalSenha");
+    if (!modal || !openBtn) return;
 
-    btn.addEventListener("click", () => {
-      const isOpen = !sec.hasAttribute("hidden");
-      if (isOpen) {
-        sec.setAttribute("hidden", "");
-        btn.setAttribute("aria-expanded", "false");
-      } else {
-        sec.removeAttribute("hidden");
-        btn.setAttribute("aria-expanded", "true");
-        const first = document.getElementById("senhaAtual");
-        if (first) first.focus();
+    const startOpen = <%= abrirModalSenha ? "true" : "false" %>;
+
+    function closeModal() {
+      modal.setAttribute("hidden", "");
+      document.body.classList.remove("perfil-modal-open");
+    }
+
+    function openModal() {
+      modal.removeAttribute("hidden");
+      document.body.classList.add("perfil-modal-open");
+      const first = document.getElementById("senhaAtual");
+      if (first) first.focus();
+    }
+
+    openBtn.addEventListener("click", openModal);
+
+    modal.querySelectorAll('[data-close-modal="true"]').forEach((el) => {
+      el.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modal.hasAttribute("hidden")) {
+        closeModal();
       }
     });
 
-    document.addEventListener("click", (ev) => {
-      const t = ev.target;
-      if (!(t instanceof HTMLElement)) return;
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
 
-      const btnPw = t.closest("[data-toggle-pw]");
+      const btnPw = target.closest("[data-toggle-pw]");
       if (!btnPw) return;
 
       const inputId = btnPw.getAttribute("data-toggle-pw");
@@ -177,5 +214,7 @@
       btnPw.setAttribute("aria-label", isPassword ? "Ocultar senha" : "Mostrar senha");
       btnPw.textContent = isPassword ? "🙈" : "👁";
     });
+
+    if (startOpen) openModal();
   })();
 </script>

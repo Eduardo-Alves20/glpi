@@ -7,7 +7,12 @@ import {
 
 import { acharPorId } from "../../repos/usuariosRepo.js";
 import { usuarioHomeGet } from "../../controllers/usuario/portalUsuarioController.js";
-import { perfilGet, perfilPost } from "../../controllers/usuario/perfilController.js";
+import {
+  perfilGet,
+  perfilPost,
+  perfilSenhaPost,
+} from "../../controllers/usuario/perfilController.js";
+import { usuarioAvaliacoesGet } from "../../controllers/usuario/avaliacoesController.js";
 
 
 export function criarUsuarioRotas({ auditoria } = {}) {
@@ -32,7 +37,9 @@ export function criarUsuarioRotas({ auditoria } = {}) {
   router.get("/usuario/home", usuarioHomeGet);
 
   router.get("/usuario/perfil", perfilGet);
+  router.get("/usuario/avaliacoes", usuarioAvaliacoesGet);
   router.post("/usuario/perfil", perfilPost);
+  router.post("/usuario/perfil/senha", perfilSenhaPost);
 
   return router;
 }

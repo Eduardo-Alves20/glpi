@@ -3,18 +3,66 @@
     <div class="form-wrapper">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Usuários</h1>
-          <p class="page-subtitle">Gerencie usuários cadastrados no GLPI.</p>
+          <h1 class="page-title">Usuarios</h1>
+          <p class="page-subtitle">Gerencie usuarios cadastrados no GLPI.</p>
         </div>
         <div class="page-actions">
-          <a class="button" href="/admin/usuarios/novo">Novo usuário</a>
+          <a class="button" href="/admin/usuarios/novo">Novo usuario</a>
         </div>
       </div>
 
+      <form method="GET" action="/admin/usuarios" class="usuarios-filters-card">
+        <div class="usuarios-filters-grid">
+          <div class="usuarios-filter-field usuarios-filter-field--search">
+            <label for="filtro-q">Pesquisar</label>
+            <input
+              id="filtro-q"
+              name="q"
+              value="<%= filtros?.q || '' %>"
+              placeholder="Nome, login ou e-mail"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-perfil">Perfil</label>
+            <select id="filtro-perfil" name="perfil">
+              <option value="">Todos</option>
+              <option value="admin" <%= filtros?.perfil === 'admin' ? 'selected' : '' %>>Administrador</option>
+              <option value="tecnico" <%= filtros?.perfil === 'tecnico' ? 'selected' : '' %>>Tecnico</option>
+              <option value="usuario" <%= filtros?.perfil === 'usuario' ? 'selected' : '' %>>Usuario</option>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-status">Status</label>
+            <select id="filtro-status" name="status">
+              <option value="">Todos</option>
+              <option value="ativo" <%= filtros?.status === 'ativo' ? 'selected' : '' %>>Ativo</option>
+              <option value="bloqueado" <%= filtros?.status === 'bloqueado' ? 'selected' : '' %>>Bloqueado</option>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field usuarios-filter-field--limit">
+            <label for="usuarios-limit">Itens por pagina</label>
+            <select id="usuarios-limit" name="limit">
+              <% [10, 25, 50, 100, 200].forEach((n) => { %>
+                <option value="<%= n %>" <%= Number((paginacao?.limit || paginacaoQuery?.limit || 10)) === n ? 'selected' : '' %>><%= n %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <div class="usuarios-filters-actions">
+          <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+          <a class="button tertiary" href="/admin/usuarios">Limpar filtros</a>
+        </div>
+      </form>
+
       <% if (!usuarios || usuarios.length === 0) { %>
         <div class="empty-state">
-          <p><strong>Nenhum usuário cadastrado ainda.</strong></p>
-          <p>Crie o primeiro usuário para testar o login pelo banco.</p>
+          <p><strong>Nenhum usuario encontrado.</strong></p>
+          <p>Tente ajustar os filtros ou cadastrar um novo usuario.</p>
         </div>
       <% } else { %>
         <div class="table-wrapper">
@@ -22,16 +70,17 @@
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>Usuário</th>
+                <th>Usuario</th>
                 <th>E-mail</th>
                 <th>Perfil</th>
                 <th>Status</th>
                 <th>Criado em</th>
+                <th style="width: 120px;">Acoes</th>
               </tr>
             </thead>
             <tbody>
               <% usuarios.forEach((u) => { %>
-                <tr>
+                <tr data-row-href="/admin/usuarios/<%= u.id %>/editar">
                   <td><%= u.nome %></td>
                   <td><%= u.usuario %></td>
                   <td><%= u.email %></td>
@@ -41,12 +90,21 @@
                       <%= u.status %>
                     </span>
                   </td>
-                  <td><%= u.criadoEm ? new Date(u.criadoEm).toLocaleString('pt-BR') : '—' %></td>
+                  <td><%= u.criadoEm ? new Date(u.criadoEm).toLocaleString('pt-BR') : '-' %></td>
+                  <td>
+                    <a class="button secondary usuarios-edit-link" href="/admin/usuarios/<%= u.id %>/editar">Editar</a>
+                  </td>
                 </tr>
               <% }) %>
             </tbody>
           </table>
         </div>
+
+        <%- include('../../partials/paginacao', {
+          basePath: '/admin/usuarios',
+          paginacao: paginacao,
+          query: paginacaoQuery || {},
+        }) %>
       <% } %>
     </div>
   </div>

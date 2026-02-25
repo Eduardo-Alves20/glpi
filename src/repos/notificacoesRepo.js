@@ -115,23 +115,26 @@ export async function criarNotificacao({
   return { ...doc, _id: out.insertedId };
 }
 
-export async function listarNotificacoes({
+function montarFiltroNotificacoes({
   destinatario,
   since,
   unread,
   readState = "all",
   tipo = null,
-  limit = 20,
   tiposIgnorados = [],
-}) {
-  const db = await pegarDb();
-
+} = {}) {
   const filtro = {
     "destinatario.tipo": destinatario.tipo,
     "destinatario.id": destinatario.id,
   };
 
-  if (since) filtro.criadoEm = { $gt: new Date(since) };
+  if (since) {
+    const dataSince = new Date(since);
+    if (!Number.isNaN(dataSince.getTime())) {
+      filtro.criadoEm = { $gt: dataSince };
+    }
+  }
+
   const estadoLida = texto(readState, { max: 20 }).toLowerCase();
   if (estadoLida === "unread" || unread) {
     filtro.lidoEm = null;
@@ -145,11 +148,46 @@ export async function listarNotificacoes({
     : [];
 
   if (tipoFiltro) {
-    if (ignorados.includes(tipoFiltro)) return [];
+    if (ignorados.includes(tipoFiltro)) return { filtro, retornarVazio: true };
     filtro.tipo = tipoFiltro;
   } else if (ignorados.length) {
     filtro.tipo = { $nin: ignorados };
   }
+
+  return { filtro, retornarVazio: false };
+}
+
+function normalizarPagina(valor, fallback = 1) {
+  const n = Number.parseInt(valor, 10);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return n;
+}
+
+function normalizarLimite(valor, fallback = 10) {
+  const n = Number.parseInt(valor, 10);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.max(1, Math.min(n, 100));
+}
+
+export async function listarNotificacoes({
+  destinatario,
+  since,
+  unread,
+  readState = "all",
+  tipo = null,
+  limit = 20,
+  tiposIgnorados = [],
+}) {
+  const db = await pegarDb();
+  const { filtro, retornarVazio } = montarFiltroNotificacoes({
+    destinatario,
+    since,
+    unread,
+    readState,
+    tipo,
+    tiposIgnorados,
+  });
+  if (retornarVazio) return [];
 
   return db.collection("notificacoes")
     .find(filtro, {
@@ -161,6 +199,78 @@ export async function listarNotificacoes({
     .sort({ criadoEm: -1 })
     .limit(Math.min(limit, 100))
     .toArray();
+}
+
+export async function contarNotificacoes({
+  destinatario,
+  readState = "all",
+  tipo = null,
+  tiposIgnorados = [],
+} = {}) {
+  const db = await pegarDb();
+  const { filtro, retornarVazio } = montarFiltroNotificacoes({
+    destinatario,
+    readState,
+    tipo,
+    tiposIgnorados,
+  });
+  if (retornarVazio) return 0;
+
+  return db.collection("notificacoes").countDocuments(filtro);
+}
+
+export async function listarNotificacoesPaginado({
+  destinatario,
+  readState = "all",
+  tipo = null,
+  page = 1,
+  limit = 10,
+  tiposIgnorados = [],
+} = {}) {
+  const db = await pegarDb();
+  const limitSafe = normalizarLimite(limit, 10);
+  const pageSolicitada = normalizarPagina(page, 1);
+  const { filtro, retornarVazio } = montarFiltroNotificacoes({
+    destinatario,
+    readState,
+    tipo,
+    tiposIgnorados,
+  });
+
+  if (retornarVazio) {
+    return {
+      itens: [],
+      total: 0,
+      page: 1,
+      pages: 1,
+      limit: limitSafe,
+    };
+  }
+
+  const total = await db.collection("notificacoes").countDocuments(filtro);
+  const pages = Math.max(1, Math.ceil(total / limitSafe));
+  const pageSafe = Math.min(pageSolicitada, pages);
+  const skip = (pageSafe - 1) * limitSafe;
+
+  const itens = await db.collection("notificacoes")
+    .find(filtro, {
+      projection: {
+        destinatario: 1, chamadoId: 1, tipo: 1, titulo: 1, mensagem: 1, url: 1,
+        criadoEm: 1, lidoEm: 1, meta: 1,
+      },
+    })
+    .sort({ criadoEm: -1 })
+    .skip(skip)
+    .limit(limitSafe)
+    .toArray();
+
+  return {
+    itens,
+    total,
+    page: pageSafe,
+    pages,
+    limit: limitSafe,
+  };
 }
 
 export async function contarNaoLidas(destinatario, { tiposIgnorados = [] } = {}) {

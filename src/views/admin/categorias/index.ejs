@@ -1,0 +1,120 @@
+<section class="usuarios-page categorias-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Categorias e prioridades</h1>
+          <p class="page-subtitle">Gerencie as classificacoes usadas na abertura e no filtro dos chamados.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button" href="/admin/categorias/novo">Nova classificacao</a>
+        </div>
+      </div>
+
+      <form method="GET" action="/admin/categorias" class="usuarios-filters-card">
+        <div class="usuarios-filters-grid categorias-filters-grid">
+          <div class="usuarios-filter-field usuarios-filter-field--search">
+            <label for="filtro-q">Pesquisar</label>
+            <input
+              id="filtro-q"
+              name="q"
+              value="<%= filtros?.q || '' %>"
+              placeholder="Nome ou chave"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-tipo">Tipo</label>
+            <select id="filtro-tipo" name="tipo">
+              <option value="">Todos</option>
+              <% (tiposClassificacao || []).forEach((tipo) => { %>
+                <option value="<%= tipo.value %>" <%= filtros?.tipo === tipo.value ? 'selected' : '' %>><%= tipo.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-status">Status</label>
+            <select id="filtro-status" name="status">
+              <option value="">Todos</option>
+              <option value="ativo" <%= filtros?.status === 'ativo' ? 'selected' : '' %>>Ativo</option>
+              <option value="inativo" <%= filtros?.status === 'inativo' ? 'selected' : '' %>>Inativo</option>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field usuarios-filter-field--limit">
+            <label for="itens-limit">Itens por pagina</label>
+            <select id="itens-limit" name="limit">
+              <% [10, 25, 50, 100, 200].forEach((n) => { %>
+                <option value="<%= n %>" <%= Number((paginacao?.limit || paginacaoQuery?.limit || 10)) === n ? 'selected' : '' %>><%= n %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <div class="usuarios-filters-actions">
+          <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+          <a class="button tertiary" href="/admin/categorias">Limpar filtros</a>
+        </div>
+      </form>
+
+      <% if (!itens || itens.length === 0) { %>
+        <div class="empty-state">
+          <p><strong>Nenhuma classificacao encontrada.</strong></p>
+          <p>Cadastre uma nova categoria ou prioridade para continuar.</p>
+        </div>
+      <% } else { %>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Nome</th>
+                <th>Chave</th>
+                <th>Status</th>
+                <th>Ordem</th>
+                <th>Atualizado em</th>
+                <th style="width: 210px;">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% itens.forEach((item) => { %>
+                <tr data-row-href="/admin/categorias/<%= item.id %>/editar">
+                  <td>
+                    <span class="badge categorias-type-badge">
+                      <%= item.tipo === 'prioridade' ? 'PRIORIDADE' : 'CATEGORIA' %>
+                    </span>
+                  </td>
+                  <td><%= item.nome %></td>
+                  <td><code><%= item.chave %></code></td>
+                  <td>
+                    <span class="status-pill <%= item.ativo ? 'ok' : 'off' %>">
+                      <%= item.status %>
+                    </span>
+                  </td>
+                  <td><%= item.ordem %></td>
+                  <td><%= item.updatedAt ? new Date(item.updatedAt).toLocaleString('pt-BR') : '-' %></td>
+                  <td>
+                    <div class="categorias-actions-inline">
+                      <a class="button secondary usuarios-edit-link" href="/admin/categorias/<%= item.id %>/editar">Editar</a>
+                      <form method="POST" action="/admin/categorias/<%= item.id %>/excluir" onsubmit="return confirm('Deseja excluir esta classificacao?');">
+                        <button class="button tertiary categorias-delete-btn" type="submit">Excluir</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <%- include('../../partials/paginacao', {
+          basePath: '/admin/categorias',
+          paginacao: paginacao,
+          query: paginacaoQuery || {},
+        }) %>
+      <% } %>
+    </div>
+  </div>
+</section>

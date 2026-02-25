@@ -1,0 +1,89 @@
+<div class="content-with-pagination-wrapper chamados-page">
+  <div class="content-with-pagination">
+
+    <%- include('../partials/breadcrumb', {
+      crumbs: [
+        { label: 'Home', href: '/app' },
+        { label: 'Tecnico' },
+        { label: 'Historico de atendimentos' }
+      ]
+    }) %>
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Historico de atendimentos</h1>
+        <p class="page-subtitle">Todos os chamados em que voce ja atuou, incluindo fechados.</p>
+
+        <% if (typeof erroGeral !== 'undefined' && erroGeral) { %>
+          <div class="alert-error"><%= erroGeral %></div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (typeof flash !== "undefined" && flash) { %>
+      <script>
+        window.__FLASH__ = <%- JSON.stringify({
+          tipo: String(flash.tipo || "info").toLowerCase(),
+          mensagem: String(flash.mensagem || "").slice(0, 300)
+        }) %>;
+      </script>
+    <% } %>
+
+    <%- include('../partials/chamados-filtros', {
+      filtroId: 'historico-chamados-tecnico',
+      filtros,
+      opcoes,
+      totalFiltrados,
+      totalBase,
+      rotaLimpar: '/tecnico/historico-chamados',
+      mostrarCampoAlocacao: true,
+      mostrarCampoResponsavelLogin: true,
+    }) %>
+
+    <div class="table-card chamados-table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:70px;">#</th>
+            <th>Titulo</th>
+            <th style="width:160px;">Solicitante</th>
+            <th style="width:160px;">Responsavel atual</th>
+            <th style="width:140px;">Categoria</th>
+            <th style="width:140px;">Prioridade</th>
+            <th style="width:140px;">Status</th>
+            <th style="width:190px;">Atualizado</th>
+            <th style="width:120px;">Acoes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!chamados || chamados.length === 0) { %>
+            <tr><td colspan="9" class="empty-row">Nenhum chamado encontrado no seu historico.</td></tr>
+          <% } else { %>
+            <% chamados.forEach((c) => { %>
+              <tr data-row-href="/tecnico/chamados/<%= c.id %>">
+                <td><p class="table-content"><%= c.numero %></p></td>
+                <td><p class="table-content"><a class="table-link" href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a></p></td>
+                <td><p class="table-content"><%= c.solicitante %></p></td>
+                <td><p class="table-content"><%= c.responsavel %></p></td>
+                <td><p class="table-content"><span class="pill pill-muted" title="<%= c.categoriaLabel %>"><%= c.categoriaLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>" title="<%= c.prioridadeLabel %>"><%= c.prioridadeLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>" title="<%= c.statusLabel %>"><%= c.statusLabel %></span></p></td>
+                <td><p class="table-content"><%= c.quando %></p></td>
+                <td><a class="btn-primary" href="/tecnico/chamados/<%= c.id %>">Abrir</a></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <%- include('../partials/paginacao', {
+      basePath: '/tecnico/historico-chamados',
+      paginacao: paginacao,
+      query: paginacaoQuery || filtros,
+    }) %>
+
+  </div>
+</div>
+
+<script type="module" src="/js/tecnico-live.js"></script>

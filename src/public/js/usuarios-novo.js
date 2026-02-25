@@ -40,7 +40,12 @@
   });
 
   async function buscarSugestoes(nome) {
-    const url = `/admin/usuarios/sugerir-login?nome=${encodeURIComponent(nome)}`;
+    const form = nomeEl.closest("form");
+    const action = String(form?.getAttribute("action") || "").trim();
+    const base = action.startsWith("/tecnico/usuarios")
+      ? "/tecnico/usuarios"
+      : "/admin/usuarios";
+    const url = `${base}/sugerir-login?nome=${encodeURIComponent(nome)}`;
     const resp = await fetch(url, { headers: { Accept: "application/json" } });
     if (!resp.ok) return [];
     const data = await resp.json();

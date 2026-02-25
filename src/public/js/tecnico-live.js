@@ -32,7 +32,9 @@ function updateHomeKpis(kpis = {}) {
 
   const path = window.location.pathname;
   const isListaTecnico =
-    path === "/tecnico/chamados" || path === "/tecnico/meus-chamados";
+    path === "/tecnico/chamados" ||
+    path === "/tecnico/meus-chamados" ||
+    path === "/tecnico/historico-chamados";
   let since = new Date(Date.now() - 15000).toISOString();
   const reloadKey = `tecnico_live_reload_${path}`;
 

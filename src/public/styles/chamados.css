@@ -101,6 +101,16 @@
   background: #fafcff;
 }
 
+.table tbody tr.table-row-clickable {
+  cursor: pointer;
+}
+
+.table tbody tr.table-row-clickable:focus-visible {
+  outline: 2px solid rgba(4, 76, 141, 0.42);
+  outline-offset: -2px;
+  background: #f2f8ff;
+}
+
 .table-content {
   margin: 0;
   color: #2d3b45;
@@ -147,18 +157,32 @@ img.small-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 32px;
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
   border: 1px solid transparent;
   text-transform: capitalize;
+  line-height: 1.1;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .pill-muted {
+  min-width: 104px;
+  max-width: 126px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   background: #f3f6f9;
   color: #415563;
   border-color: #e2e8ef;
+}
+
+.pill-prio {
+  min-width: 78px;
+  max-width: 98px;
 }
 
 .pill-prio-baixa {
@@ -210,6 +234,12 @@ img.small-icon {
 }
 
 .pill-status {
+  min-width: 118px;
+  max-width: 118px;
+  padding: 6px 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   background: #eef4fb;
   border-color: #d4dfeb;
   color: #27496b;
@@ -478,6 +508,80 @@ body.chamados-modal-open {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+body.app-layout.dark-mode .table tbody tr.table-row-clickable:focus-visible {
+  outline-color: rgba(125, 211, 252, 0.65);
+  background: rgba(125, 211, 252, 0.1);
+}
+
+body.app-layout.dark-mode .chamados-page .table-content {
+  color: #dbe8fc;
+}
+
+body.app-layout.dark-mode .chamados-page .pill {
+  border-color: #355071;
+  color: #dbe9ff;
+}
+
+body.app-layout.dark-mode .chamados-page .pill-muted {
+  background: #1a2a40;
+  color: #dbe9ff;
+  border-color: #3a5475;
+}
+
+body.app-layout.dark-mode .chamados-page .pill-status {
+  background: #1a2a40;
+  color: #dbe9ff;
+  border-color: #3a5475;
+}
+
+body.app-layout.dark-mode .chamados-page .pill-status-aberto {
+  background: rgba(59, 130, 246, 0.2);
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-status-em_atendimento {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-status-aguardando_usuario {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border-color: rgba(251, 146, 60, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-status-fechado {
+  background: rgba(100, 116, 139, 0.22);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-prio-baixa {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border-color: rgba(74, 222, 128, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-prio-media {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-prio-alta {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border-color: rgba(251, 146, 60, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-prio-critica {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+  border-color: rgba(251, 113, 133, 0.42);
 }
 
 @media (max-width: 1080px) {

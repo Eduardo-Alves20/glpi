@@ -57,11 +57,9 @@
           <label class="form__label" for="categoria">Categoria</label>
           <select class="form__input" id="categoria" name="categoria" required>
             <option value="" <%= !valores?.categoria ? "selected" : "" %>>Selecione</option>
-            <option value="acesso" <%= valores?.categoria === "acesso" ? "selected" : "" %>>Acesso</option>
-            <option value="incidente" <%= valores?.categoria === "incidente" ? "selected" : "" %>>Incidente</option>
-            <option value="solicitacao" <%= valores?.categoria === "solicitacao" ? "selected" : "" %>>Solicitacao</option>
-            <option value="infra" <%= valores?.categoria === "infra" ? "selected" : "" %>>Infra</option>
-            <option value="outros" <%= valores?.categoria === "outros" ? "selected" : "" %>>Outros</option>
+            <% (opcoesClassificacao?.categorias || []).forEach((item) => { %>
+              <option value="<%= item.value %>" <%= valores?.categoria === item.value ? "selected" : "" %>><%= item.label %></option>
+            <% }) %>
           </select>
         </div>
 
@@ -69,10 +67,9 @@
           <label class="form__label" for="prioridade">Prioridade</label>
           <select class="form__input" id="prioridade" name="prioridade" required>
             <option value="" <%= !valores?.prioridade ? "selected" : "" %>>Selecione</option>
-            <option value="baixa" <%= valores?.prioridade === "baixa" ? "selected" : "" %>>Baixa</option>
-            <option value="media" <%= valores?.prioridade === "media" ? "selected" : "" %>>Media</option>
-            <option value="alta" <%= valores?.prioridade === "alta" ? "selected" : "" %>>Alta</option>
-            <option value="critica" <%= valores?.prioridade === "critica" ? "selected" : "" %>>Critica</option>
+            <% (opcoesClassificacao?.prioridades || []).forEach((item) => { %>
+              <option value="<%= item.value %>" <%= valores?.prioridade === item.value ? "selected" : "" %>><%= item.label %></option>
+            <% }) %>
           </select>
         </div>
 

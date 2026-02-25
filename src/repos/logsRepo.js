@@ -4,6 +4,15 @@ const COL_LOGS = "logs_sistema";
 
 const NIVEIS_ALLOWED = ["info", "warn", "error", "security"];
 const RESULTADOS_ALLOWED = ["sucesso", "erro", "negado", "parcial", "info"];
+const CHAVES_SENSIVEIS = [
+  "senha",
+  "password",
+  "pass",
+  "token",
+  "authorization",
+  "cookie",
+  "senhaHash",
+];
 
 function normString(v, { max = 300, fallback = "" } = {}) {
   const s = String(v ?? "").trim();
@@ -43,6 +52,12 @@ function sanitizeObject(input, depth = 0) {
   for (const [k, v] of entries) {
     const key = normString(k, { max: 80 });
     if (!key) continue;
+    const keyLower = key.toLowerCase();
+
+    if (CHAVES_SENSIVEIS.some((s) => keyLower.includes(String(s).toLowerCase()))) {
+      out[key] = "[REDACTED]";
+      continue;
+    }
 
     if (v === null || typeof v === "undefined") {
       out[key] = null;
@@ -118,7 +133,7 @@ export async function listarLogs({
   dataInicio = "",
   dataFim = "",
   page = 1,
-  limit = 50,
+  limit = 10,
 } = {}) {
   const db = pegarDb();
   const filtro = {};
@@ -164,7 +179,7 @@ export async function listarLogs({
     ];
   }
 
-  const lim = Math.max(1, Math.min(Number(limit) || 50, 200));
+  const lim = Math.max(1, Math.min(Number(limit) || 10, 200));
   const pg = Math.max(1, Number(page) || 1);
   const skip = (pg - 1) * lim;
 
@@ -183,6 +198,7 @@ export async function listarLogs({
         alvo: 1,
         req: 1,
         tags: 1,
+        meta: 1,
         criadoEm: 1,
       })
       .sort({ criadoEm: -1 })
@@ -273,4 +289,3 @@ export async function garantirIndicesLogs() {
   await db.collection(COL_LOGS).createIndex({ "alvo.id": 1, criadoEm: -1 });
   await db.collection(COL_LOGS).createIndex({ nivel: 1, resultado: 1, criadoEm: -1 });
 }
-

@@ -1,0 +1,151 @@
+<section class="usuarios-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Novo usuario</h1>
+          <p class="page-subtitle">Cadastre usuarios com perfil Tecnico ou Usuario.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button secondary" href="/tecnico/usuarios">Voltar</a>
+        </div>
+      </div>
+
+      <% if (erros && erros.length) { %>
+        <div class="alert alert-error">
+          <strong>Verifique os campos:</strong>
+          <ul>
+            <% erros.forEach((e) => { %>
+              <li><%= e %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form class="glpi-form" action="/tecnico/usuarios" method="POST" autocomplete="off">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="nome">Nome completo</label>
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              placeholder="Ex.: Eduardo Fernando Silva Alves"
+              value="<%= (valores && valores.nome) ? valores.nome : '' %>"
+              required
+              maxlength="120"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="usuario">Usuario (login)</label>
+            <input
+              id="usuario"
+              name="usuario"
+              type="text"
+              placeholder="Ex.: ealves"
+              value="<%= (valores && valores.usuario) ? valores.usuario : '' %>"
+              required
+              maxlength="40"
+            />
+            <small class="hint">Sem espacos. Use letras, numeros, ponto e underscore.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="email">E-mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Ex.: ealves@cge.rj.gov.br"
+              value="<%= (valores && valores.email) ? valores.email : '' %>"
+              required
+              maxlength="120"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="perfil">Perfil</label>
+            <select id="perfil" name="perfil" required>
+              <option value="">Selecione...</option>
+              <option value="tecnico" <%= (valores && valores.perfil === 'tecnico') ? 'selected' : '' %>>Tecnico</option>
+              <option value="usuario" <%= (valores && valores.perfil === 'usuario') ? 'selected' : '' %>>Usuario</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="status">Status</label>
+            <select id="status" name="status" required>
+              <option value="ativo" <%= (!valores || !valores.status || valores.status === 'ativo') ? 'selected' : '' %>>Ativo</option>
+              <option value="bloqueado" <%= (valores && valores.status === 'bloqueado') ? 'selected' : '' %>>Bloqueado</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="senhaTemporaria">Senha temporaria</label>
+            <input
+              id="senhaTemporaria"
+              name="senhaTemporaria"
+              type="password"
+              placeholder="Defina uma senha temporaria"
+              minlength="8"
+              maxlength="72"
+              required
+            />
+            <small class="hint">Minimo de 8 caracteres.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="senhaTemporariaConfirmacao">Confirmar senha temporaria</label>
+            <input
+              id="senhaTemporariaConfirmacao"
+              name="senhaTemporariaConfirmacao"
+              type="password"
+              placeholder="Repita a senha temporaria"
+              minlength="8"
+              maxlength="72"
+              required
+            />
+            <small class="hint">A confirmacao precisa ser igual a senha informada.</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="button" type="submit">Salvar</button>
+          <a class="button tertiary" href="/tecnico/usuarios">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const form = document.querySelector(".glpi-form");
+    const senha = document.getElementById("senhaTemporaria");
+    const senhaConf = document.getElementById("senhaTemporariaConfirmacao");
+
+    if (!form || !senha || !senhaConf) return;
+
+    function validar() {
+      const s1 = String(senha.value || "");
+      const s2 = String(senhaConf.value || "");
+      if (s1 !== s2) {
+        senhaConf.setCustomValidity("A confirmacao da senha nao confere.");
+        return;
+      }
+      senhaConf.setCustomValidity("");
+    }
+
+    senha.addEventListener("input", validar);
+    senhaConf.addEventListener("input", validar);
+
+    form.addEventListener("submit", (event) => {
+      validar();
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        form.reportValidity();
+      }
+    });
+  })();
+</script>

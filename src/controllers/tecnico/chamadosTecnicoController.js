@@ -3,12 +3,24 @@ import {
   assumirChamado,
   atualizarResponsavelChamado,
   adicionarInteracaoTecnico,
+  adicionarTecnicoApoioChamado,
+  removerTecnicoApoioChamado,
+  seguirNotificacoesChamado,
+  pararNotificacoesChamado,
 } from "../../repos/chamados/tecnico/chamadosTecnicoRepo.js";
 import { criarNotificacao } from "../../repos/notificacoesRepo.js";
 import { acharPorId, listarUsuariosPorPerfis } from "../../repos/usuariosRepo.js";
 import { notificarNovoChamadoFila } from "../../service/notificacoesService.js";
+import {
+  notificarSeguidoresChamado,
+  chaveDestinoNotificacao,
+} from "../../service/notificacoesSeguidoresChamadoService.js";
 import { registrarEventoSistema } from "../../service/logsService.js";
 import { apagarArquivosUpload, mapearArquivosUpload } from "../../service/anexosService.js";
+import {
+  acharAvaliacaoPorChamado,
+  moderarAvaliacaoPorChamado,
+} from "../../repos/avaliacoesAtendimentoRepo.js";
 
 function podeTecnicoVerChamado(usuarioSessao, chamado) {
   if (!chamado) return false;
@@ -21,6 +33,8 @@ function podeTecnicoVerChamado(usuarioSessao, chamado) {
 
 export async function tecnicoChamadoShowGet(req, res) {
   const usuarioSessao = req.session?.usuario;
+  const perfilSessao = String(usuarioSessao?.perfil || "").toLowerCase();
+  const isAdminSessao = perfilSessao === "admin";
 
   const chamado = await acharChamadoPorId(req.params.id);
   if (!podeTecnicoVerChamado(usuarioSessao, chamado)) {
@@ -39,16 +53,114 @@ export async function tecnicoChamadoShowGet(req, res) {
     perfil: String(u.perfil || ""),
   }));
 
+  const minhaChave = chaveDestinoNotificacao({
+    perfil: usuarioSessao?.perfil,
+    id: usuarioSessao?.id,
+  });
+  const inscritos = Array.isArray(chamado?.inscritosNotificacao)
+    ? chamado.inscritosNotificacao
+    : [];
+  const seguindoNotificacoes = inscritos.some((x) => {
+    const chave = chaveDestinoNotificacao({
+      perfil: x?.perfil,
+      id: x?.id,
+    });
+    return Boolean(minhaChave && chave && minhaChave === chave);
+  });
+  const avaliacaoChamado = isAdminSessao
+    ? await acharAvaliacaoPorChamado(String(chamado?._id || ""))
+    : null;
+
   return res.render("tecnico/chamados/show", {
     layout: "layout-app",
     titulo: `Chamado #${chamado.numero}`,
     ambiente: process.env.AMBIENTE || "LOCAL",
     usuarioSessao,
     chamado,
+    avaliacaoChamado,
     equipeResponsaveis,
+    seguindoNotificacoes,
     cssPortal: "/styles/usuario.css",
     cssExtra: "/styles/chamado-show.css",
   });
+}
+
+export async function tecnicoChamadoAvaliacaoModerarPost(req, res) {
+  const usuarioSessao = req.session?.usuario;
+  const chamadoId = String(req.params.id || "");
+  const perfilSessao = String(usuarioSessao?.perfil || "").toLowerCase();
+
+  try {
+    if (!usuarioSessao?.id || perfilSessao !== "admin") {
+      throw new Error("Apenas admin pode alterar avaliacao de chamado.");
+    }
+
+    const chamado = await acharChamadoPorId(chamadoId);
+    if (!podeTecnicoVerChamado(usuarioSessao, chamado)) {
+      throw new Error("Chamado nao encontrado ou sem permissao.");
+    }
+
+    const nota = Number(req.body?.nota || 0);
+    const feedback = String(req.body?.feedback || "").trim();
+    const sugestao = String(req.body?.sugestao || "").trim();
+    const motivo = String(req.body?.motivo || "").trim();
+
+    const avaliacao = await moderarAvaliacaoPorChamado(chamadoId, {
+      nota,
+      feedback,
+      sugestao,
+      motivo,
+      moderador: {
+        id: String(usuarioSessao?.id || ""),
+        nome: usuarioSessao?.nome,
+        usuario: usuarioSessao?.usuario,
+        perfil: usuarioSessao?.perfil,
+      },
+    });
+
+    await registrarEventoSistema({
+      req,
+      nivel: "security",
+      modulo: "admin",
+      evento: "chamado.avaliacao.moderada",
+      acao: "moderar_avaliacao",
+      resultado: "sucesso",
+      mensagem: `Admin moderou avaliacao do chamado #${chamado?.numero || ""}.`,
+      alvo: {
+        tipo: "chamado",
+        id: String(chamado?._id || chamadoId),
+        numero: String(chamado?.numero || ""),
+      },
+      meta: {
+        nota: Number(avaliacao?.nota || 0),
+        motivo: motivo.slice(0, 300),
+      },
+    });
+
+    req.session.flash = { tipo: "success", mensagem: "Avaliacao alterada pelo admin." };
+  } catch (err) {
+    await registrarEventoSistema({
+      req,
+      nivel: "warn",
+      modulo: "admin",
+      evento: "chamado.avaliacao.moderada",
+      acao: "moderar_avaliacao",
+      resultado: "erro",
+      mensagem: err?.message || "Falha ao moderar avaliacao do chamado.",
+      alvo: {
+        tipo: "chamado",
+        id: chamadoId,
+      },
+    });
+
+    req.session.flash = { tipo: "error", mensagem: err?.message || "Nao foi possivel alterar a avaliacao." };
+  }
+
+  return res.redirect(`/tecnico/chamados/${chamadoId}`);
+}
+
+function perfilDestinoNotificacao(perfil = "") {
+  return String(perfil || "").toLowerCase() === "admin" ? "admin" : "tecnico";
 }
 
 export async function tecnicoChamadoAssumirPost(req, res) {
@@ -113,6 +225,25 @@ export async function tecnicoChamadoAssumirPost(req, res) {
     } catch (errNotif) {
       console.error("[notificacao] falha ao notificar usuário sobre assunção:", errNotif);
     }
+  }
+
+  try {
+    await notificarSeguidoresChamado({
+      chamado,
+      tipo: "mudou_status",
+      titulo: `Chamado #${chamado.numero}: ${chamado.titulo}`,
+      mensagem: `${usuarioSessao.nome} assumiu o chamado.`,
+      url: `/tecnico/chamados/${String(chamado._id)}`,
+      autor: {
+        tipo: perfilDestinoNotificacao(usuarioSessao?.perfil),
+        id: String(usuarioSessao?.id || ""),
+        nome: usuarioSessao?.nome,
+        login: usuarioSessao?.usuario,
+      },
+      ignorar: [chaveDestinoNotificacao({ perfil: usuarioSessao?.perfil, id: usuarioSessao?.id })],
+    });
+  } catch (errNotif) {
+    console.error("[notificacao] falha ao notificar seguidores na assuncao:", errNotif);
   }
 
   await registrarEventoSistema({
@@ -183,6 +314,25 @@ export async function tecnicoChamadoResponsavelPost(req, res) {
         }
       }
 
+      try {
+        await notificarSeguidoresChamado({
+          chamado: chamadoAtualizado,
+          tipo: "mudou_status",
+          titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
+          mensagem: `${usuarioSessao.nome} devolveu o chamado para a fila.`,
+          url: `/tecnico/chamados/${String(chamadoAtualizado._id)}`,
+          autor: {
+            tipo: perfilDestinoNotificacao(usuarioSessao?.perfil),
+            id: String(usuarioSessao?.id || ""),
+            nome: usuarioSessao?.nome,
+            login: usuarioSessao?.usuario,
+          },
+          ignorar: [chaveDestinoNotificacao({ perfil: usuarioSessao?.perfil, id: usuarioSessao?.id })],
+        });
+      } catch (errNotif) {
+        console.error("[notificacao] falha ao notificar seguidores (retorno fila):", errNotif);
+      }
+
       await registrarEventoSistema({
         req,
         nivel: "info",
@@ -247,6 +397,25 @@ export async function tecnicoChamadoResponsavelPost(req, res) {
       }
     }
 
+    try {
+      await notificarSeguidoresChamado({
+        chamado: chamadoAtualizado,
+        tipo: "mudou_status",
+        titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
+        mensagem: `Responsavel alterado para ${novoResp.nome}.`,
+        url: `/tecnico/chamados/${String(chamadoAtualizado._id)}`,
+        autor: {
+          tipo: perfilDestinoNotificacao(usuarioSessao?.perfil),
+          id: String(usuarioSessao?.id || ""),
+          nome: usuarioSessao?.nome,
+          login: usuarioSessao?.usuario,
+        },
+        ignorar: [chaveDestinoNotificacao({ perfil: usuarioSessao?.perfil, id: usuarioSessao?.id })],
+      });
+    } catch (errNotif) {
+      console.error("[notificacao] falha ao notificar seguidores (troca responsavel):", errNotif);
+    }
+
     await registrarEventoSistema({
       req,
       nivel: "info",
@@ -289,6 +458,192 @@ export async function tecnicoChamadoResponsavelPost(req, res) {
     };
     return res.redirect(`/tecnico/chamados/${chamadoId}`);
   }
+}
+
+export async function tecnicoChamadoSeguirNotificacoesPost(req, res) {
+  const usuarioSessao = req.session?.usuario;
+  const chamadoId = String(req.params.id || "");
+
+  try {
+    if (!usuarioSessao?.id) throw new Error("Sessao invalida.");
+    await seguirNotificacoesChamado(
+      chamadoId,
+      {
+        id: usuarioSessao.id,
+        nome: usuarioSessao.nome,
+        usuario: usuarioSessao.usuario,
+        perfil: usuarioSessao.perfil,
+      },
+      { porLogin: usuarioSessao.usuario },
+    );
+    req.session.flash = { tipo: "success", mensagem: "Notificacoes ativadas para este chamado." };
+  } catch (e) {
+    req.session.flash = { tipo: "error", mensagem: e?.message || "Falha ao ativar notificacoes." };
+  }
+
+  return res.redirect(`/tecnico/chamados/${chamadoId}`);
+}
+
+export async function tecnicoChamadoPararNotificacoesPost(req, res) {
+  const usuarioSessao = req.session?.usuario;
+  const chamadoId = String(req.params.id || "");
+
+  try {
+    if (!usuarioSessao?.id) throw new Error("Sessao invalida.");
+    await pararNotificacoesChamado(
+      chamadoId,
+      {
+        id: usuarioSessao.id,
+        nome: usuarioSessao.nome,
+        usuario: usuarioSessao.usuario,
+        perfil: usuarioSessao.perfil,
+      },
+      { porLogin: usuarioSessao.usuario },
+    );
+    req.session.flash = { tipo: "success", mensagem: "Notificacoes desativadas para este chamado." };
+  } catch (e) {
+    req.session.flash = { tipo: "error", mensagem: e?.message || "Falha ao desativar notificacoes." };
+  }
+
+  return res.redirect(`/tecnico/chamados/${chamadoId}`);
+}
+
+export async function tecnicoChamadoApoioAdicionarPost(req, res) {
+  const usuarioSessao = req.session?.usuario;
+  const chamadoId = String(req.params.id || "");
+  const apoioId = String(req.body?.apoioId || "").trim();
+  let chamadoAtualizado = null;
+
+  try {
+    if (!usuarioSessao?.id) throw new Error("Sessao invalida.");
+    if (!apoioId) throw new Error("Selecione um tecnico para apoio.");
+
+    const tecnicoApoio = await acharPorId(apoioId);
+    if (!tecnicoApoio) throw new Error("Tecnico de apoio nao encontrado.");
+    if (!["tecnico", "admin"].includes(String(tecnicoApoio.perfil || "").toLowerCase())) {
+      throw new Error("Perfil invalido para apoio.");
+    }
+    if (String(tecnicoApoio.status || "").toLowerCase() === "bloqueado") {
+      throw new Error("Nao e possivel adicionar tecnico bloqueado.");
+    }
+
+    chamadoAtualizado = await adicionarTecnicoApoioChamado(
+      chamadoId,
+      {
+        id: String(tecnicoApoio._id),
+        nome: tecnicoApoio.nome,
+        usuario: tecnicoApoio.usuario,
+        perfil: tecnicoApoio.perfil,
+      },
+      { porLogin: usuarioSessao.usuario },
+    );
+
+    await seguirNotificacoesChamado(
+      chamadoId,
+      {
+        id: String(tecnicoApoio._id),
+        nome: tecnicoApoio.nome,
+        usuario: tecnicoApoio.usuario,
+        perfil: tecnicoApoio.perfil,
+      },
+      { porLogin: usuarioSessao.usuario },
+    );
+
+    const destinoId = String(tecnicoApoio._id);
+    if (destinoId !== String(usuarioSessao.id || "")) {
+      try {
+        await criarNotificacao({
+          destinatarioTipo: perfilDestinoNotificacao(tecnicoApoio.perfil),
+          destinatarioId: destinoId,
+          chamadoId: String(chamadoAtualizado._id),
+          tipo: "mudou_status",
+          titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
+          mensagem: `${usuarioSessao.nome} adicionou voce como tecnico de apoio.`,
+          url: `/tecnico/chamados/${String(chamadoAtualizado._id)}`,
+          meta: {
+            autor: {
+              tipo: perfilDestinoNotificacao(usuarioSessao.perfil),
+              id: String(usuarioSessao.id),
+              nome: usuarioSessao.nome,
+              login: usuarioSessao.usuario,
+            },
+          },
+        });
+      } catch (errNotif) {
+        console.error("[notificacao] falha ao notificar tecnico de apoio:", errNotif);
+      }
+    }
+
+    try {
+      await notificarSeguidoresChamado({
+        chamado: chamadoAtualizado,
+        tipo: "mudou_status",
+        titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
+        mensagem: `Tecnico de apoio adicionado: ${tecnicoApoio.nome}.`,
+        url: `/tecnico/chamados/${String(chamadoAtualizado._id)}`,
+        autor: {
+          tipo: perfilDestinoNotificacao(usuarioSessao?.perfil),
+          id: String(usuarioSessao?.id || ""),
+          nome: usuarioSessao?.nome,
+          login: usuarioSessao?.usuario,
+        },
+        ignorar: [chaveDestinoNotificacao({ perfil: usuarioSessao?.perfil, id: usuarioSessao?.id })],
+      });
+    } catch (errNotif) {
+      console.error("[notificacao] falha ao notificar seguidores (apoio adicionado):", errNotif);
+    }
+
+    req.session.flash = { tipo: "success", mensagem: "Tecnico de apoio adicionado." };
+  } catch (e) {
+    req.session.flash = { tipo: "error", mensagem: e?.message || "Falha ao adicionar tecnico de apoio." };
+  }
+
+  return res.redirect(`/tecnico/chamados/${chamadoId}`);
+}
+
+export async function tecnicoChamadoApoioRemoverPost(req, res) {
+  const usuarioSessao = req.session?.usuario;
+  const chamadoId = String(req.params.id || "");
+  const apoioId = String(req.body?.apoioId || "").trim();
+  let chamadoAtualizado = null;
+
+  try {
+    if (!usuarioSessao?.id) throw new Error("Sessao invalida.");
+    if (!apoioId) throw new Error("Tecnico de apoio invalido.");
+
+    chamadoAtualizado = await removerTecnicoApoioChamado(
+      chamadoId,
+      apoioId,
+      { porLogin: usuarioSessao.usuario },
+    );
+
+    req.session.flash = { tipo: "success", mensagem: "Tecnico de apoio removido." };
+  } catch (e) {
+    req.session.flash = { tipo: "error", mensagem: e?.message || "Falha ao remover tecnico de apoio." };
+  }
+
+  if (chamadoAtualizado) {
+    try {
+      await notificarSeguidoresChamado({
+        chamado: chamadoAtualizado,
+        tipo: "mudou_status",
+        titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
+        mensagem: "Tecnico de apoio removido deste chamado.",
+        url: `/tecnico/chamados/${String(chamadoAtualizado._id)}`,
+        autor: {
+          tipo: perfilDestinoNotificacao(usuarioSessao?.perfil),
+          id: String(usuarioSessao?.id || ""),
+          nome: usuarioSessao?.nome,
+          login: usuarioSessao?.usuario,
+        },
+        ignorar: [chaveDestinoNotificacao({ perfil: usuarioSessao?.perfil, id: usuarioSessao?.id })],
+      });
+    } catch (errNotif) {
+      console.error("[notificacao] falha ao notificar seguidores (apoio removido):", errNotif);
+    }
+  }
+
+  return res.redirect(`/tecnico/chamados/${chamadoId}`);
 }
 
 export async function tecnicoChamadoSolucaoPost(req, res) {
@@ -375,11 +730,18 @@ export async function tecnicoChamadoInteracaoPost(req, res) {
     if (req.uploadError) throw new Error(req.uploadError);
 
     const usuarioSessao = req.session?.usuario;
+    const isAdmin = String(usuarioSessao?.perfil || "").toLowerCase() === "admin";
     const texto = String(req.body?.texto || "").trim();
     const tipo = String(req.body?.tipo || "");
     const anexos = mapearArquivosUpload(req.files);
+    const chamadoAntes = await acharChamadoPorId(req.params.id);
+    if (!chamadoAntes) throw new Error("Chamado nao encontrado.");
 
     const t = tipo === "solucao" ? "solucao" : "mensagem";
+    if (!isAdmin && t === "mensagem" && String(chamadoAntes.status || "") === "aguardando_usuario") {
+      throw new Error("Chamado aguardando usuario. Atualize a solucao ou aguarde a validacao.");
+    }
+    const solucaoAtualizada = t === "solucao" && String(chamadoAntes.status || "") === "aguardando_usuario";
     const mudarStatusPara = t === "solucao" ? "aguardando_usuario" : null;
 
     const chamadoAtualizado = await adicionarInteracaoTecnico(
@@ -400,7 +762,9 @@ export async function tecnicoChamadoInteracaoPost(req, res) {
         chamadoId: String(chamadoAtualizado._id),
         tipo: t === "solucao" ? "nova_solucao" : "nova_mensagem",
         titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
-        mensagem: t === "solucao" ? "Técnico enviou uma solução." : "Nova mensagem do técnico.",
+        mensagem: t === "solucao"
+          ? (solucaoAtualizada ? "Tecnico atualizou a solucao do chamado." : "Tecnico enviou uma solucao.")
+          : "Nova mensagem do tecnico.",
         url: `/chamados/${String(chamadoAtualizado._id)}`,
         meta: {
           autor: { tipo: "tecnico", id: autorId, nome: usuarioSessao.nome, login: usuarioSessao.usuario },
@@ -408,7 +772,33 @@ export async function tecnicoChamadoInteracaoPost(req, res) {
       });
     }
 
-    req.session.flash = { tipo: "success", mensagem: t === "solucao" ? "Solução enviada." : "Mensagem enviada." };
+    try {
+      await notificarSeguidoresChamado({
+        chamado: chamadoAtualizado,
+        tipo: t === "solucao" ? "nova_solucao" : "nova_mensagem",
+        titulo: `Chamado #${chamadoAtualizado.numero}: ${chamadoAtualizado.titulo}`,
+        mensagem: t === "solucao"
+          ? (solucaoAtualizada ? "Solucao atualizada no chamado." : "Nova solucao enviada no chamado.")
+          : "Nova interacao no chamado.",
+        url: `/tecnico/chamados/${String(chamadoAtualizado._id)}`,
+        autor: {
+          tipo: perfilDestinoNotificacao(usuarioSessao?.perfil),
+          id: String(usuarioSessao?.id || ""),
+          nome: usuarioSessao?.nome,
+          login: usuarioSessao?.usuario,
+        },
+        ignorar: [chaveDestinoNotificacao({ perfil: usuarioSessao?.perfil, id: usuarioSessao?.id })],
+      });
+    } catch (errNotif) {
+      console.error("[notificacao] falha ao notificar seguidores (interacao tecnico):", errNotif);
+    }
+
+    req.session.flash = {
+      tipo: "success",
+      mensagem: t === "solucao"
+        ? (solucaoAtualizada ? "Solucao atualizada. Usuario notificado." : "Solucao enviada. Aguardando usuario.")
+        : "Mensagem enviada.",
+    };
     await registrarEventoSistema({
       req,
       nivel: "info",
@@ -457,3 +847,4 @@ export async function tecnicoChamadoInteracaoPost(req, res) {
     return res.redirect(`/tecnico/chamados/${req.params.id}`);
   }
 }
+

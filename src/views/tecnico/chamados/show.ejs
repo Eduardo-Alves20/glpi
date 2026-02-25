@@ -5,7 +5,7 @@
         const STATUS_UI = {
           aberto: { label: "Aberto", cls: "st-aberto" },
           em_atendimento: { label: "Em atendimento", cls: "st-atendimento" },
-          aguardando_usuario: { label: "Aguardando usuário", cls: "st-aguardando" },
+          aguardando_usuario: { label: "Aguardando usuario", cls: "st-aguardando" },
           fechado: { label: "Fechado", cls: "st-fechado" },
         };
 
@@ -20,7 +20,7 @@
           (chamado.urgencia ? String(chamado.urgencia) : "-");
 
         const responsavelLabel =
-          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuído" : "-"));
+          (chamado.responsavelNome || chamado.responsavelLogin || (chamado.responsavelId ? "Atribuido" : "-"));
 
         const solicitanteLabel =
           (chamado.criadoPor?.nome || chamado.criadoPor?.login || "-");
@@ -43,12 +43,47 @@
         };
 
         const tipoLabel = (t) => {
-          if (t === "solucao") return "Solução";
+          if (t === "solucao") return "Solucao";
           if (t === "mensagem") return "Mensagem";
           if (t === "comentario_interno") return "Nota interna";
           if (t === "status") return "Status";
-          if (t === "transferencia") return "Transferência";
+          if (t === "transferencia") return "Transferencia";
           return t ? String(t) : "Evento";
+        };
+
+        const tecnicoPorId = (id) => {
+          const alvo = String(id || "").trim();
+          if (!alvo) return null;
+          return (equipeResponsaveis || []).find((u) => String(u?.id || u?._id || "").trim() === alvo) || null;
+        };
+
+        const destinoTransferencia = (h) => {
+          const tipo = String(h?.tipo || "");
+          if (!["transferencia", "atribuicao"].includes(tipo)) return "";
+
+          const meta = h?.meta || {};
+          if (meta?.responsavelId === null) {
+            return "Destino: fila (sem responsavel)";
+          }
+
+          const id = String(meta?.responsavelId || "").trim();
+          let nome = String(meta?.responsavelNome || "").trim();
+          let login = String(meta?.responsavelLogin || "").trim();
+
+          if ((!nome || !login) && id) {
+            const tecnico = tecnicoPorId(id);
+            if (tecnico) {
+              if (!nome) nome = String(tecnico?.nome || "").trim();
+              if (!login) login = String(tecnico?.usuario || tecnico?.login || "").trim();
+            }
+          }
+
+          if (nome && login) return `Destino: ${nome} (${login})`;
+          if (nome) return `Destino: ${nome}`;
+          if (login) return `Destino: ${login}`;
+          if (id) return "Destino: tecnico atribuido";
+
+          return "";
         };
 
         const normalizarExt = (s) => {
@@ -97,7 +132,29 @@
           return `${(b / (1024 * 1024)).toFixed(1)} MB`;
         };
         const chamadoFechado = chamado.status === "fechado";
+        const isAdmin = String(usuarioSessao?.perfil || "").toLowerCase() === "admin";
+        const podeDecidirComoAdmin = isAdmin && chamado.status === "aguardando_usuario";
+        const aguardandoUsuario = chamado.status === "aguardando_usuario";
         const respAtualId = chamado.responsavelId ? String(chamado.responsavelId) : "";
+        const seguindo = Boolean(seguindoNotificacoes);
+        const tecnicosApoio = Array.isArray(chamado.tecnicosApoio) ? chamado.tecnicosApoio : [];
+        const apoioIds = new Set(tecnicosApoio.map((x) => String(x?.id || "")));
+        const opcoesApoio = (equipeResponsaveis || []).filter((u) => {
+          const id = String(u?.id || "");
+          if (!id) return false;
+          if (id === respAtualId) return false;
+          if (apoioIds.has(id)) return false;
+          return true;
+        });
+
+        const ultimaSolucao = (() => {
+          const lista = Array.isArray(historico) ? historico.slice().reverse() : [];
+          const item = lista.find((h) => String(h?.tipo || "") === "solucao" && String(h?.mensagem || "").trim());
+          return item ? String(item.mensagem || "") : "";
+        })();
+        const avaliacao = avaliacaoChamado || null;
+        const notaAvaliacao = Number(avaliacao?.nota || 0);
+        const moderacao = avaliacao?.moderacao || null;
       %>
 
       <div class="page-header">
@@ -112,11 +169,22 @@
 
           <div class="subrow">
             <span class="meta"><strong>Solicitante:</strong> <%= solicitanteLabel %></span>
-            <span class="meta"><strong>Responsável:</strong> <%= responsavelLabel %></span>
+            <span class="meta"><strong>Responsavel:</strong> <%= responsavelLabel %></span>
           </div>
         </div>
 
         <div class="page-actions">
+          <% if (!chamadoFechado) { %>
+            <% if (seguindo) { %>
+              <form method="POST" action="/tecnico/chamados/<%= chamado._id %>/notificacoes/parar">
+                <button class="button secondary" type="submit">Parar notificacoes</button>
+              </form>
+            <% } else { %>
+              <form method="POST" action="/tecnico/chamados/<%= chamado._id %>/notificacoes/seguir">
+                <button class="button" type="submit">Receber atualizacoes</button>
+              </form>
+            <% } %>
+          <% } %>
           <a class="button secondary" href="/tecnico/chamados">Voltar</a>
         </div>
       </div>
@@ -124,7 +192,7 @@
       <div class="glpi-form">
         <div class="form-grid">
           <div class="form-field">
-            <label>Título</label>
+            <label>Titulo</label>
             <input type="text" value="<%= chamado.titulo %>" disabled />
           </div>
 
@@ -141,7 +209,7 @@
               class="form-field responsavel-form"
               style="grid-column: 1 / -1;"
             >
-              <label for="responsavelBusca">Responsável do chamado</label>
+              <label for="responsavelBusca">Responsavel do chamado</label>
               <input
                 id="responsavelBusca"
                 type="search"
@@ -149,20 +217,47 @@
                 placeholder="Buscar por nome ou login..."
               />
               <select id="responsavelId" name="responsavelId" data-current-value="<%= respAtualId %>">
-                <option value="">Sem responsável (voltar para fila)</option>
+                <option value="">Sem responsavel (voltar para fila)</option>
                 <% (equipeResponsaveis || []).forEach((u) => { %>
                   <option value="<%= u.id %>" <%= respAtualId === String(u.id) ? "selected" : "" %>>
                     <%= u.nome %> (<%= u.usuario %>) - <%= u.perfil %>
                   </option>
                 <% }) %>
               </select>
-              <small class="hint">Selecione e a alteração é salva automaticamente.</small>
-              <small class="hint muted" id="responsavelStatus" hidden>Salvando responsável...</small>
+              <small class="hint">Selecione e a alteracao e salva automaticamente.</small>
+              <small class="hint muted" id="responsavelStatus" hidden>Salvando responsavel...</small>
             </form>
+            <div class="form-field apoio-form" style="grid-column: 1 / -1;">
+              <label for="apoioId">Tecnicos de apoio</label>
+              <% if (tecnicosApoio.length) { %>
+                <div class="apoio-lista">
+                  <% tecnicosApoio.forEach((a) => { %>
+                    <form method="POST" action="/tecnico/chamados/<%= chamado._id %>/apoio/remover" class="apoio-chip-form">
+                      <input type="hidden" name="apoioId" value="<%= String(a?.id || "") %>" />
+                      <span class="apoio-chip-label"><%= String(a?.nome || a?.login || "tecnico") %> (<%= String(a?.login || "-") %>)</span>
+                      <button class="apoio-chip-remove" type="submit" aria-label="Remover tecnico de apoio">&times;</button>
+                    </form>
+                  <% }) %>
+                </div>
+              <% } else { %>
+                <small class="hint muted">Nenhum tecnico de apoio adicionado.</small>
+              <% } %>
+
+              <form method="POST" action="/tecnico/chamados/<%= chamado._id %>/apoio/adicionar" class="apoio-add-form">
+                <select id="apoioId" name="apoioId">
+                  <option value="">Selecione um tecnico/admin</option>
+                  <% opcoesApoio.forEach((u) => { %>
+                    <option value="<%= u.id %>"><%= u.nome %> (<%= u.usuario %>) - <%= u.perfil %></option>
+                  <% }) %>
+                </select>
+                <button class="button secondary" type="submit">Adicionar apoio</button>
+              </form>
+              <small class="hint">Tecnicos de apoio tambem recebem notificacoes e conseguem acompanhar o chamado.</small>
+            </div>
           <% } %>
 
           <div class="form-field" style="grid-column: 1 / -1;">
-            <label>Descrição</label>
+            <label>Descricao</label>
             <textarea rows="6" disabled><%= chamado.descricao %></textarea>
           </div>
         </div>
@@ -170,12 +265,12 @@
 
       <div class="chat-wrap">
         <div class="chat-head">
-          <h2 class="chat-title">Interações</h2>
-          <span class="chat-sub">Tudo que técnicos e usuário escreveram fica registrado aqui.</span>
+          <h2 class="chat-title">Interacoes</h2>
+          <span class="chat-sub">Tudo que tecnicos e usuario escreveram fica registrado aqui.</span>
         </div>
 
         <% if (!historico.length) { %>
-          <div class="chat-empty">Nenhuma interação ainda.</div>
+          <div class="chat-empty">Nenhuma interacao ainda.</div>
         <% } else { %>
           <div class="chat" data-chat-wrap>
             <% historico.forEach((h) => { %>
@@ -190,6 +285,11 @@
                   <div class="msg-body"><%= h.mensagem %></div>
                 <% } else { %>
                   <div class="msg-body muted">-</div>
+                <% } %>
+
+                <% const destino = destinoTransferencia(h); %>
+                <% if (destino) { %>
+                  <div class="msg-extra"><%= destino %></div>
                 <% } %>
 
                 <% const anexosMsg = anexosDaInteracao(h); %>
@@ -226,6 +326,147 @@
         <% } %>
       </div>
 
+      <% if (avaliacao) { %>
+        <div class="avaliacao-admin-card">
+          <div class="avaliacao-admin-head">
+            <h3 class="avaliacao-admin-title">Avaliacao do usuario</h3>
+            <span class="avaliacao-admin-note"><%= notaAvaliacao.toFixed(1) %>/5</span>
+          </div>
+
+          <div class="avaliacao-admin-stars" aria-label="Nota <%= notaAvaliacao.toFixed(1) %> de 5">
+            <% for (let i = 1; i <= 5; i += 1) { %>
+              <span class="star <%= i <= Math.round(notaAvaliacao) ? "is-on" : "" %>" aria-hidden="true">&#9733;</span>
+            <% } %>
+          </div>
+
+          <% if (avaliacao.feedback) { %>
+            <p><strong>Feedback:</strong> <%= avaliacao.feedback %></p>
+          <% } %>
+          <% if (avaliacao.sugestao) { %>
+            <p><strong>Sugestao:</strong> <%= avaliacao.sugestao %></p>
+          <% } %>
+          <% if (!avaliacao.feedback && !avaliacao.sugestao) { %>
+            <p class="muted">Sem comentario adicional.</p>
+          <% } %>
+
+          <% if (moderacao?.editadaPorAdmin) { %>
+            <div class="avaliacao-admin-moderada">
+              Moderada por admin em
+              <strong><%= moderacao?.editadaEm ? new Date(moderacao.editadaEm).toLocaleString("pt-BR") : "-" %></strong>
+              <% if (moderacao?.moderador?.login) { %>
+                por <strong><%= moderacao.moderador.login %></strong>
+              <% } %>.
+              <% if (moderacao?.motivo) { %>
+                Motivo: <%= moderacao.motivo %>
+              <% } %>
+            </div>
+          <% } %>
+
+          <% if (isAdmin) { %>
+            <form
+              id="formModerarAvaliacao"
+              method="POST"
+              action="/tecnico/chamados/<%= chamado._id %>/avaliacao/moderar"
+              class="glpi-form avaliacao-admin-form"
+              autocomplete="off"
+            >
+              <div class="form-grid">
+                <div class="form-field">
+                  <label for="avaliacaoNotaAdmin">Nota</label>
+                  <select id="avaliacaoNotaAdmin" name="nota" required>
+                    <% [5,4,3,2,1].forEach((n) => { %>
+                      <option value="<%= n %>" <%= Number(Math.round(notaAvaliacao)) === n ? "selected" : "" %>><%= n %></option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <label for="avaliacaoFeedbackAdmin">Feedback (ajustado)</label>
+                  <textarea id="avaliacaoFeedbackAdmin" name="feedback" rows="3" maxlength="1500"><%= avaliacao.feedback || "" %></textarea>
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <label for="avaliacaoSugestaoAdmin">Sugestao (ajustada)</label>
+                  <textarea id="avaliacaoSugestaoAdmin" name="sugestao" rows="3" maxlength="1500"><%= avaliacao.sugestao || "" %></textarea>
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <label for="avaliacaoMotivoAdmin">Motivo da alteracao (obrigatorio)</label>
+                  <textarea
+                    id="avaliacaoMotivoAdmin"
+                    name="motivo"
+                    rows="2"
+                    minlength="8"
+                    maxlength="600"
+                    required
+                    placeholder="Ex.: conteudo ofensivo / fora da realidade do atendimento..."
+                  ></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="button" type="submit">Alterar avaliacao</button>
+              </div>
+            </form>
+
+            <div class="confirm-avaliacao-modal" id="confirmAvaliacaoModal" hidden>
+              <div class="confirm-avaliacao-modal__backdrop"></div>
+              <div class="confirm-avaliacao-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="confirmAvaliacaoTitulo">
+                <div class="confirm-avaliacao-modal__header">
+                  <h2 id="confirmAvaliacaoTitulo">Confirmar alteracao de avaliacao</h2>
+                </div>
+                <p class="confirm-avaliacao-modal__text">
+                  Esta acao altera a avaliacao original do usuario no chamado. Deseja continuar?
+                </p>
+                <div class="confirm-avaliacao-modal__actions">
+                  <button type="button" class="button secondary" id="btnCancelarAlterarAvaliacao">Cancelar</button>
+                  <button type="button" class="button" id="btnConfirmarAlterarAvaliacao">Sim, alterar avaliacao</button>
+                </div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+
+      <% if (podeDecidirComoAdmin) { %>
+        <form
+          id="adminDecisaoChamadoForm"
+          method="POST"
+          action="/chamados/<%= chamado._id %>/confirmar"
+          class="glpi-form"
+          autocomplete="off"
+          enctype="multipart/form-data"
+        >
+          <div class="form-field">
+            <label for="comentarioAdminDecisao">Validacao admin (aguardando usuario)</label>
+            <input
+              id="comentarioAdminDecisao"
+              type="text"
+              name="comentario"
+              maxlength="2000"
+              autocomplete="off"
+              placeholder="Motivo opcional para confirmar e obrigatorio para reabrir..."
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="anexosAdminDecisao">Anexos para validacao (opcional)</label>
+            <input
+              id="anexosAdminDecisao"
+              name="anexos"
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp"
+            />
+            <small class="hint">Voce pode confirmar/fechar ou reabrir como admin sem trocar de tela.</small>
+          </div>
+
+          <div class="form-actions">
+            <button class="button" type="submit">Confirmar e fechar (admin)</button>
+            <button class="button secondary" type="submit" formaction="/chamados/<%= chamado._id %>/reabrir">
+              Reabrir (admin)
+            </button>
+          </div>
+        </form>
+      <% } %>
+
+      <% if (!podeDecidirComoAdmin && !chamadoFechado && !aguardandoUsuario) { %>
       <form
         action="/tecnico/chamados/<%= chamado._id %>/interacao"
         method="POST"
@@ -233,6 +474,7 @@
         autocomplete="off"
         enctype="multipart/form-data"
       >
+
         <div class="form-field">
           <label for="texto">Digite sua resposta</label>
           <textarea
@@ -243,7 +485,7 @@
             placeholder="Escreva uma mensagem..."
           ></textarea>
           <small class="hint">
-            Escreva uma mensagem ou anexe arquivos. Use <strong>Enviar como solução</strong> para mover para Aguardando usuário.
+            Escreva uma mensagem ou anexe arquivos. Use <strong>Enviar como solucao</strong> para mover para Aguardando usuario.
           </small>
         </div>
 
@@ -265,10 +507,53 @@
           </button>
 
           <button class="button" type="submit" name="tipo" value="solucao">
-            Enviar como solução
+            Enviar como solucao
           </button>
         </div>
       </form>
+      <% } else if (!podeDecidirComoAdmin && !chamadoFechado && aguardandoUsuario) { %>
+      <form
+        action="/tecnico/chamados/<%= chamado._id %>/interacao"
+        method="POST"
+        class="glpi-form solucao-pendente"
+        autocomplete="off"
+        enctype="multipart/form-data"
+      >
+        <input type="hidden" name="tipo" value="solucao" />
+
+        <div class="form-field">
+          <label for="textoSolucaoEdicao">Aguardando confirmacao do usuario</label>
+          <textarea
+            id="textoSolucaoEdicao"
+            name="texto"
+            rows="5"
+            minlength="2"
+            placeholder="Se necessario, ajuste a solucao para o usuario..."
+          ><%= ultimaSolucao %></textarea>
+          <small class="hint">Mensagem/anexo comum fica bloqueado neste status. Se precisar, atualize a solucao.</small>
+        </div>
+
+        <div class="form-field">
+          <label for="anexosSolucaoEdicao">Anexos da solucao (opcional)</label>
+          <input
+            id="anexosSolucaoEdicao"
+            name="anexos"
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp"
+          />
+          <small class="hint">Ao atualizar a solucao, o usuario recebe nova notificacao automaticamente.</small>
+        </div>
+
+        <div class="form-actions">
+          <button class="button" type="submit">Atualizar solucao</button>
+        </div>
+      </form>
+      <% } else if (podeDecidirComoAdmin) { %>
+        <div class="hint muted" style="margin-top:14px;">Use os botoes de validacao acima para confirmar/fechar ou reabrir.</div>
+      <% } else { %>
+        <div class="hint muted" style="margin-top:14px;">Este chamado esta fechado.</div>
+      <% } %>
     </div>
   </div>
 </section>
@@ -282,6 +567,7 @@
   .subrow { margin-top: 8px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
   .meta { font-size: 13px; opacity: .85; }
   .meta strong { opacity: 1; }
+  .page-actions form { margin: 0; }
 
   .badge {
     display:inline-flex; align-items:center; gap:8px;
@@ -325,6 +611,52 @@
     background: #fff;
     color: rgba(15,31,55,.92);
   }
+  .apoio-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .apoio-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .apoio-chip-form {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(15,31,55,.14);
+    background: rgba(15,31,55,.04);
+  }
+  .apoio-chip-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(15,31,55,.9);
+  }
+  .apoio-chip-remove {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(15,31,55,.14);
+    color: rgba(15,31,55,.9);
+    cursor: pointer;
+    line-height: 1;
+    font-size: 14px;
+    padding: 0;
+  }
+  .apoio-chip-remove:hover {
+    background: rgba(15,31,55,.22);
+  }
+  .apoio-add-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
 
   .chat-wrap {
     margin-top: 18px;
@@ -349,6 +681,7 @@
   .msg-type { font-size: 12px; padding: 2px 8px; border-radius: 999px; border:1px solid rgba(15,31,55,.12); background:#fff; }
   .msg-time { margin-left:auto; font-size: 12px; opacity: .75; }
   .msg-body { white-space: pre-wrap; font-size: 13px; line-height: 1.4; }
+  .msg-extra { margin-top: 6px; font-size: 12px; opacity: .85; font-weight: 600; }
 
   .anexos { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
   .anexo-item { border: 1px solid rgba(15,31,55,.1); border-radius: 10px; padding: 8px; background: rgba(15,31,55,.02); }
@@ -357,6 +690,112 @@
   .anexo-preview-img { margin-top: 8px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(15,31,55,.14); }
   .anexo-preview-pdf { margin-top: 8px; width: 100%; min-height: 320px; border: 1px solid rgba(15,31,55,.14); border-radius: 8px; background: #fff; }
   .muted { opacity: .7; }
+
+  .avaliacao-admin-card {
+    margin-top: 14px;
+    border: 1px solid rgba(15,31,55,.12);
+    border-radius: 12px;
+    background: rgba(15,31,55,.03);
+    padding: 14px;
+  }
+  .avaliacao-admin-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .avaliacao-admin-title {
+    margin: 0;
+    font-size: 16px;
+    color: #123;
+  }
+  .avaliacao-admin-note {
+    font-weight: 700;
+    color: #0f4d7b;
+  }
+  .avaliacao-admin-stars {
+    margin-top: 8px;
+    display: inline-flex;
+    gap: 4px;
+    font-size: 24px;
+    line-height: 1;
+  }
+  .avaliacao-admin-stars .star {
+    color: #c8d4e3;
+  }
+  .avaliacao-admin-stars .star.is-on {
+    color: #f5b301;
+  }
+  .avaliacao-admin-card p {
+    margin: 8px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .avaliacao-admin-moderada {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #f2d38a;
+    background: #fff6df;
+    color: #5d4b1e;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .avaliacao-admin-form {
+    margin-top: 12px;
+  }
+
+  .confirm-avaliacao-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1800;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+  .confirm-avaliacao-modal[hidden] {
+    display: none !important;
+  }
+  .confirm-avaliacao-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(7, 20, 36, 0.58);
+  }
+  .confirm-avaliacao-modal__dialog {
+    position: relative;
+    width: min(520px, 100%);
+    background: #fff;
+    border: 1px solid rgba(15, 31, 55, .14);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 22px 44px rgba(15, 31, 55, .24);
+  }
+  .confirm-avaliacao-modal__header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #10263f;
+  }
+  .confirm-avaliacao-modal__text {
+    margin: 10px 0 0;
+    color: #425b75;
+    line-height: 1.45;
+  }
+  .confirm-avaliacao-modal__actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .solucao-pendente {
+    margin-top: 14px;
+    border: 1px solid rgba(243, 156, 18, .32);
+    border-radius: 12px;
+    background: rgba(243, 156, 18, .08);
+    padding: 12px;
+  }
 
   .form-actions {
     margin-top: 16px;
@@ -368,6 +807,43 @@
   @media (max-width: 900px) {
     .usuarios-page .form-wrapper { padding: 18px; }
     .form-actions .button { width: 100%; justify-content: center; }
+    .apoio-add-form { grid-template-columns: 1fr; }
+    .apoio-add-form .button { width: 100%; justify-content: center; }
+  }
+
+  body.app-layout.dark-mode .avaliacao-admin-card {
+    border-color: #2f4663;
+    background: #132235;
+  }
+  body.app-layout.dark-mode .avaliacao-admin-title {
+    color: #dbe9ff;
+  }
+  body.app-layout.dark-mode .avaliacao-admin-note {
+    color: #dbe8fc;
+  }
+  body.app-layout.dark-mode .avaliacao-admin-stars .star {
+    color: #365170;
+  }
+  body.app-layout.dark-mode .avaliacao-admin-stars .star.is-on {
+    color: #f8ca40;
+  }
+  body.app-layout.dark-mode .avaliacao-admin-card p {
+    color: #d5e4fb;
+  }
+  body.app-layout.dark-mode .avaliacao-admin-moderada {
+    border-color: #66542d;
+    background: #2f2a1f;
+    color: #f7e3b4;
+  }
+  body.app-layout.dark-mode .confirm-avaliacao-modal__dialog {
+    background: #12233a;
+    border-color: #2f4663;
+  }
+  body.app-layout.dark-mode .confirm-avaliacao-modal__header h2 {
+    color: #e6efff;
+  }
+  body.app-layout.dark-mode .confirm-avaliacao-modal__text {
+    color: #a9bdd8;
   }
 </style>
 <script type="module">
@@ -441,10 +917,54 @@
     rebuildOptions("");
   })();
 
+  (function setupConfirmacaoModerarAvaliacao() {
+    const form = document.getElementById("formModerarAvaliacao");
+    const modal = document.getElementById("confirmAvaliacaoModal");
+    const btnCancelar = document.getElementById("btnCancelarAlterarAvaliacao");
+    const btnConfirmar = document.getElementById("btnConfirmarAlterarAvaliacao");
+    if (!form || !modal) return;
+
+    function abrirModal() {
+      modal.hidden = false;
+    }
+
+    function fecharModal() {
+      modal.hidden = true;
+    }
+
+    form.addEventListener("submit", (event) => {
+      if (form.dataset.confirmed === "1") {
+        form.dataset.confirmed = "0";
+        return;
+      }
+
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        form.reportValidity();
+        return;
+      }
+
+      event.preventDefault();
+      abrirModal();
+    });
+
+    btnCancelar?.addEventListener("click", fecharModal);
+    modal.querySelector(".confirm-avaliacao-modal__backdrop")?.addEventListener("click", fecharModal);
+
+    btnConfirmar?.addEventListener("click", () => {
+      form.dataset.confirmed = "1";
+      fecharModal();
+      form.requestSubmit();
+    });
+  })();
+
   startChamadoPoll({
     chamadoId: "<%= String(chamado._id) %>",
     viewerId: "<%= String(usuarioSessao?.id || '') %>",
     intervalMs: 1000,
     notifyOnlyWhenHidden: true,
+    reloadOnChange: true,
   });
+
 </script>
+

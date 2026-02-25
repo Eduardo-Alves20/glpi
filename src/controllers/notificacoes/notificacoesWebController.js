@@ -1,5 +1,5 @@
 import {
-  listarNotificacoes,
+  listarNotificacoesPaginado,
   contarNaoLidas,
   marcarComoLida,
   marcarTodasComoLidas,
@@ -8,8 +8,9 @@ import {
   resolverDestinatarioNotificacoes,
   obterTiposIgnoradosNotificacoes,
 } from "../../service/notificacoesDestinatarioService.js";
+import { normalizarPaginacao } from "../../service/paginacaoService.js";
 
-const LIMIT_DEFAULT = 80;
+const LIMIT_DEFAULT = 10;
 const LIMIT_MAX = 100;
 const ESTADOS_VALIDOS = new Set(["todas", "nao_lidas", "lidas"]);
 const TIPOS_VALIDOS = new Set([
@@ -45,10 +46,16 @@ function parseTipo(tipo) {
   return TIPOS_VALIDOS.has(san) ? san : "todos";
 }
 
-function parseLimit(limit) {
-  const n = Number.parseInt(limit, 10);
-  if (!Number.isFinite(n) || n <= 0) return LIMIT_DEFAULT;
-  return Math.min(Math.max(n, 1), LIMIT_MAX);
+function parsePaginacao(query = {}) {
+  return normalizarPaginacao(
+    { page: query.page, limit: query.limit },
+    {
+      pageDefault: 1,
+      limitDefault: LIMIT_DEFAULT,
+      limitMin: LIMIT_DEFAULT,
+      limitMax: LIMIT_MAX,
+    },
+  );
 }
 
 function rotuloTipo(tipo) {
@@ -91,6 +98,7 @@ function montarRetornoAtual(filtros) {
   if (filtros.estado !== "todas") params.set("estado", filtros.estado);
   if (filtros.tipo !== "todos") params.set("tipo", filtros.tipo);
   if (filtros.limit !== LIMIT_DEFAULT) params.set("limit", String(filtros.limit));
+  if (filtros.page > 1) params.set("page", String(filtros.page));
   const query = params.toString();
   return query ? `/notificacoes?${query}` : "/notificacoes";
 }
@@ -119,10 +127,12 @@ export async function notificacoesIndexGet(req, res) {
   const destinatario = resolverDestinatarioNotificacoes(usuarioSessao);
   if (!destinatario) return res.redirect("/auth");
 
+  const { page, limit } = parsePaginacao(req.query || {});
   const filtros = {
     estado: parseEstado(req.query?.estado),
     tipo: parseTipo(req.query?.tipo),
-    limit: parseLimit(req.query?.limit),
+    page,
+    limit,
   };
 
   const readState =
@@ -131,25 +141,31 @@ export async function notificacoesIndexGet(req, res) {
       : (filtros.estado === "lidas" ? "read" : "all");
   const tipoFiltro = filtros.tipo === "todos" ? null : filtros.tipo;
   const tiposIgnorados = obterTiposIgnoradosNotificacoes(usuarioSessao);
-  const retornoAtual = montarRetornoAtual(filtros);
   const opcoesTipo = [...TIPOS_VALIDOS]
     .filter((tipo) => tipo !== "todos")
     .filter((tipo) => !tiposIgnorados.includes(tipo))
     .map((tipo) => ({ valor: tipo, label: rotuloTipo(tipo) }));
 
   try {
-    const [itens, totalNaoLidas] = await Promise.all([
-      listarNotificacoes({
+    const [dados, totalNaoLidas] = await Promise.all([
+      listarNotificacoesPaginado({
         destinatario,
         readState,
         tipo: tipoFiltro,
+        page: filtros.page,
         limit: filtros.limit,
         tiposIgnorados,
       }),
       contarNaoLidas(destinatario, { tiposIgnorados }),
     ]);
 
-    const notificacoes = (itens || []).map(mapearNotificacaoView);
+    const notificacoes = (dados?.itens || []).map(mapearNotificacaoView);
+    const filtrosAtuais = {
+      ...filtros,
+      page: dados?.page || filtros.page,
+      limit: dados?.limit || filtros.limit,
+    };
+    const retornoAtual = montarRetornoAtual(filtrosAtuais);
 
     return res.render("notificacoes/index", {
       layout: "layout-app",
@@ -157,18 +173,30 @@ export async function notificacoesIndexGet(req, res) {
       cssPortal: cssPortalPorPerfil(usuarioSessao?.perfil),
       cssExtra: "/styles/notificacoes.css",
       usuarioSessao,
-      filtros,
+      filtros: filtrosAtuais,
       retornoAtual,
       opcoesTipo,
       notificacoes,
+      paginacao: {
+        total: dados?.total || 0,
+        page: dados?.page || filtros.page,
+        pages: dados?.pages || 1,
+        limit: dados?.limit || filtros.limit,
+      },
+      paginacaoQuery: {
+        estado: filtros.estado,
+        tipo: filtros.tipo,
+        limit: dados?.limit || filtros.limit,
+      },
       totais: {
-        listadas: notificacoes.length,
+        listadas: dados?.total || 0,
         naoLidas: totalNaoLidas,
       },
       erroGeral: null,
     });
   } catch (err) {
     console.error("Erro ao carregar notificacoes:", err);
+    const retornoAtual = montarRetornoAtual(filtros);
     return res.status(500).render("notificacoes/index", {
       layout: "layout-app",
       titulo: "Notificacoes",
@@ -179,6 +207,17 @@ export async function notificacoesIndexGet(req, res) {
       retornoAtual,
       opcoesTipo,
       notificacoes: [],
+      paginacao: {
+        total: 0,
+        page: filtros.page,
+        pages: 1,
+        limit: filtros.limit,
+      },
+      paginacaoQuery: {
+        estado: filtros.estado,
+        tipo: filtros.tipo,
+        limit: filtros.limit,
+      },
       totais: {
         listadas: 0,
         naoLidas: 0,

@@ -1,0 +1,182 @@
+<section class="tecnicos-admin-page tecnico-metricas-page usuarios-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <%- include('../partials/breadcrumb', {
+        crumbs: [
+          { label: 'Home', href: '/app' },
+          { label: 'Tecnico', href: '/tecnico' },
+          { label: 'Metricas' }
+        ]
+      }) %>
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Minhas metricas</h1>
+          <p class="page-subtitle">
+            Acompanhe sua carga, produtividade e pontos de melhoria antes de virar alerta de operacao.
+          </p>
+        </div>
+      </div>
+
+      <% if (typeof erroGeral !== "undefined" && erroGeral) { %>
+        <div class="empty-state">
+          <p><strong><%= erroGeral %></strong></p>
+        </div>
+      <% } %>
+
+      <form method="GET" action="/tecnico/metricas" class="table-card usuarios-filters-card">
+        <div class="usuarios-filters-grid tecnicos-filters-grid">
+          <div class="usuarios-filter-field usuarios-filter-field--search">
+            <label for="filtro-periodo">Periodo</label>
+            <select id="filtro-periodo" name="periodoDias">
+              <% (opcoes?.periodosDias || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= String(filtros?.periodoDias || 30) === String(item.value) ? 'selected' : '' %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="usuarios-filters-actions">
+          <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+          <a class="button tertiary" href="/tecnico/metricas">Limpar filtros</a>
+        </div>
+      </form>
+
+      <% if (!tecnico) { %>
+        <div class="empty-state">
+          <p><strong>Sem dados para este tecnico no periodo.</strong></p>
+          <p>Assim que houver atendimento, as metricas aparecerao aqui.</p>
+        </div>
+      <% } else { %>
+        <section class="tecnicos-kpis" aria-label="Indicadores pessoais do tecnico">
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Chamados ativos</div>
+            <div class="tecnicos-kpi__value"><%= Number(tecnico?.ativos || 0) %></div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Em atendimento</div>
+            <div class="tecnicos-kpi__value"><%= Number(tecnico?.emAtendimento || 0) %></div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Aguardando usuario</div>
+            <div class="tecnicos-kpi__value"><%= Number(tecnico?.aguardandoUsuario || 0) %></div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Criticos ativos</div>
+            <div class="tecnicos-kpi__value"><%= Number(tecnico?.criticosAtivos || 0) %></div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Fechados no periodo</div>
+            <div class="tecnicos-kpi__value"><%= Number(tecnico?.fechadosPeriodo || 0) %></div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Interacoes no periodo</div>
+            <div class="tecnicos-kpi__value"><%= Number(tecnico?.interacoesPeriodo || 0) %></div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Tempo 1o atendimento</div>
+            <div class="tecnicos-kpi__value">
+              <% if (Number(tecnico?.tempoPrimeiroAtendimentoAmostras || 0) > 0) { %>
+                <%= Number(tecnico?.tempoPrimeiroAtendimentoHoras || 0).toFixed(1) %>h
+              <% } else { %>
+                -
+              <% } %>
+            </div>
+          </article>
+          <article class="tecnicos-kpi">
+            <div class="tecnicos-kpi__label">Saude operacional</div>
+            <div class="tecnicos-kpi__value"><%= tecnico?.saudeLabel || '-' %></div>
+          </article>
+        </section>
+
+        <section class="tecnicos-insights" aria-label="Orientacoes rapidas">
+          <article class="table-card tecnicos-insight-card">
+            <h2>Sua situacao atual</h2>
+            <p>
+              <strong><%= tecnico?.nome || '-' %></strong> (<%= tecnico?.usuario || '-' %>) com
+              <strong><%= Number(tecnico?.ativos || 0) %></strong> ativo(s),
+              <strong><%= Number(tecnico?.criticosAtivos || 0) %></strong> critico(s) e
+              status de saude <strong><%= tecnico?.saudeLabel || '-' %></strong>.
+            </p>
+          </article>
+
+          <article class="table-card tecnicos-insight-card">
+            <h2>Onde melhorar agora</h2>
+            <ul class="tecnicos-insight-list">
+              <% (pontosMelhoria || []).forEach((item) => { %>
+                <li><%= item %></li>
+              <% }) %>
+            </ul>
+          </article>
+
+          <article class="table-card tecnicos-insight-card">
+            <h2>Acoes rapidas</h2>
+            <ul class="tecnicos-insight-list">
+              <li><a href="/tecnico/chamados?status=em_atendimento&limit=10">Ver chamados em atendimento</a></li>
+              <li><a href="/tecnico/chamados?status=aguardando_usuario&limit=10">Ver aguardando usuario</a></li>
+              <li><a href="/tecnico/meus-chamados?limit=10">Abrir meus chamados</a></li>
+            </ul>
+          </article>
+        </section>
+
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Tecnico</th>
+                <th>Status</th>
+                <th>Ativos</th>
+                <th>Atendimento</th>
+                <th>Aguardando usuario</th>
+                <th>Criticos</th>
+                <th>Fechados periodo</th>
+                <th>Interacoes periodo</th>
+                <th>Tempo 1o atendimento</th>
+                <th>Ultima atuacao</th>
+                <th>Saude</th>
+                <th style="width: 130px;">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-row-href="/tecnico/meus-chamados?limit=10">
+                <td>
+                  <div class="tecnico-cell">
+                    <strong><%= tecnico?.nome || '-' %></strong>
+                    <span><%= tecnico?.usuario || '-' %></span>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-pill <%= tecnico?.status === 'ativo' ? 'ok' : 'off' %>"><%= tecnico?.status || '-' %></span>
+                </td>
+                <td><%= Number(tecnico?.ativos || 0) %></td>
+                <td><%= Number(tecnico?.emAtendimento || 0) %></td>
+                <td><%= Number(tecnico?.aguardandoUsuario || 0) %></td>
+                <td><%= Number(tecnico?.criticosAtivos || 0) %></td>
+                <td><%= Number(tecnico?.fechadosPeriodo || 0) %></td>
+                <td><%= Number(tecnico?.interacoesPeriodo || 0) %></td>
+                <td>
+                  <% if (Number(tecnico?.tempoPrimeiroAtendimentoAmostras || 0) > 0) { %>
+                    <%= Number(tecnico?.tempoPrimeiroAtendimentoHoras || 0).toFixed(1) %>h
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td><%= tecnico?.ultimaAtuacaoFmt || '-' %></td>
+                <td>
+                  <span class="tecnico-health tecnico-health--<%= tecnico?.saudeCodigo || 'inativo' %>"><%= tecnico?.saudeLabel || '-' %></span>
+                </td>
+                <td>
+                  <a
+                    class="button secondary tecnicos-view-link"
+                    href="/tecnico/chamados?responsavelLogin=<%= encodeURIComponent(tecnico?.usuario || '') %>&limit=10"
+                  >
+                    Ver chamados
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>

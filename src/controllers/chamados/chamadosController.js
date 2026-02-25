@@ -2,6 +2,7 @@ import {
   criarChamado,
   listarChamados,
 } from "../../repos/chamados/core/chamadosCoreRepo.js";
+import { obterClassificacoesAtivasChamados } from "../../repos/chamados/classificacoesChamadosRepo.js";
 import {
   acharChamadoPorIdDoUsuario,
   editarChamadoDoUsuario,
@@ -19,8 +20,25 @@ import {
   rotuloStatusChamado,
 } from "../../service/chamadosListaFiltrosService.js";
 
+async function carregarClassificacoesChamados() {
+  try {
+    return await obterClassificacoesAtivasChamados();
+  } catch (err) {
+    console.error("Erro ao carregar classificacoes de chamados:", err);
+    return {
+      categorias: [],
+      prioridades: [],
+      categoriasValores: [],
+      prioridadesValores: [],
+      categoriasLabels: {},
+      prioridadesLabels: {},
+    };
+  }
+}
+
 export async function chamadoNovoGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
+  const classificacoes = await carregarClassificacoesChamados();
 
   return res.render("chamados/novo", {
     layout: "layout-app",
@@ -28,6 +46,7 @@ export async function chamadoNovoGet(req, res) {
     cssPortal: "/styles/usuario.css",
     cssExtra: "/styles/chamado-novo.css",
     usuarioSessao,
+    opcoesClassificacao: classificacoes,
     erroGeral: null,
     valores: { titulo: "", descricao: "", categoria: "", prioridade: "" },
   });
@@ -36,6 +55,7 @@ export async function chamadoNovoGet(req, res) {
 export async function chamadoNovoPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
+  const classificacoes = await carregarClassificacoesChamados();
 
   const valores = {
     titulo: String(req.body?.titulo ?? "").trim(),
@@ -57,13 +77,11 @@ export async function chamadoNovoPost(req, res) {
       throw new Error("Descricao deve ter entre 20 e 5000 caracteres.");
     }
 
-    const categoriasPermitidas = ["acesso", "incidente", "solicitacao", "infra", "outros"];
-    if (!categoriasPermitidas.includes(valores.categoria)) {
+    if (!classificacoes.categoriasValores.includes(valores.categoria)) {
       throw new Error("Selecione uma categoria valida.");
     }
 
-    const prioridadesPermitidas = ["baixa", "media", "alta", "critica"];
-    if (!prioridadesPermitidas.includes(valores.prioridade)) {
+    if (!classificacoes.prioridadesValores.includes(valores.prioridade)) {
       throw new Error("Selecione uma prioridade valida.");
     }
 
@@ -132,6 +150,7 @@ export async function chamadoNovoPost(req, res) {
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamado-novo.css",
       usuarioSessao,
+      opcoesClassificacao: classificacoes,
       erroGeral: e?.message || "Nao foi possivel registrar o chamado.",
       valores,
     });
@@ -144,12 +163,21 @@ export async function meusChamadosGet(req, res) {
 
   const flash = req.session?.flash || null;
   if (req.session) req.session.flash = null;
+  const classificacoes = await carregarClassificacoesChamados();
 
   const filtros = lerFiltrosListaChamados(req.query, {
-    limitDefault: 50,
+    limitDefault: 10,
     allowResponsavelLogin: true,
+    categoriasPermitidas: classificacoes.categoriasValores,
+    prioridadesPermitidas: classificacoes.prioridadesValores,
   });
-  const opcoes = obterOpcoesFiltrosChamados({ incluirAlocacao: false });
+  const opcoes = obterOpcoesFiltrosChamados({
+    incluirAlocacao: false,
+    categorias: classificacoes.categorias,
+    prioridades: classificacoes.prioridades,
+    categoriasLabels: classificacoes.categoriasLabels,
+    prioridadesLabels: classificacoes.prioridadesLabels,
+  });
 
   try {
     const lista = await listarChamados({ solicitanteId: usuarioSessao.id, limit: 200 });
@@ -164,9 +192,9 @@ export async function meusChamadosGet(req, res) {
       status: c.status || "-",
       statusLabel: rotuloStatusChamado(c.status),
       prioridade: c.prioridade || "-",
-      prioridadeLabel: rotuloPrioridadeChamado(c.prioridade),
+      prioridadeLabel: rotuloPrioridadeChamado(c.prioridade, classificacoes.prioridadesLabels),
       categoria: c.categoria || "-",
-      categoriaLabel: rotuloCategoriaChamado(c.categoria),
+      categoriaLabel: rotuloCategoriaChamado(c.categoria, classificacoes.categoriasLabels),
       quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "-",
       responsavel: c.responsavelLogin
         ? `${c.responsavelNome || ""} (${c.responsavelLogin})`
@@ -185,6 +213,13 @@ export async function meusChamadosGet(req, res) {
       usuarioSessao,
       chamados,
       filtros,
+      paginacao: {
+        total: resultado.total,
+        page: resultado.page,
+        pages: resultado.pages,
+        limit: resultado.limit,
+      },
+      paginacaoQuery: { ...filtros },
       opcoes,
       totalFiltrados: resultado.total,
       totalBase: Array.isArray(lista) ? lista.length : 0,
@@ -207,6 +242,13 @@ export async function meusChamadosGet(req, res) {
       usuarioSessao,
       chamados: [],
       filtros,
+      paginacao: {
+        total: 0,
+        page: filtros.page || 1,
+        pages: 1,
+        limit: filtros.limit || 10,
+      },
+      paginacaoQuery: { ...filtros },
       opcoes,
       totalFiltrados: 0,
       totalBase: 0,
@@ -219,6 +261,7 @@ export async function meusChamadosGet(req, res) {
 export async function chamadoEditarGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
+  const classificacoes = await carregarClassificacoesChamados();
 
   const chamado = await acharChamadoPorIdDoUsuario(req.params.id, usuarioSessao.id);
   if (!chamado) {
@@ -231,14 +274,25 @@ export async function chamadoEditarGet(req, res) {
 
   const bloqueado = chamado.status !== "aberto";
 
+  if (bloqueado) {
+    if (req.session) {
+      req.session.flash = {
+        tipo: "info",
+        mensagem: "Chamado fechado nao pode ser editado. Exibindo os detalhes.",
+      };
+    }
+    return res.redirect(`/chamados/${req.params.id}`);
+  }
+
   return res.render("chamados/editar", {
     layout: "layout-app",
     titulo: `Editar chamado #${chamado.numero}`,
-    cssPortal: "/styles/usuario.css",
-    cssExtra: "/styles/chamado-novo.css",
-    usuarioSessao,
-    erroGeral: bloqueado ? "Este chamado nao pode mais ser editado (status diferente de aberto)." : null,
-    bloqueado,
+      cssPortal: "/styles/usuario.css",
+      cssExtra: "/styles/chamado-novo.css",
+      usuarioSessao,
+      opcoesClassificacao: classificacoes,
+      erroGeral: null,
+      bloqueado,
     chamado: {
       id: String(chamado._id),
       numero: chamado.numero,
@@ -255,6 +309,7 @@ export async function chamadoEditarGet(req, res) {
 export async function chamadoEditarPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
+  const classificacoes = await carregarClassificacoesChamados();
 
   const valores = {
     titulo: String(req.body?.titulo ?? "").trim(),
@@ -273,25 +328,13 @@ export async function chamadoEditarPost(req, res) {
 
   const bloqueado = chamadoAtual.status !== "aberto";
   if (bloqueado) {
-    return res.status(400).render("chamados/editar", {
-      layout: "layout-app",
-      titulo: `Editar chamado #${chamadoAtual.numero}`,
-      cssPortal: "/styles/usuario.css",
-      cssExtra: "/styles/chamado-novo.css",
-      usuarioSessao,
-      erroGeral: "Este chamado nao pode mais ser editado (status diferente de aberto).",
-      bloqueado: true,
-      chamado: {
-        id: String(chamadoAtual._id),
-        numero: chamadoAtual.numero,
-        status: chamadoAtual.status,
-      },
-      valores: {
-        titulo: chamadoAtual.titulo || valores.titulo,
-        descricao: chamadoAtual.descricao || valores.descricao,
-        categoria: chamadoAtual.categoria || valores.categoria,
-      },
-    });
+    if (req.session) {
+      req.session.flash = {
+        tipo: "info",
+        mensagem: "Chamado fechado nao pode ser editado. Exibindo os detalhes.",
+      };
+    }
+    return res.redirect(`/chamados/${req.params.id}`);
   }
 
   try {
@@ -335,6 +378,7 @@ export async function chamadoEditarPost(req, res) {
       cssPortal: "/styles/usuario.css",
       cssExtra: "/styles/chamado-novo.css",
       usuarioSessao,
+      opcoesClassificacao: classificacoes,
       erroGeral: e?.message || "Nao foi possivel atualizar o chamado.",
       bloqueado: bloqueadoDepois,
       chamado: {

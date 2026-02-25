@@ -11,7 +11,7 @@
 
       <h1 class="page__title">Editar chamado <%= chamado?.numero ? `#${chamado.numero}` : "" %></h1>
       <p class="page__subtitle">
-        Status atual: <strong><%= chamado?.status || "—" %></strong>
+        Status atual: <strong><%= chamado?.status || "-" %></strong>
       </p>
     </div>
 
@@ -26,14 +26,14 @@
 
   <div class="card">
     <div class="card__header">
-      <h2 class="card__title">Alterar informações</h2>
-      <p class="card__hint">Você só consegue editar enquanto o chamado estiver com status <strong>aberto</strong>.</p>
+      <h2 class="card__title">Alterar informacoes</h2>
+      <p class="card__hint">Voce so consegue editar enquanto o chamado estiver com status <strong>aberto</strong>.</p>
     </div>
 
     <form class="form" method="post" action="/chamados/<%= chamado?.id %>/editar" autocomplete="off" novalidate>
       <div class="form__grid">
         <div class="form__field form__field--full">
-          <label class="form__label" for="titulo">Título</label>
+          <label class="form__label" for="titulo">Titulo</label>
           <input
             class="form__input"
             id="titulo"
@@ -42,7 +42,7 @@
             minlength="6"
             maxlength="120"
             required
-            placeholder="Ex.: Não consigo acessar o sistema"
+            placeholder="Ex.: Nao consigo acessar o sistema"
             value="<%= valores?.titulo || '' %>"
             <%= bloqueado ? "disabled" : "" %>
           />
@@ -51,17 +51,20 @@
         <div class="form__field">
           <label class="form__label" for="categoria">Categoria</label>
           <select class="form__input" id="categoria" name="categoria" required <%= bloqueado ? "disabled" : "" %>>
+            <% const categorias = opcoesClassificacao?.categorias || []; %>
+            <% const categoriaAtualNaoListada = valores?.categoria && !categorias.some((item) => item.value === valores.categoria); %>
             <option value="" <%= !valores?.categoria ? "selected" : "" %>>Selecione</option>
-            <option value="acesso" <%= valores?.categoria === "acesso" ? "selected" : "" %>>Acesso</option>
-            <option value="incidente" <%= valores?.categoria === "incidente" ? "selected" : "" %>>Incidente</option>
-            <option value="solicitacao" <%= valores?.categoria === "solicitacao" ? "selected" : "" %>>Solicitação</option>
-            <option value="infra" <%= valores?.categoria === "infra" ? "selected" : "" %>>Infra</option>
-            <option value="outros" <%= valores?.categoria === "outros" ? "selected" : "" %>>Outros</option>
+            <% if (categoriaAtualNaoListada) { %>
+              <option value="<%= valores.categoria %>" selected><%= valores.categoria %></option>
+            <% } %>
+            <% categorias.forEach((item) => { %>
+              <option value="<%= item.value %>" <%= valores?.categoria === item.value ? "selected" : "" %>><%= item.label %></option>
+            <% }) %>
           </select>
         </div>
 
         <div class="form__field form__field--full">
-          <label class="form__label" for="descricao">Descrição</label>
+          <label class="form__label" for="descricao">Descricao</label>
           <textarea
             class="form__input form__textarea"
             id="descricao"
@@ -70,7 +73,7 @@
             maxlength="5000"
             required
             rows="7"
-            placeholder="Inclua: passos para reproduzir, impacto, urgência, e se ocorre sempre."
+            placeholder="Inclua: passos para reproduzir, impacto, urgencia e se ocorre sempre."
             <%= bloqueado ? "disabled" : "" %>
           ><%= valores?.descricao || "" %></textarea>
         </div>
@@ -78,7 +81,7 @@
 
       <div class="form__actions">
         <% if (!bloqueado) { %>
-          <button class="btn btn--primary" type="submit">Salvar alterações</button>
+          <button class="btn btn--primary" type="submit">Salvar alteracoes</button>
         <% } %>
         <a class="btn btn--ghost" href="/chamados/meus">Cancelar</a>
       </div>

@@ -8,6 +8,17 @@
     <link rel="icon" href="/assets/favicon.ico" />
     <title><%= (typeof titulo !== "undefined" && titulo) ? titulo : "GLPI" %></title>
 
+    <script>
+      (function () {
+        try {
+          const saved = String(localStorage.getItem("glpi-theme") || "").trim().toLowerCase();
+          const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const useDark = saved ? saved === "dark" : prefersDark;
+          if (useDark) document.documentElement.classList.add("dark-mode");
+        } catch {}
+      })();
+    </script>
+
     <link rel="stylesheet" href="/styles/index.css" />
     <link rel="stylesheet" href="/styles/sidebar.css" />
     <link rel="stylesheet" href="/styles/app.css" />
@@ -18,8 +29,7 @@
     <% if (typeof cssPortal !== "undefined" && cssPortal) { %>
       <link rel="stylesheet" href="<%= cssPortal %>" />
     <% } %>
-
-  
+    <link rel="stylesheet" href="/styles/dark-mode-fixes.css" />
 
     <% if (typeof jsExtra !== "undefined" && jsExtra) { %>
       <% (Array.isArray(jsExtra) ? jsExtra : [jsExtra]).forEach((src) => { %>
@@ -29,13 +39,17 @@
   </head>
 
   <body class="app-layout" data-perfil="<%= usuarioSessao?.perfil || '' %>">
-    <button id="notifBell" type="button" class="notif-btn" aria-label="Notificações">
-  🔔 <span id="notifBadge" hidden>0</span>
-</button>
-<div id="notifDropdown" hidden>
-  <div id="notifListMini"></div>
-  <a href="/notificacoes">Ver todas</a>
-</div>
+    <button id="notifBell" type="button" class="notif-btn" aria-label="Notificacoes" hidden>
+      &#128276; <span id="notifBadge" hidden>0</span>
+    </button>
+    <div id="notifDropdown" hidden>
+      <div class="notif-mini-head">
+        <strong class="notif-mini-title">Notificacoes</strong>
+        <a class="notif-see-all" href="/notificacoes">Ver todas</a>
+      </div>
+      <div id="notifListMini" class="notif-mini-list"></div>
+    </div>
+
     <div class="app-shell">
       <%- include("partials/sidebar") %>
 
@@ -43,23 +57,6 @@
         <%- body %>
       </main>
     </div>
-
-    <!-- Botão para permitir notificações do browser -->
-    <button id="btnNotify" type="button" style="
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 9999;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(15,31,55,.18);
-      background: #fff;
-      cursor: pointer;
-      font-weight: 700;
-      box-shadow: 0 8px 22px rgba(0,0,0,.12);
-    ">
-      Ativar notificações
-    </button>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <% if (typeof flash !== "undefined" && flash) { %>
@@ -71,35 +68,9 @@
       </script>
     <% } %>
     <script src="/js/alerts.js"></script>
+    <script src="/js/anexos-assist.js" defer></script>
+    <script src="/js/app.js" defer></script>
 
-    <script>
-      // pede permissão só quando o usuário clicar
-      (function () {
-        const btn = document.getElementById("btnNotify");
-        if (!btn) return;
-
-        btn.addEventListener("click", async () => {
-          try {
-            if (!("Notification" in window)) {
-              Swal.fire({ icon: "info", title: "Não suportado", text: "Seu navegador não suporta notificações." });
-              return;
-            }
-            const perm = await Notification.requestPermission();
-            if (perm === "granted") {
-              Swal.fire({ icon: "success", title: "Ok!", text: "Notificações ativadas." });
-              btn.style.display = "none";
-            } else {
-              Swal.fire({ icon: "warning", title: "Permissão negada", text: "Você pode ativar nas configurações do navegador." });
-            }
-          } catch (e) {}
-        });
-
-        // se já está granted, some
-        if ("Notification" in window && Notification.permission === "granted") {
-          btn.style.display = "none";
-        }
-      })();
-    </script>
     <script type="module">
       import { startNotificacoesPoll } from "/js/notificacoes-poll.js";
       startNotificacoesPoll({

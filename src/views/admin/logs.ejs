@@ -12,13 +12,15 @@
 <% const advancedActive = advancedCount > 0; %>
 <% const currentPage = Math.max(1, Number(dados.page || 1)); %>
 <% const totalPages = Math.max(1, Number(dados.pages || 1)); %>
+<% const baseLogsPath = String(logsBasePath || "/admin/logs"); %>
+<% const contextoLogs = logsContexto || { secaoLabel: "Admin", secaoHref: "/admin" }; %>
 
 <div class="content-with-pagination-wrapper logs-page">
   <div class="content-with-pagination">
     <%- include("../partials/breadcrumb", {
       crumbs: [
         { label: "Home", href: "/app" },
-        { label: "Admin", href: "/admin" },
+        { label: contextoLogs.secaoLabel || "Admin", href: contextoLogs.secaoHref || "/admin" },
         { label: "Logs" },
       ],
     }) %>
@@ -30,7 +32,7 @@
       </div>
     </div>
 
-    <form id="logs-filters-form" method="GET" action="/admin/logs" class="table-card logs-filter-card">
+    <form id="logs-filters-form" method="GET" action="<%= baseLogsPath %>" class="table-card logs-filter-card">
       <div class="logs-basic-grid">
         <div class="logs-field logs-field-search">
           <label for="filtro-q">Pesquisar</label>
@@ -84,8 +86,8 @@
           <% } %>
         </button>
 
-        <button class="button" type="submit">Aplicar filtros</button>
-        <a class="button tertiary logs-clear-button" href="/admin/logs">Limpar filtros</a>
+        <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+        <a class="button tertiary logs-clear-button" href="<%= baseLogsPath %>">Limpar filtros</a>
       </div>
 
       <div id="logs-advanced-modal" class="logs-advanced-modal" hidden>
@@ -183,7 +185,7 @@
 
             <div class="logs-advanced-footer-actions">
               <button type="button" id="logs-cancel-advanced" class="button secondary">Cancelar</button>
-              <button type="submit" class="button">Aplicar filtros</button>
+              <button type="submit" class="button button-filter-apply">Aplicar filtros</button>
             </div>
           </div>
         </div>
@@ -201,21 +203,45 @@
             <th class="col-resultado">Resultado</th>
             <th class="col-usuario">Usuario</th>
             <th>Mensagem</th>
+            <th style="width: 130px;">Acoes</th>
           </tr>
         </thead>
         <tbody>
           <% if (!dados?.itens?.length) { %>
-            <tr><td colspan="7" class="empty-row">Nenhum log encontrado para os filtros.</td></tr>
+            <tr><td colspan="8" class="empty-row">Nenhum log encontrado para os filtros.</td></tr>
           <% } else { %>
-            <% dados.itens.forEach((l) => { %>
-              <tr>
+            <% dados.itens.forEach((l, idx) => { %>
+              <% const detalhe = (logsDetalhes || [])[idx] || {}; %>
+              <tr
+                class="logs-details-row"
+                data-log-index="<%= idx %>"
+                tabindex="0"
+                role="button"
+                aria-label="Abrir detalhes do log"
+              >
                 <td><%= l.criadoEm ? new Date(l.criadoEm).toLocaleString("pt-BR") : "-" %></td>
                 <td><span class="pill pill-status"><%= l.nivel || "-" %></span></td>
                 <td><%= l.modulo || "-" %></td>
                 <td><code><%= l.evento || "-" %></code></td>
                 <td><%= l.resultado || "-" %></td>
                 <td><%= l?.usuario?.login || l?.usuario?.nome || "-" %></td>
-                <td class="cell-msg"><%= l.mensagem || "-" %></td>
+                <td class="cell-msg">
+                  <%= l.mensagem || "-" %>
+                  <% if (detalhe?.chamadoUrl) { %>
+                    <div class="logs-inline-link-wrap">
+                      <a class="logs-inline-link" href="<%= detalhe.chamadoUrl %>">Abrir chamado relacionado</a>
+                    </div>
+                  <% } %>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="button secondary logs-open-details"
+                    data-log-index="<%= idx %>"
+                  >
+                    Detalhes
+                  </button>
+                </td>
               </tr>
             <% }) %>
           <% } %>
@@ -241,14 +267,14 @@
           chamadoId: filtros.chamadoId || "",
           dataInicio: filtros.dataInicio || "",
           dataFim: filtros.dataFim || "",
-          limit: String(filtros.limit || 50),
+          limit: String(filtros.limit || 10),
         }); %>
 
         <% qsBase.set("page", String(prev)); %>
         <a
           class="button secondary logs-pager-link <%= prevDisabled ? 'is-disabled' : '' %>"
           aria-disabled="<%= prevDisabled ? 'true' : 'false' %>"
-          href="/admin/logs?<%= qsBase.toString() %>"
+          href="<%= baseLogsPath %>?<%= qsBase.toString() %>"
         >
           Anterior
         </a>
@@ -259,11 +285,58 @@
         <a
           class="button secondary logs-pager-link <%= nextDisabled ? 'is-disabled' : '' %>"
           aria-disabled="<%= nextDisabled ? 'true' : 'false' %>"
-          href="/admin/logs?<%= qsBase.toString() %>"
+          href="<%= baseLogsPath %>?<%= qsBase.toString() %>"
         >
           Proxima
         </a>
       </div>
+    </div>
+  </div>
+</div>
+
+<script id="logs-details-data" type="application/json"><%- JSON.stringify(logsDetalhes || []).replace(/</g, "\\u003c") %></script>
+
+<div id="logs-details-modal" class="logs-details-modal" hidden>
+  <div class="logs-details-dialog" role="dialog" aria-modal="true" aria-labelledby="logs-details-title">
+    <div class="logs-details-head">
+      <h2 id="logs-details-title">Detalhes do log</h2>
+      <button type="button" id="logs-details-close" class="logs-details-close" aria-label="Fechar">&times;</button>
+    </div>
+
+    <div class="logs-details-grid">
+      <div class="logs-details-item"><span>ID log</span><strong id="ld-id">-</strong></div>
+      <div class="logs-details-item"><span>Quando</span><strong id="ld-quando">-</strong></div>
+      <div class="logs-details-item"><span>Nivel</span><strong id="ld-nivel">-</strong></div>
+      <div class="logs-details-item"><span>Modulo</span><strong id="ld-modulo">-</strong></div>
+      <div class="logs-details-item"><span>Evento</span><strong id="ld-evento">-</strong></div>
+      <div class="logs-details-item"><span>Acao</span><strong id="ld-acao">-</strong></div>
+      <div class="logs-details-item"><span>Resultado</span><strong id="ld-resultado">-</strong></div>
+      <div class="logs-details-item"><span>Login de usuario</span><strong id="ld-usuario-login">-</strong></div>
+      <div class="logs-details-item"><span>Nome de usuario</span><strong id="ld-usuario-nome">-</strong></div>
+      <div class="logs-details-item"><span>Perfil usuario</span><strong id="ld-usuario-perfil">-</strong></div>
+      <div class="logs-details-item"><span>Login tentativa</span><strong id="ld-login-tentativa">-</strong></div>
+      <div class="logs-details-item"><span>Alvo tipo</span><strong id="ld-alvo-tipo">-</strong></div>
+      <div class="logs-details-item"><span>Alvo id</span><strong id="ld-alvo-id">-</strong></div>
+      <div class="logs-details-item"><span>Rota</span><strong id="ld-rota">-</strong></div>
+      <div class="logs-details-item"><span>Metodo</span><strong id="ld-metodo">-</strong></div>
+      <div class="logs-details-item"><span>IP</span><strong id="ld-ip">-</strong></div>
+      <div class="logs-details-item"><span>User-Agent</span><strong id="ld-ua">-</strong></div>
+      <div class="logs-details-item"><span>Tags</span><strong id="ld-tags">-</strong></div>
+    </div>
+
+    <div class="logs-details-block">
+      <h3>Mensagem</h3>
+      <pre id="ld-mensagem">-</pre>
+    </div>
+
+    <div class="logs-details-block">
+      <h3>Meta tecnica</h3>
+      <pre id="ld-meta">-</pre>
+    </div>
+
+    <div class="logs-details-actions">
+      <a id="ld-chamado-link" class="button" href="#" hidden>Abrir chamado relacionado</a>
+      <button type="button" id="logs-details-close-bottom" class="button secondary">Fechar</button>
     </div>
   </div>
 </div>

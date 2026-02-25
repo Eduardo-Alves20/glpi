@@ -1,8 +1,16 @@
 import {
-  CATEGORIAS_ALLOWED,
-  PRIORIDADES_ALLOWED,
   STATUS_ALLOWED,
 } from "../repos/chamados/core/chamadosCoreRepo.js";
+import {
+  CATEGORIAS_LABELS_PADRAO,
+  CATEGORIAS_PADRAO_VALUES,
+  PRIORIDADES_LABELS_PADRAO,
+  PRIORIDADES_PADRAO_VALUES,
+} from "../repos/chamados/classificacoesDefaults.js";
+import {
+  normalizarPaginacao,
+  paginarLista,
+} from "./paginacaoService.js";
 
 const ALOCACOES_ALLOWED = [
   "",
@@ -15,24 +23,12 @@ const ALOCACOES_ALLOWED = [
 const STATUS_LABELS = {
   aberto: "Aberto",
   em_atendimento: "Em atendimento",
-  aguardando_usuario: "Aguardando usuario",
+  aguardando_usuario: "Em fechamento",
   fechado: "Fechado",
 };
 
-const CATEGORIA_LABELS = {
-  acesso: "Acesso",
-  incidente: "Incidente",
-  solicitacao: "Solicitacao",
-  infra: "Infra",
-  outros: "Outros",
-};
-
-const PRIORIDADE_LABELS = {
-  baixa: "Baixa",
-  media: "Media",
-  alta: "Alta",
-  critica: "Critica",
-};
+const CATEGORIA_LABELS = { ...CATEGORIAS_LABELS_PADRAO };
+const PRIORIDADE_LABELS = { ...PRIORIDADES_LABELS_PADRAO };
 
 function limparTexto(valor) {
   return String(valor ?? "").trim();
@@ -40,12 +36,6 @@ function limparTexto(valor) {
 
 function normalizarTexto(valor) {
   return limparTexto(valor).toLowerCase();
-}
-
-function limitarInteiro(valor, { min = 10, max = 200, fallback = 50 } = {}) {
-  const n = Number(valor);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(Math.trunc(n), max));
 }
 
 function dataIsoValida(valor) {
@@ -69,6 +59,50 @@ function sanitizeEnum(value, allowed) {
   return allowed.includes(v) ? v : "";
 }
 
+function normalizarListaValores(lista, fallback = []) {
+  const origem = Array.isArray(lista) && lista.length ? lista : fallback;
+
+  return origem
+    .map((item) => {
+      if (typeof item === "string") return normalizarTexto(item);
+      if (item && typeof item === "object") {
+        return normalizarTexto(item.value || item.chave || "");
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
+function normalizarOpcoesClassificacao(lista, labelsPadrao, rotuloFn) {
+  const opcoes = Array.isArray(lista) ? lista : [];
+  const vistos = new Set();
+
+  return opcoes
+    .map((item) => {
+      if (typeof item === "string") {
+        const value = normalizarTexto(item);
+        return {
+          value,
+          label: rotuloFn(value, labelsPadrao),
+        };
+      }
+
+      if (!item || typeof item !== "object") return null;
+
+      const value = normalizarTexto(item.value || item.chave || "");
+      if (!value) return null;
+
+      const label = limparTexto(item.label || item.nome) || rotuloFn(value, labelsPadrao);
+      return { value, label };
+    })
+    .filter((item) => {
+      if (!item || !item.value) return false;
+      if (vistos.has(item.value)) return false;
+      vistos.add(item.value);
+      return true;
+    });
+}
+
 function toDateSafe(value) {
   const d = value ? new Date(value) : null;
   if (!d || Number.isNaN(d.getTime())) return null;
@@ -78,14 +112,26 @@ function toDateSafe(value) {
 export function lerFiltrosListaChamados(
   query,
   {
-    limitDefault = 50,
+    limitDefault = 10,
     allowAlocacao = false,
     allowResponsavelLogin = false,
+    categoriasPermitidas = CATEGORIAS_PADRAO_VALUES,
+    prioridadesPermitidas = PRIORIDADES_PADRAO_VALUES,
   } = {},
 ) {
+  const categoriasAllowed = normalizarListaValores(
+    categoriasPermitidas,
+    CATEGORIAS_PADRAO_VALUES,
+  );
+
+  const prioridadesAllowed = normalizarListaValores(
+    prioridadesPermitidas,
+    PRIORIDADES_PADRAO_VALUES,
+  );
+
   const status = sanitizeEnum(query?.status, STATUS_ALLOWED);
-  const categoria = sanitizeEnum(query?.categoria, CATEGORIAS_ALLOWED);
-  const prioridade = sanitizeEnum(query?.prioridade, PRIORIDADES_ALLOWED);
+  const categoria = sanitizeEnum(query?.categoria, categoriasAllowed);
+  const prioridade = sanitizeEnum(query?.prioridade, prioridadesAllowed);
 
   const dataInicioRaw = limparTexto(query?.dataInicio);
   const dataFimRaw = limparTexto(query?.dataFim);
@@ -100,7 +146,10 @@ export function lerFiltrosListaChamados(
     prioridade,
     dataInicio,
     dataFim,
-    limit: limitarInteiro(query?.limit, { fallback: limitDefault }),
+    ...normalizarPaginacao(
+      { page: query?.page, limit: query?.limit },
+      { pageDefault: 1, limitDefault, limitMin: 10, limitMax: 200 },
+    ),
     alocacao: "",
     responsavelLogin: "",
   };
@@ -119,6 +168,11 @@ export function lerFiltrosListaChamados(
 function incluiBusca(chamado, termoBusca) {
   if (!termoBusca) return true;
 
+  const apoio = Array.isArray(chamado?.tecnicosApoio) ? chamado.tecnicosApoio : [];
+  const apoioTexto = apoio
+    .map((a) => `${String(a?.nome || "")} ${String(a?.login || "")}`)
+    .join(" ");
+
   const campos = [
     chamado?.numero,
     chamado?.titulo,
@@ -129,6 +183,7 @@ function incluiBusca(chamado, termoBusca) {
     chamado?.criadoPor?.login,
     chamado?.responsavelNome,
     chamado?.responsavelLogin,
+    apoioTexto,
   ];
 
   const texto = campos
@@ -154,13 +209,19 @@ function incluiAlocacao(chamado, alocacao, usuarioLogin) {
   if (!alocacao) return true;
 
   const possuiResponsavel = Boolean(chamado?.responsavelId);
+  const apoio = Array.isArray(chamado?.tecnicosApoio) ? chamado.tecnicosApoio : [];
+  const possuiApoio = apoio.length > 0;
+  const possuiAlocacao = possuiResponsavel || possuiApoio;
   const respLogin = normalizarTexto(chamado?.responsavelLogin);
   const loginSessao = normalizarTexto(usuarioLogin);
+  const apoioLogins = apoio.map((a) => normalizarTexto(a?.login)).filter(Boolean);
+  const souApoio = loginSessao && apoioLogins.includes(loginSessao);
+  const souAlocado = (possuiResponsavel && respLogin === loginSessao) || souApoio;
 
-  if (alocacao === "sem_responsavel") return !possuiResponsavel;
-  if (alocacao === "com_responsavel") return possuiResponsavel;
-  if (alocacao === "meus") return possuiResponsavel && respLogin === loginSessao;
-  if (alocacao === "outros") return possuiResponsavel && respLogin && respLogin !== loginSessao;
+  if (alocacao === "sem_responsavel") return !possuiAlocacao;
+  if (alocacao === "com_responsavel") return possuiAlocacao;
+  if (alocacao === "meus") return souAlocado;
+  if (alocacao === "outros") return possuiAlocacao && !souAlocado;
 
   return true;
 }
@@ -168,7 +229,7 @@ function incluiAlocacao(chamado, alocacao, usuarioLogin) {
 export function aplicarFiltrosListaChamados(
   chamados,
   filtros,
-  { usuarioLogin = "" } = {},
+  { usuarioLogin = "", ordenarItensFn = null } = {},
 ) {
   const lista = Array.isArray(chamados) ? chamados : [];
   const termoBusca = normalizarTexto(filtros?.q);
@@ -184,7 +245,9 @@ export function aplicarFiltrosListaChamados(
 
     if (filtroResponsavelLogin) {
       const resp = normalizarTexto(chamado?.responsavelLogin);
-      if (!resp.includes(filtroResponsavelLogin)) return false;
+      const apoio = Array.isArray(chamado?.tecnicosApoio) ? chamado.tecnicosApoio : [];
+      const apoioMatch = apoio.some((a) => normalizarTexto(a?.login).includes(filtroResponsavelLogin));
+      if (!resp.includes(filtroResponsavelLogin) && !apoioMatch) return false;
     }
 
     if (!incluiAlocacao(chamado, filtros?.alocacao, usuarioLogin)) return false;
@@ -194,26 +257,54 @@ export function aplicarFiltrosListaChamados(
     return true;
   });
 
+  const ordenados = typeof ordenarItensFn === "function"
+    ? ordenarItensFn([...filtrados])
+    : filtrados;
+
+  const pagina = paginarLista(ordenados, {
+    page: filtros?.page || 1,
+    limit: filtros?.limit || 10,
+  });
+
   return {
-    total: filtrados.length,
-    itens: filtrados.slice(0, filtros?.limit || 50),
+    total: pagina.total,
+    itens: pagina.itens,
+    page: pagina.page,
+    pages: pagina.pages,
+    limit: pagina.limit,
+    from: pagina.from,
+    to: pagina.to,
+    hasPrev: pagina.hasPrev,
+    hasNext: pagina.hasNext,
   };
 }
 
-export function obterOpcoesFiltrosChamados({ incluirAlocacao = false } = {}) {
+export function obterOpcoesFiltrosChamados({
+  incluirAlocacao = false,
+  categorias = CATEGORIAS_PADRAO_VALUES,
+  prioridades = PRIORIDADES_PADRAO_VALUES,
+  categoriasLabels = CATEGORIA_LABELS,
+  prioridadesLabels = PRIORIDADE_LABELS,
+} = {}) {
+  const categoriasOpcoes = normalizarOpcoesClassificacao(
+    categorias,
+    categoriasLabels,
+    rotuloCategoriaChamado,
+  );
+
+  const prioridadesOpcoes = normalizarOpcoesClassificacao(
+    prioridades,
+    prioridadesLabels,
+    rotuloPrioridadeChamado,
+  );
+
   const opcoes = {
     status: STATUS_ALLOWED.map((value) => ({
       value,
       label: rotuloStatusChamado(value),
     })),
-    categorias: CATEGORIAS_ALLOWED.map((value) => ({
-      value,
-      label: rotuloCategoriaChamado(value),
-    })),
-    prioridades: PRIORIDADES_ALLOWED.map((value) => ({
-      value,
-      label: rotuloPrioridadeChamado(value),
-    })),
+    categorias: categoriasOpcoes,
+    prioridades: prioridadesOpcoes,
     alocacao: [],
   };
 
@@ -235,12 +326,18 @@ export function rotuloStatusChamado(status) {
   return STATUS_LABELS[key] || limparTexto(status) || "-";
 }
 
-export function rotuloCategoriaChamado(categoria) {
-  const key = normalizarTexto(categoria);
-  return CATEGORIA_LABELS[key] || limparTexto(categoria) || "-";
+function humanizarCodigo(codigo) {
+  const texto = normalizarTexto(codigo).replace(/_/g, " ");
+  if (!texto) return "";
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-export function rotuloPrioridadeChamado(prioridade) {
+export function rotuloCategoriaChamado(categoria, labels = CATEGORIA_LABELS) {
+  const key = normalizarTexto(categoria);
+  return labels?.[key] || CATEGORIA_LABELS[key] || humanizarCodigo(key) || limparTexto(categoria) || "-";
+}
+
+export function rotuloPrioridadeChamado(prioridade, labels = PRIORIDADE_LABELS) {
   const key = normalizarTexto(prioridade);
-  return PRIORIDADE_LABELS[key] || limparTexto(prioridade) || "-";
+  return labels?.[key] || PRIORIDADE_LABELS[key] || humanizarCodigo(key) || limparTexto(prioridade) || "-";
 }

@@ -51,9 +51,12 @@ export function startNotificacoesPoll({ perfil }) {
   async function atualizarBadge() {
     const { count } = await apiGet("/api/notificacoes/unread-count");
     if (count > 0) {
+      bell.hidden = false;
       badge.hidden = false;
       badge.textContent = String(count);
     } else {
+      bell.hidden = true;
+      dropdown.hidden = true;
       badge.hidden = true;
       badge.textContent = "0";
     }

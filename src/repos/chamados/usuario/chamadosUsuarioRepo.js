@@ -1,20 +1,31 @@
 import { pegarDb } from "../../../compartilhado/db/mongo.js";
 import {
   COL_CHAMADOS,
-  CATEGORIAS_ALLOWED,
-  PRIORIDADES_ALLOWED,
   assertString,
-  sanitizeEnum,
   toObjectId,
 } from "../core/chamadosCoreRepo.js";
 import { sanitizarAnexosHistorico } from "../../../service/anexosService.js";
+import { validarClassificacaoAtiva } from "../classificacoesChamadosRepo.js";
 
-export async function acharChamadoPorIdDoUsuario(chamadoId, usuarioId) {
+function docPosFindOneAndUpdate(out) {
+  return out?.value ?? out ?? null;
+}
+
+export async function acharChamadoPorIdDoUsuario(
+  chamadoId,
+  usuarioId,
+  { permitirAdmin = false } = {},
+) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
-  const u = toObjectId(usuarioId, "usuarioId");
+  const filtro = { _id };
 
-  return db.collection(COL_CHAMADOS).findOne({ _id, "criadoPor.usuarioId": u });
+  if (!permitirAdmin) {
+    const u = toObjectId(usuarioId, "usuarioId");
+    filtro["criadoPor.usuarioId"] = u;
+  }
+
+  return db.collection(COL_CHAMADOS).findOne(filtro);
 }
 
 export async function editarChamadoDoUsuario(
@@ -54,10 +65,10 @@ export async function editarChamadoDoUsuario(
     assertString(allowed.descricao, "descricao", { min: 20, max: 5000 });
   }
   if (allowed.categoria) {
-    sanitizeEnum(allowed.categoria, CATEGORIAS_ALLOWED, "categoria");
+    allowed.categoria = await validarClassificacaoAtiva("categoria", allowed.categoria);
   }
   if (allowed.prioridade) {
-    sanitizeEnum(allowed.prioridade, PRIORIDADES_ALLOWED, "prioridade");
+    allowed.prioridade = await validarClassificacaoAtiva("prioridade", allowed.prioridade);
   }
 
   const now = new Date();
@@ -69,7 +80,7 @@ export async function editarChamadoDoUsuario(
         tipo: "edicao",
         em: now,
         por: String(porLogin || "sistema"),
-        mensagem: "Usuário editou o chamado",
+        mensagem: "Usuario editou o chamado",
         meta: { campos },
       },
     },
@@ -82,31 +93,55 @@ export async function editarChamadoDoUsuario(
     .collection(COL_CHAMADOS)
     .findOne({ _id, "criadoPor.usuarioId": u }, { projection: { status: 1 } });
 
-  if (!existeDoUsuario) throw new Error("Chamado não encontrado.");
+  if (!existeDoUsuario) throw new Error("Chamado nao encontrado.");
   if (existeDoUsuario.status !== "aberto") {
-    throw new Error("Este chamado não pode mais ser editado (status diferente de aberto).");
+    throw new Error("Este chamado nao pode mais ser editado (status diferente de aberto).");
   }
-  throw new Error("Edição não permitida.");
+  throw new Error("Edicao nao permitida.");
 }
 
 export async function usuarioConfirmarSolucao(
   chamadoId,
   usuarioId,
-  { porLogin = "sistema" } = {},
+  {
+    porLogin = "sistema",
+    comentario = "",
+    anexos = [],
+    permitirAdmin = false,
+  } = {},
 ) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
-  const uId = toObjectId(usuarioId, "usuarioId");
+  const filtro = { _id, status: "aguardando_usuario" };
+  if (!permitirAdmin) {
+    const uId = toObjectId(usuarioId, "usuarioId");
+    filtro["criadoPor.usuarioId"] = uId;
+  }
   const now = new Date();
+  const comentarioSan = String(comentario || "").trim();
+  const anexosSan = sanitizarAnexosHistorico(anexos);
+
+  let mensagemHistorico = permitirAdmin
+    ? "Admin confirmou solucao. Chamado fechado."
+    : "Usuario confirmou solucao. Chamado fechado.";
+  if (comentarioSan) {
+    const motivo = assertString(comentarioSan, "comentario", { min: 1, max: 2000 });
+    mensagemHistorico = `${mensagemHistorico} Motivo: ${motivo}`;
+  }
+
+  const metaHistorico = {};
+  if (anexosSan.length) {
+    metaHistorico.anexos = anexosSan;
+  }
 
   const r = await db.collection(COL_CHAMADOS).findOneAndUpdate(
-    { _id, "criadoPor.usuarioId": uId, status: "aguardando_usuario" },
+    filtro,
     {
       $set: {
         status: "fechado",
         fechadoEm: now,
         fechadoAutomatico: false,
-        fechadoMotivo: "Confirmado pelo usuário",
+        fechadoMotivo: permitirAdmin ? "Confirmado pelo admin" : "Confirmado pelo usuario",
         updatedAt: now,
       },
       $push: {
@@ -114,34 +149,52 @@ export async function usuarioConfirmarSolucao(
           tipo: "status",
           em: now,
           por: String(porLogin || "sistema"),
-          mensagem: "Usuário confirmou solução. Chamado fechado.",
+          mensagem: mensagemHistorico,
+          meta: metaHistorico,
         },
       },
     },
     { returnDocument: "after" },
   );
 
-  if (!r.value) {
-    throw new Error("Não foi possível confirmar (status inválido ou chamado não é seu).");
+  const doc = docPosFindOneAndUpdate(r);
+  if (!doc || !doc._id) {
+    if (permitirAdmin) {
+      throw new Error("Nao foi possivel confirmar (status invalido).");
+    }
+    throw new Error("Nao foi possivel confirmar (status invalido ou chamado nao e seu).");
   }
-  return r.value;
+  return doc;
 }
 
 export async function usuarioReabrirChamado(
   chamadoId,
   usuarioId,
   comentario,
-  { porLogin = "sistema" } = {},
+  {
+    porLogin = "sistema",
+    anexos = [],
+    permitirAdmin = false,
+  } = {},
 ) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
-  const uId = toObjectId(usuarioId, "usuarioId");
+  const filtro = { _id, status: { $in: ["aguardando_usuario", "fechado"] } };
+  if (!permitirAdmin) {
+    const uId = toObjectId(usuarioId, "usuarioId");
+    filtro["criadoPor.usuarioId"] = uId;
+  }
   const now = new Date();
+  const anexosSan = sanitizarAnexosHistorico(anexos);
 
   const msg = assertString(comentario, "comentario", { min: 5, max: 2000 });
+  const metaHistorico = {};
+  if (anexosSan.length) {
+    metaHistorico.anexos = anexosSan;
+  }
 
   const r = await db.collection(COL_CHAMADOS).findOneAndUpdate(
-    { _id, "criadoPor.usuarioId": uId, status: { $in: ["aguardando_usuario", "fechado"] } },
+    filtro,
     {
       $set: { status: "aberto", updatedAt: now },
       $push: {
@@ -149,17 +202,22 @@ export async function usuarioReabrirChamado(
           tipo: "status",
           em: now,
           por: String(porLogin || "sistema"),
-          mensagem: `Usuário reabriu o chamado: ${msg}`,
+          mensagem: `${permitirAdmin ? "Admin" : "Usuario"} reabriu o chamado: ${msg}`,
+          meta: metaHistorico,
         },
       },
     },
     { returnDocument: "after" },
   );
 
-  if (!r.value) {
-    throw new Error("Não foi possível reabrir (status inválido ou chamado não é seu).");
+  const doc = docPosFindOneAndUpdate(r);
+  if (!doc || !doc._id) {
+    if (permitirAdmin) {
+      throw new Error("Nao foi possivel reabrir (status invalido).");
+    }
+    throw new Error("Nao foi possivel reabrir (status invalido ou chamado nao e seu).");
   }
-  return r.value;
+  return doc;
 }
 
 export async function usuarioAdicionarInteracao(
@@ -211,7 +269,7 @@ export async function usuarioAdicionarInteracao(
 
   const doc = out?.value ?? out;
   if (!doc || !doc._id) {
-    throw new Error("Não foi possível enviar mensagem (verifique se o chamado está fechado ou não é seu).");
+    throw new Error("Nao foi possivel enviar mensagem (verifique se o chamado esta fechado ou nao e seu).");
   }
   return doc;
 }

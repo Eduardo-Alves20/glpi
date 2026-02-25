@@ -61,14 +61,14 @@
             <tr><td colspan="9" class="empty-row">Nenhum chamado encontrado.</td></tr>
           <% } else { %>
             <% chamados.forEach((c) => { %>
-              <tr>
+              <tr data-row-href="/tecnico/chamados/<%= c.id %>">
                 <td><p class="table-content"><%= c.numero %></p></td>
                 <td><p class="table-content"><a class="table-link" href="/tecnico/chamados/<%= c.id %>"><%= c.titulo %></a></p></td>
-                <td><p class="table-content"><span class="pill pill-muted"><%= c.categoriaLabel %></span></p></td>
-                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>"><%= c.prioridadeLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-muted" title="<%= c.categoriaLabel %>"><%= c.categoriaLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>" title="<%= c.prioridadeLabel %>"><%= c.prioridadeLabel %></span></p></td>
                 <td><p class="table-content"><%= c.solicitante %></p></td>
                 <td><p class="table-content"><%= c.responsavel %></p></td>
-                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>"><%= c.statusLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>" title="<%= c.statusLabel %>"><%= c.statusLabel %></span></p></td>
                 <td><p class="table-content"><%= c.quando %></p></td>
                 <td>
                   <div class="btn-items">
@@ -87,6 +87,12 @@
         </tbody>
       </table>
     </div>
+
+    <%- include('../partials/paginacao', {
+      basePath: '/admin/chamados',
+      paginacao: paginacao,
+      query: paginacaoQuery || filtros,
+    }) %>
 
   </div>
 </div>

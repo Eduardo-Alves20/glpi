@@ -46,6 +46,17 @@
           </a>
         </div>
 
+        <div class="main-anchor-wrapper" id="nav-notificacoes">
+          <a
+            href="/notificacoes"
+            class="accordion-main-item <%= isAtivo('/notificacoes') ? 'active' : '' %>"
+            title="Notificacoes"
+          >
+            <span class="main-anchor-symbol" aria-hidden="true">&#128276;</span>
+            Notificacoes
+          </a>
+        </div>
+
         <!-- PERFIL: USUÁRIO (solicitante) -->
         <% if (perfil === "usuario" || perfil === "admin") { %>
           <div class="main-anchor-wrapper" id="nav-chamados-usuario" title="Clique para expandir">
@@ -73,18 +84,32 @@
             </p>
             <div class="accordion-content">
               <a class="accordion-item <%= isAtivo('/tecnico/chamados') ? 'active' : '' %>"
-                 href="/tecnico/chamados" title="Fila de chamados">
-                Fila de chamados
+                 href="/tecnico/chamados" title="Chamados">
+                Chamados
                 <span
                   class="nav-badge"
                   data-hook="fila-count"
-                  aria-label="Chamados na fila"
+                  aria-label="Chamados abertos"
                   hidden
                 >0</span>
               </a>
 
               <a class="accordion-item <%= isAtivo('/tecnico/meus-chamados') ? 'active' : '' %>"
                  href="/tecnico/meus-chamados" title="Meus chamados">Meus chamados</a>
+
+              <% if (perfil === "tecnico") { %>
+                <a class="accordion-item <%= isAtivo('/tecnico/metricas') ? 'active' : '' %>"
+                   href="/tecnico/metricas" title="Minhas metricas">Metricas</a>
+              <% } %>
+
+              <a class="accordion-item <%= isAtivo('/tecnico/historico-chamados') ? 'active' : '' %>"
+                 href="/tecnico/historico-chamados" title="Historico de atendimentos">Historico</a>
+
+              <a class="accordion-item <%= isAtivo('/tecnico/usuarios') ? 'active' : '' %>"
+                 href="/tecnico/usuarios" title="Usuarios">Usuarios</a>
+
+              <a class="accordion-item <%= isAtivo('/tecnico/logs') ? 'active' : '' %>"
+                 href="/tecnico/logs" title="Logs">Logs</a>
 
               <a class="accordion-item <%= isAtivo('/artigos') ? 'active' : '' %>"
                  href="/artigos" title="Base de conhecimento">Base de conhecimento</a>
@@ -116,6 +141,8 @@
                  href="/admin/artigos" title="Artigos">Artigos</a>
               <a class="accordion-item <%= isAtivo('/admin/logs') ? 'active' : '' %>"
                  href="/admin/logs" title="Logs">Logs</a>
+              <a class="accordion-item <%= isAtivo('/admin/avaliacoes') ? 'active' : '' %>"
+                 href="/admin/avaliacoes" title="Avaliacoes">Avaliacoes</a>
               <a class="accordion-item <%= isAtivo('/admin/config') ? 'active' : '' %>"
                  href="/admin/config" title="Configurações">Configurações</a>
             </div>
@@ -124,15 +151,15 @@
 
         <!-- CONTA -->
         <div class="main-anchor-wrapper" id="nav-conta" title="Clique para expandir">
-          <p class="accordion-main-item <%= isAtivo('/conta') ? 'active' : '' %>">
+          <p class="accordion-main-item <%= (isAtivo('/usuario/perfil') || isAtivo('/usuario/avaliacoes')) ? 'active' : '' %>">
             <img src="/assets/perfil.png" alt="" class="main-anchor-icon">
             Conta
           </p>
           <div class="accordion-content">
             <a class="accordion-item <%= isAtivo('/usuario/perfil') ? 'active' : '' %>"
                href="/usuario/perfil" title="Meu perfil">Meu perfil</a>
-            <a class="accordion-item <%= isAtivo('/notificacoes') ? 'active' : '' %>"
-               href="/notificacoes" title="Minhas notificacoes">Notificacoes</a>
+            <a class="accordion-item <%= isAtivo('/usuario/avaliacoes') ? 'active' : '' %>"
+               href="/usuario/avaliacoes" title="Avaliacoes">Avaliacoes</a>
           </div>
         </div>
 
@@ -147,12 +174,13 @@
         title="<%= usuarioSessao?.nome || 'Usuário' %>"
         aria-expanded="false"
       >
-        <%= nomeCurto %>
+        <span class="sr-only">Menu do usuario</span>
         <img class="sidebar-footer-icon" src="/assets/perfil.png" alt="Opções do usuário" />
       </button>
 
       <div id="profile-dropdown" class="profile-dropdown" aria-hidden="true">
         <a class="profile-dropdown-item" href="/usuario/perfil">Meu Perfil</a>
+        <a class="profile-dropdown-item" href="/usuario/avaliacoes">Avaliacoes</a>
         <button type="button" id="darkmode-toggle" class="profile-dropdown-item" aria-pressed="false">
           <span>Modo escuro</span>
         </button>

@@ -77,6 +77,7 @@ export function startChamadoPoll({
   viewerId,
   intervalMs = 1000,
   notifyOnlyWhenHidden = true,
+  reloadOnChange = true,
 } = {}) {
   if (!chamadoId) {
     console.error("[poll] chamadoId ausente");
@@ -96,6 +97,11 @@ export function startChamadoPoll({
       if (!data.changed) return;
 
       since = data.updatedAt || new Date().toISOString();
+
+      if (reloadOnChange) {
+        window.location.reload();
+        return;
+      }
 
       const badge = document.querySelector("[data-status-badge]");
       if (badge && data.status) badge.textContent = data.status;

@@ -1,6 +1,11 @@
 import { ObjectId } from "mongodb";
 import { pegarDb } from "../../../compartilhado/db/mongo.js";
 import { sanitizarAnexosHistorico } from "../../../service/anexosService.js";
+import { validarClassificacaoAtiva } from "../classificacoesChamadosRepo.js";
+import {
+  CATEGORIAS_PADRAO_VALUES,
+  PRIORIDADES_PADRAO_VALUES,
+} from "../classificacoesDefaults.js";
 
 export const COL_CHAMADOS = "chamados";
 export const COL_COUNTERS = "counters";
@@ -11,14 +16,8 @@ export const STATUS_ALLOWED = [
   "aguardando_usuario",
   "fechado",
 ];
-export const CATEGORIAS_ALLOWED = [
-  "acesso",
-  "incidente",
-  "solicitacao",
-  "infra",
-  "outros",
-];
-export const PRIORIDADES_ALLOWED = ["baixa", "media", "alta", "critica"];
+export const CATEGORIAS_ALLOWED = [...CATEGORIAS_PADRAO_VALUES];
+export const PRIORIDADES_ALLOWED = [...PRIORIDADES_PADRAO_VALUES];
 
 export function assertString(v, field, { min = 1, max = 5000 } = {}) {
   const s = String(v ?? "").trim();
@@ -70,12 +69,8 @@ export async function criarChamado({
 
   const tituloSan = assertString(titulo, "titulo", { min: 6, max: 120 });
   const descSan = assertString(descricao, "descricao", { min: 20, max: 5000 });
-  const categoriaSan = sanitizeEnum(categoria, CATEGORIAS_ALLOWED, "categoria");
-  const prioridadeSan = sanitizeEnum(
-    prioridade,
-    PRIORIDADES_ALLOWED,
-    "prioridade",
-  );
+  const categoriaSan = await validarClassificacaoAtiva("categoria", categoria);
+  const prioridadeSan = await validarClassificacaoAtiva("prioridade", prioridade);
 
   const now = new Date();
   const numero = await nextChamadoNumero(db);
@@ -96,6 +91,8 @@ export async function criarChamado({
     responsavelId: null,
     responsavelNome: "",
     responsavelLogin: "",
+    tecnicosApoio: [],
+    inscritosNotificacao: [],
     atendidoEm: null,
     fechadoEm: null,
     solucao: "",
@@ -180,12 +177,11 @@ export async function listarChamados({
   }
 
   if (typeof prioridade === "string" && prioridade.trim()) {
-    const p = prioridade.trim();
-    if (PRIORIDADES_ALLOWED.includes(p)) filtro.prioridade = p;
+    filtro.prioridade = prioridade.trim();
   } else if (Array.isArray(prioridade) && prioridade.length) {
     const ps = prioridade
       .map((p) => String(p).trim())
-      .filter((p) => PRIORIDADES_ALLOWED.includes(p));
+      .filter(Boolean);
     if (ps.length) filtro.prioridade = { $in: ps };
   }
 
@@ -221,11 +217,116 @@ export async function listarFilaChamados({
 }
 
 export async function listarMeusAtendimentos(tecnicoId, { limit = 50 } = {}) {
-  return listarChamados({ responsavelId: tecnicoId, limit });
+  const db = pegarDb();
+  const tecnicoIdStr = String(tecnicoId || "").trim();
+  if (!ObjectId.isValid(tecnicoIdStr)) return [];
+
+  const tecnicoOid = new ObjectId(tecnicoIdStr);
+  const lim = Math.max(1, Math.min(Number(limit) || 50, 200));
+
+  return db
+    .collection(COL_CHAMADOS)
+    .find({
+      $or: [
+        { responsavelId: tecnicoOid },
+        { "tecnicosApoio.id": tecnicoIdStr },
+      ],
+    })
+    .project({
+      numero: 1,
+      titulo: 1,
+      status: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      prioridade: 1,
+      categoria: 1,
+      "criadoPor.nome": 1,
+      "criadoPor.login": 1,
+      responsavelId: 1,
+      responsavelNome: 1,
+      responsavelLogin: 1,
+      tecnicosApoio: 1,
+    })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .limit(lim)
+    .toArray();
+}
+
+export async function listarHistoricoTecnicoChamados(
+  { tecnicoId = null, tecnicoLogin = "" } = {},
+  { limit = 200 } = {},
+) {
+  const db = pegarDb();
+  const lim = Math.max(1, Math.min(Number(limit) || 200, 500));
+
+  const login = String(tecnicoLogin || "").trim();
+  const criterios = [];
+
+  const tecnicoIdStr = String(tecnicoId || "").trim();
+  if (ObjectId.isValid(tecnicoIdStr)) {
+    const tecnicoOid = new ObjectId(tecnicoIdStr);
+    criterios.push({ responsavelId: tecnicoOid });
+    criterios.push({ "tecnicosApoio.id": tecnicoIdStr });
+    criterios.push({ "solucaoPor.tecnicoId": tecnicoOid });
+    criterios.push({
+      historico: {
+        $elemMatch: {
+          "meta.autor.tecnicoId": tecnicoOid,
+          tipo: { $in: ["mensagem", "solucao", "comentario_interno"] },
+        },
+      },
+    });
+    criterios.push({
+      historico: {
+        $elemMatch: {
+          tipo: { $in: ["atribuicao", "transferencia"] },
+          "meta.responsavelId": tecnicoIdStr,
+        },
+      },
+    });
+  }
+
+  if (login) {
+    criterios.push({ responsavelLogin: login });
+    criterios.push({ "solucaoPor.login": login });
+    criterios.push({
+      historico: {
+        $elemMatch: {
+          tipo: { $in: ["mensagem", "solucao", "comentario_interno"] },
+          "meta.autor.login": login,
+        },
+      },
+    });
+  }
+
+  if (!criterios.length) return [];
+
+  return db
+    .collection(COL_CHAMADOS)
+    .find({ $or: criterios })
+    .project({
+      numero: 1,
+      titulo: 1,
+      status: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      prioridade: 1,
+      categoria: 1,
+      "criadoPor.nome": 1,
+      "criadoPor.login": 1,
+      responsavelId: 1,
+      responsavelNome: 1,
+      responsavelLogin: 1,
+      tecnicosApoio: 1,
+    })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .limit(lim)
+    .toArray();
 }
 
 export async function contarChamados({
   status = null,
+  solicitanteId = null,
   responsavelId = null,
   prioridade = null,
   somenteSemResponsavel = false,
@@ -247,6 +348,12 @@ export async function contarChamados({
     if (st.length) filtro.status = { $in: st };
   }
 
+  if (solicitanteId !== null && solicitanteId !== undefined) {
+    const s = String(solicitanteId).trim();
+    if (!ObjectId.isValid(s)) return 0;
+    filtro["criadoPor.usuarioId"] = new ObjectId(s);
+  }
+
   if (responsavelId !== null && responsavelId !== undefined) {
     const s = String(responsavelId).trim();
     if (!ObjectId.isValid(s)) return 0;
@@ -254,12 +361,11 @@ export async function contarChamados({
   }
 
   if (typeof prioridade === "string" && prioridade.trim()) {
-    const p = prioridade.trim();
-    if (PRIORIDADES_ALLOWED.includes(p)) filtro.prioridade = p;
+    filtro.prioridade = prioridade.trim();
   } else if (Array.isArray(prioridade) && prioridade.length) {
     const ps = prioridade
       .map((p) => String(p).trim())
-      .filter((p) => PRIORIDADES_ALLOWED.includes(p));
+      .filter(Boolean);
     if (ps.length) filtro.prioridade = { $in: ps };
   }
 
@@ -309,4 +415,19 @@ export async function garantirIndicesChamados() {
   await db
     .collection(COL_CHAMADOS)
     .createIndex({ responsavelId: 1, status: 1, updatedAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ "tecnicosApoio.id": 1, updatedAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ "inscritosNotificacao.id": 1, updatedAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ "solucaoPor.tecnicoId": 1, updatedAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ "historico.meta.autor.tecnicoId": 1, updatedAt: -1 });
+  await db
+    .collection(COL_CHAMADOS)
+    .createIndex({ "historico.por": 1, updatedAt: -1 });
 }

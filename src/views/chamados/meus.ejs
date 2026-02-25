@@ -66,7 +66,7 @@
             </tr>
           <% } else { %>
             <% chamados.forEach((c) => { %>
-              <tr>
+              <tr data-row-href="/chamados/<%= c.id %>">
                 <td>
                   <p class="table-content">
                     <a class="table-link" href="/chamados/<%= c.id %>">
@@ -81,13 +81,13 @@
 
                 <td>
                   <p class="table-content">
-                    <span class="pill pill-muted"><%= c.categoriaLabel %></span>
+                    <span class="pill pill-muted" title="<%= c.categoriaLabel %>"><%= c.categoriaLabel %></span>
                   </p>
                 </td>
 
                 <td>
                   <p class="table-content">
-                    <span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>">
+                    <span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>" title="<%= c.prioridadeLabel %>">
                       <%= c.prioridadeLabel %>
                     </span>
                   </p>
@@ -99,7 +99,7 @@
 
                 <td>
                   <p class="table-content">
-                    <span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>">
+                    <span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>" title="<%= c.statusLabel %>">
                       <%= c.statusLabel %>
                     </span>
                   </p>
@@ -111,11 +111,7 @@
 
                 <td>
                   <div class="btn-items">
-                    <a class="small-icon" href="/chamados/<%= c.id %>" title="Ver detalhes" aria-label="Ver detalhes">
-                      <img class="small-icon" src="/assets/visualizar.png" alt="Ver">
-                    </a>
-
-                    <a class="small-icon" href="/chamados/<%= c.id %>/editar" title="Editar" aria-label="Editar">
+                    <a class="small-icon" href="/chamados/<%= c.id %>" title="Abrir chamado" aria-label="Abrir chamado">
                       <img class="small-icon" src="/assets/editar.png" alt="Editar">
                     </a>
                   </div>
@@ -126,6 +122,12 @@
         </tbody>
       </table>
     </div>
+
+    <%- include('../partials/paginacao', {
+      basePath: '/chamados/meus',
+      paginacao: paginacao,
+      query: paginacaoQuery || filtros,
+    }) %>
 
   </div>
 </div>

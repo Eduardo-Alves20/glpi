@@ -1,0 +1,259 @@
+<section class="tecnicos-admin-page usuarios-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <%- include('../partials/breadcrumb', {
+        crumbs: [
+          { label: 'Home', href: '/app' },
+          { label: 'Admin', href: '/admin' },
+          { label: 'Tecnicos' }
+        ]
+      }) %>
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard de tecnicos</h1>
+          <p class="page-subtitle">
+            Acompanhe carga, produtividade e risco operacional da equipe de atendimento.
+          </p>
+        </div>
+      </div>
+
+      <% if (typeof flash !== "undefined" && flash) { %>
+        <script>
+          window.__FLASH__ = <%- JSON.stringify({
+            tipo: String(flash.tipo || "info").toLowerCase(),
+            mensagem: String(flash.mensagem || "").slice(0, 300)
+          }) %>;
+        </script>
+      <% } %>
+
+      <section class="tecnicos-kpis" aria-label="Indicadores gerais da equipe">
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Tecnicos monitorados</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.totalTecnicos || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Com fila ativa</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.tecnicosComAtivos || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Sobrecarregados</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.tecnicosSobrecarregados || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Chamados ativos</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.chamadosAtivos || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Criticos ativos</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.chamadosCriticosAtivos || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Fechados no periodo</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.fechadosPeriodo || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Sem atividade no periodo</div>
+          <div class="tecnicos-kpi__value"><%= Number(kpis?.tecnicosSemAtividade || 0) %></div>
+        </article>
+        <article class="tecnicos-kpi">
+          <div class="tecnicos-kpi__label">Tempo medio de 1o atendimento</div>
+          <div class="tecnicos-kpi__value">
+            <% if (Number(kpis?.tempoMedioPrimeiroAtendimentoHoras || 0) > 0) { %>
+              <%= Number(kpis?.tempoMedioPrimeiroAtendimentoHoras || 0).toFixed(1) %>h
+            <% } else { %>
+              -
+            <% } %>
+          </div>
+        </article>
+      </section>
+
+      <section class="tecnicos-insights" aria-label="Resumo rapido">
+        <article class="table-card tecnicos-insight-card">
+          <h2>Top carga</h2>
+          <% if (insights?.topoCarga) { %>
+            <p>
+              <strong><%= insights.topoCarga.nome %></strong> (<%= insights.topoCarga.usuario %>)
+              com <strong><%= insights.topoCarga.ativos %></strong> ativo(s)
+              e <strong><%= insights.topoCarga.criticosAtivos %></strong> criticidade(s).
+            </p>
+          <% } else { %>
+            <p>Nenhum tecnico para avaliar carga.</p>
+          <% } %>
+        </article>
+
+        <article class="table-card tecnicos-insight-card">
+          <h2>Top produtividade</h2>
+          <% if (insights?.topoFechamentos && Number(insights.topoFechamentos.fechadosPeriodo || 0) > 0) { %>
+            <p>
+              <strong><%= insights.topoFechamentos.nome %></strong> (<%= insights.topoFechamentos.usuario %>)
+              fechou <strong><%= insights.topoFechamentos.fechadosPeriodo %></strong> chamado(s)
+              no periodo selecionado.
+            </p>
+          <% } else { %>
+            <p>Sem fechamentos no periodo selecionado.</p>
+          <% } %>
+        </article>
+
+        <article class="table-card tecnicos-insight-card">
+          <h2>Pontos de atencao</h2>
+          <% if (insights?.atencao?.length || insights?.semAtividade?.length) { %>
+            <ul class="tecnicos-insight-list">
+              <% (insights?.atencao || []).forEach((t) => { %>
+                <li>
+                  <strong><%= t.nome %></strong> (<%= t.usuario %>) - <%= t.saudeLabel %>
+                </li>
+              <% }) %>
+              <% (insights?.semAtividade || []).forEach((t) => { %>
+                <li>
+                  <strong><%= t.nome %></strong> (<%= t.usuario %>) - sem atividade no periodo
+                </li>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p>Sem tecnicos em estado de atencao neste recorte.</p>
+          <% } %>
+        </article>
+      </section>
+
+      <form method="GET" action="/admin/tecnicos" class="table-card usuarios-filters-card">
+        <div class="usuarios-filters-grid tecnicos-filters-grid">
+          <div class="usuarios-filter-field usuarios-filter-field--search">
+            <label for="filtro-q">Pesquisar tecnico</label>
+            <input
+              id="filtro-q"
+              name="q"
+              value="<%= filtros?.q || '' %>"
+              placeholder="Nome, login ou e-mail"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-status">Status</label>
+            <select id="filtro-status" name="status">
+              <% (opcoes?.status || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= filtros?.status === item.value ? 'selected' : '' %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-desempenho">Recorte</label>
+            <select id="filtro-desempenho" name="desempenho">
+              <% (opcoes?.desempenho || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= filtros?.desempenho === item.value ? 'selected' : '' %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-periodo">Periodo</label>
+            <select id="filtro-periodo" name="periodoDias">
+              <% (opcoes?.periodosDias || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= String(filtros?.periodoDias || 30) === String(item.value) ? 'selected' : '' %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="filtro-ordenacao">Ordenacao</label>
+            <select id="filtro-ordenacao" name="ordenacao">
+              <% (opcoes?.ordenacao || []).forEach((item) => { %>
+                <option value="<%= item.value %>" <%= filtros?.ordenacao === item.value ? 'selected' : '' %>><%= item.label %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field usuarios-filter-field--limit">
+            <label for="tecnicos-limit">Itens por pagina</label>
+            <select id="tecnicos-limit" name="limit">
+              <% [10, 25, 50, 100, 200].forEach((n) => { %>
+                <option value="<%= n %>" <%= Number((paginacao?.limit || paginacaoQuery?.limit || 10)) === n ? 'selected' : '' %>><%= n %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <div class="usuarios-filters-actions">
+          <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+          <a class="button tertiary" href="/admin/tecnicos">Limpar filtros</a>
+        </div>
+      </form>
+
+      <% if (!tecnicos || tecnicos.length === 0) { %>
+        <div class="empty-state">
+          <p><strong>Nenhum tecnico encontrado.</strong></p>
+          <p>Tente ajustar os filtros para ampliar o recorte.</p>
+        </div>
+      <% } else { %>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Tecnico</th>
+                <th>Status</th>
+                <th>Ativos</th>
+                <th>Atendimento</th>
+                <th>Aguardando usuario</th>
+                <th>Criticos</th>
+                <th>Fechados periodo</th>
+                <th>Interacoes periodo</th>
+                <th>Tempo 1o atendimento</th>
+                <th>Ultima atuacao</th>
+                <th>Saude</th>
+                <th style="width: 130px;">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% tecnicos.forEach((t) => { %>
+                <tr data-row-href="/admin/chamados?responsavelLogin=<%= encodeURIComponent(t.usuario || '') %>&limit=10">
+                  <td>
+                    <div class="tecnico-cell">
+                      <strong><%= t.nome %></strong>
+                      <span><%= t.usuario %></span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-pill <%= t.status === 'ativo' ? 'ok' : 'off' %>"><%= t.status %></span>
+                  </td>
+                  <td><%= Number(t.ativos || 0) %></td>
+                  <td><%= Number(t.emAtendimento || 0) %></td>
+                  <td><%= Number(t.aguardandoUsuario || 0) %></td>
+                  <td><%= Number(t.criticosAtivos || 0) %></td>
+                  <td><%= Number(t.fechadosPeriodo || 0) %></td>
+                  <td><%= Number(t.interacoesPeriodo || 0) %></td>
+                  <td>
+                    <% if (Number(t.tempoPrimeiroAtendimentoAmostras || 0) > 0) { %>
+                      <%= Number(t.tempoPrimeiroAtendimentoHoras || 0).toFixed(1) %>h
+                    <% } else { %>
+                      -
+                    <% } %>
+                  </td>
+                  <td><%= t.ultimaAtuacaoFmt || '-' %></td>
+                  <td>
+                    <span class="tecnico-health tecnico-health--<%= t.saudeCodigo %>"><%= t.saudeLabel %></span>
+                  </td>
+                  <td>
+                    <a
+                      class="button secondary tecnicos-view-link"
+                      href="/admin/chamados?responsavelLogin=<%= encodeURIComponent(t.usuario || '') %>&limit=10"
+                    >
+                      Ver chamados
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <%- include('../partials/paginacao', {
+          basePath: '/admin/tecnicos',
+          paginacao: paginacao,
+          query: paginacaoQuery || {},
+        }) %>
+      <% } %>
+    </div>
+  </div>
+</section>

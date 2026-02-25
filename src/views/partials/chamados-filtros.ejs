@@ -46,7 +46,7 @@
       <label for="<%= baseId %>-limit">Itens por pagina</label>
       <select id="<%= baseId %>-limit" name="limit">
         <% [10, 25, 50, 75, 100, 200].forEach((n) => { %>
-          <option value="<%= n %>" <%= Number(filtros?.limit || 50) === n ? "selected" : "" %>><%= n %></option>
+          <option value="<%= n %>" <%= Number(filtros?.limit || 10) === n ? "selected" : "" %>><%= n %></option>
         <% }) %>
       </select>
     </div>
@@ -82,7 +82,7 @@
       <a class="btn-primary" href="<%= acao.href %>"><%= acao.label %></a>
     <% } %>
 
-    <button class="button" type="submit">Aplicar filtros</button>
+    <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
     <a class="button tertiary chamados-clear-button" href="<%= limparHref %>">Limpar filtros</a>
   </div>
 
@@ -180,7 +180,7 @@
 
         <div class="chamados-advanced-footer-actions">
           <button type="button" class="button secondary" data-action="cancel-advanced">Cancelar</button>
-          <button type="submit" class="button">Aplicar filtros</button>
+          <button type="submit" class="button button-filter-apply">Aplicar filtros</button>
         </div>
       </div>
     </div>

@@ -1,0 +1,153 @@
+.avaliacoes-page .content-with-pagination {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.avaliacoes-page .page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.avaliacoes-page .page-title {
+  margin: 0;
+}
+
+.avaliacoes-page .page-subtitle {
+  margin: 6px 0 0;
+}
+
+.avaliacoes-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.avaliacoes-kpi strong {
+  font-size: 28px;
+  line-height: 1;
+  color: #0b3c6b;
+}
+
+.avaliacoes-kpi span {
+  font-size: 12px;
+  color: #5b6c80;
+}
+
+.avaliacoes-filtros-card {
+  padding: 14px;
+}
+
+.avaliacoes-filtros-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.avaliacoes-filtros-grid.is-admin {
+  grid-template-columns: minmax(240px, 2fr) repeat(5, minmax(120px, 1fr));
+}
+
+.avaliacoes-filtro-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.avaliacoes-filtro-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #294a6d;
+}
+
+.avaliacoes-filtro-field input,
+.avaliacoes-filtro-field select {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #ccd9ea;
+  background: #f8fbff;
+  padding: 0 10px;
+  color: #123a63;
+}
+
+.avaliacoes-filtros-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.avaliacoes-table-card {
+  overflow: auto;
+}
+
+.avaliacoes-table-card .table {
+  min-width: 860px;
+}
+
+.avaliacoes-table-card .table tbody td {
+  font-size: 13px;
+}
+
+.avaliacoes-table-card .table tbody tr[data-row-href] {
+  cursor: pointer;
+}
+
+.avaliacoes-table-card .table tbody tr:focus-visible {
+  outline: 2px solid rgba(4, 76, 141, 0.4);
+  outline-offset: -2px;
+}
+
+@media (max-width: 1200px) {
+  .avaliacoes-filtros-grid,
+  .avaliacoes-filtros-grid.is-admin {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .avaliacoes-filtro-field--search {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 700px) {
+  .avaliacoes-filtros-grid,
+  .avaliacoes-filtros-grid.is-admin {
+    grid-template-columns: 1fr;
+  }
+
+  .avaliacoes-filtro-field--search {
+    grid-column: auto;
+  }
+
+  .avaliacoes-filtros-actions .button {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+body.app-layout.dark-mode .avaliacoes-kpi strong {
+  color: #dbe8fc;
+}
+
+body.app-layout.dark-mode .avaliacoes-kpi span {
+  color: #9cb0cb;
+}
+
+body.app-layout.dark-mode .avaliacoes-filtro-field label {
+  color: #bcd1ec;
+}
+
+body.app-layout.dark-mode .avaliacoes-filtro-field input,
+body.app-layout.dark-mode .avaliacoes-filtro-field select {
+  background: #132235;
+  border-color: #2f4663;
+  color: #d5e4fb;
+}
+
+body.app-layout.dark-mode .avaliacoes-table-card .table tbody tr:focus-visible {
+  outline-color: rgba(125, 211, 252, 0.65);
+}

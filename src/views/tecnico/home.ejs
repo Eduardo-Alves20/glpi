@@ -12,12 +12,7 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
       <p>Aqui está um panorama rápido do GLPI.</p>
     </div>
 
-    <div class="admin-home__headerActions">
-      <span class="admin-home__updated">
-        Atualizado em: <%= (new Date()).toLocaleString("pt-BR") %>
-      </span>
-      <a href="/tecnico" class="admin-home__btn admin-home__btn--secondary">Atualizar</a>
-    </div>
+
   </header>
 
   <!-- KPIs -->
@@ -55,7 +50,7 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
           </h2>
           <p>Atividades do sistema e ações administrativas</p>
         </div>
-        <a class="admin-home__btn admin-home__btn--tertiary" href="/admin/logs">Ver</a>
+        <a class="admin-home__btn admin-home__btn--tertiary" href="/tecnico/logs">Ver</a>
       </header>
 
       <ul class="list">
@@ -131,7 +126,7 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
           <h2>Usuários</h2>
           <p>Cadastros e perfis</p>
         </div>
-        <a class="admin-home__btn admin-home__btn--tertiary" href="/admin/usuarios">Ver</a>
+        <a class="admin-home__btn admin-home__btn--tertiary" href="/tecnico/usuarios">Ver</a>
       </header>
 
       <div class="miniKpis">
@@ -178,8 +173,6 @@ const nome = (usuarioSessao?.nome || usuarioSessao?.usuario || "Administrador(a)
   .admin-home__header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
   .admin-home__headerText h1 { margin:0; font-size: 22px; }
   .admin-home__headerText p { margin:6px 0 0; opacity:.8; }
-  .admin-home__headerActions { display:flex; gap:12px; align-items:center; }
-  .admin-home__updated { font-size: 13px; opacity: .75; }
 
   .admin-home__btn { display:inline-flex; align-items:center; justify-content:center; border-radius:10px; padding:8px 14px; font-size:13px; text-decoration:none; border:1px solid transparent; cursor:pointer; }
   .admin-home__btn--secondary { background:#f1f5f9; border-color:#d8e1ec; color:#0b3c6b; font-weight:600; }

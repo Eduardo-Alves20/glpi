@@ -94,7 +94,21 @@
               maxlength="72"
               required
             />
-            <small class="hint">Depois a gente troca por fluxo de “primeiro acesso / reset”.</small>
+            <small class="hint">Minimo de 8 caracteres.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="senhaTemporariaConfirmacao">Confirmar senha temporaria</label>
+            <input
+              id="senhaTemporariaConfirmacao"
+              name="senhaTemporariaConfirmacao"
+              type="password"
+              placeholder="Repita a senha temporaria"
+              minlength="8"
+              maxlength="72"
+              required
+            />
+            <small class="hint">A confirmacao precisa ser igual a senha informada.</small>
           </div>
         </div>
 
@@ -106,3 +120,34 @@
     </div>
   </div>
 </section>
+
+<script>
+  (function () {
+    const form = document.querySelector(".glpi-form");
+    const senha = document.getElementById("senhaTemporaria");
+    const senhaConf = document.getElementById("senhaTemporariaConfirmacao");
+
+    if (!form || !senha || !senhaConf) return;
+
+    function validar() {
+      const s1 = String(senha.value || "");
+      const s2 = String(senhaConf.value || "");
+      if (s1 !== s2) {
+        senhaConf.setCustomValidity("A confirmacao da senha nao confere.");
+        return;
+      }
+      senhaConf.setCustomValidity("");
+    }
+
+    senha.addEventListener("input", validar);
+    senhaConf.addEventListener("input", validar);
+
+    form.addEventListener("submit", (event) => {
+      validar();
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        form.reportValidity();
+      }
+    });
+  })();
+</script>
