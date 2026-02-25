@@ -83,6 +83,7 @@ function montarDetalhesLog(log = {}) {
       perfil: limpar(log?.alvo?.perfil, 40),
     },
     req: {
+      requestId: limpar(log?.req?.requestId, 120),
       metodo: limpar(log?.req?.metodo, 20),
       rota: limpar(log?.req?.rota, 300),
       ip: limpar(log?.req?.ip, 120),
@@ -106,6 +107,7 @@ async function logsIndexGet(req, res) {
     modulo: String(req.query?.modulo || "").trim().toLowerCase(),
     evento: String(req.query?.evento || "").trim().toLowerCase(),
     resultado: String(req.query?.resultado || "").trim().toLowerCase(),
+    requestId: String(req.query?.requestId || "").trim(),
     usuarioId: String(req.query?.usuarioId || "").trim(),
     usuarioLogin: String(req.query?.usuarioLogin || "").trim(),
     chamadoId: String(req.query?.chamadoId || "").trim(),

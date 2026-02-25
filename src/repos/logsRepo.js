@@ -127,6 +127,7 @@ export async function listarLogs({
   modulo = "",
   evento = "",
   resultado = "",
+  requestId = "",
   usuarioId = "",
   usuarioLogin = "",
   chamadoId = "",
@@ -143,6 +144,7 @@ export async function listarLogs({
   const moduloSan = normString(modulo, { max: 60 }).toLowerCase();
   const eventoSan = normString(evento, { max: 120 }).toLowerCase();
   const resultadoSan = normString(resultado, { max: 20 }).toLowerCase();
+  const requestIdSan = normString(requestId, { max: 120 });
   const usuarioIdSan = normString(usuarioId, { max: 80 });
   const usuarioLoginSan = normString(usuarioLogin, { max: 80 });
   const chamadoIdSan = normString(chamadoId, { max: 80 });
@@ -151,6 +153,7 @@ export async function listarLogs({
   if (moduloSan) filtro.modulo = moduloSan;
   if (eventoSan) filtro.evento = eventoSan;
   if (RESULTADOS_ALLOWED.includes(resultadoSan)) filtro.resultado = resultadoSan;
+  if (requestIdSan) filtro["req.requestId"] = requestIdSan;
   if (usuarioIdSan) filtro["usuario.id"] = usuarioIdSan;
   if (usuarioLoginSan) filtro["usuario.login"] = usuarioLoginSan;
   if (chamadoIdSan) filtro["alvo.id"] = chamadoIdSan;
@@ -174,6 +177,7 @@ export async function listarLogs({
       { mensagem: rx },
       { "usuario.login": rx },
       { "usuario.nome": rx },
+      { "req.requestId": rx },
       { "alvo.id": rx },
       { "alvo.numero": rx },
     ];
@@ -286,6 +290,7 @@ export async function garantirIndicesLogs() {
   await db.collection(COL_LOGS).createIndex({ modulo: 1, criadoEm: -1 });
   await db.collection(COL_LOGS).createIndex({ "usuario.id": 1, criadoEm: -1 });
   await db.collection(COL_LOGS).createIndex({ "usuario.login": 1, criadoEm: -1 });
+  await db.collection(COL_LOGS).createIndex({ "req.requestId": 1, criadoEm: -1 });
   await db.collection(COL_LOGS).createIndex({ "alvo.id": 1, criadoEm: -1 });
   await db.collection(COL_LOGS).createIndex({ nivel: 1, resultado: 1, criadoEm: -1 });
 }

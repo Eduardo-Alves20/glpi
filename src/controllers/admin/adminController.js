@@ -21,6 +21,7 @@ import {
 } from "../../service/chamadosListaFiltrosService.js";
 import { resolverCaminhoAnexo } from "../../service/anexosService.js";
 import { registrarEventoSistema } from "../../service/logsService.js";
+import { avaliarSlaChamado } from "../../service/chamadosSlaService.js";
 
 async function carregarClassificacoesChamados() {
   try {
@@ -39,6 +40,8 @@ async function carregarClassificacoesChamados() {
 }
 
 function mapearChamadoAdmin(c, classificacoes) {
+  const sla = avaliarSlaChamado(c);
+
   return {
     id: String(c._id),
     numero: c.numero,
@@ -57,6 +60,9 @@ function mapearChamadoAdmin(c, classificacoes) {
       ? `${c.responsavelNome || ""} (${c.responsavelLogin})`
       : "-",
     temResponsavel: Boolean(c.responsavelId),
+    slaClasse: String(sla?.classe || "sem_sla"),
+    slaLabel: String(sla?.label || "SLA n/a"),
+    slaTooltip: String(sla?.tooltip || ""),
   };
 }
 

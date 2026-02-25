@@ -1,6 +1,7 @@
 <% const advancedCount = [
   filtros.nivel,
   filtros.resultado,
+  filtros.requestId,
   filtros.modulo,
   filtros.evento,
   filtros.usuarioId,
@@ -150,6 +151,11 @@
               <h3>Relacionamentos</h3>
 
               <div class="logs-advanced-field">
+                <label for="filtro-request-id">Request ID</label>
+                <input id="filtro-request-id" name="requestId" value="<%= filtros.requestId %>" data-advanced-field />
+              </div>
+
+              <div class="logs-advanced-field">
                 <label for="filtro-usuario-login">Login do usuario</label>
                 <input id="filtro-usuario-login" name="usuarioLogin" value="<%= filtros.usuarioLogin %>" data-advanced-field />
               </div>
@@ -262,6 +268,7 @@
           modulo: filtros.modulo || "",
           evento: filtros.evento || "",
           resultado: filtros.resultado || "",
+          requestId: filtros.requestId || "",
           usuarioId: filtros.usuarioId || "",
           usuarioLogin: filtros.usuarioLogin || "",
           chamadoId: filtros.chamadoId || "",
@@ -318,6 +325,7 @@
       <div class="logs-details-item"><span>Alvo tipo</span><strong id="ld-alvo-tipo">-</strong></div>
       <div class="logs-details-item"><span>Alvo id</span><strong id="ld-alvo-id">-</strong></div>
       <div class="logs-details-item"><span>Rota</span><strong id="ld-rota">-</strong></div>
+      <div class="logs-details-item"><span>Request ID</span><strong id="ld-request-id">-</strong></div>
       <div class="logs-details-item"><span>Metodo</span><strong id="ld-metodo">-</strong></div>
       <div class="logs-details-item"><span>IP</span><strong id="ld-ip">-</strong></div>
       <div class="logs-details-item"><span>User-Agent</span><strong id="ld-ua">-</strong></div>

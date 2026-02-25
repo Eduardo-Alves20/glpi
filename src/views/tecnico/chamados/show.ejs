@@ -694,6 +694,19 @@
   .chat-sub { font-size: 12px; opacity:.75; }
 
   .chat-empty { padding: 14px 16px; opacity:.8; }
+  .chat-unread-indicator {
+    margin: 0 14px 12px auto;
+    border: 1px solid rgba(4, 76, 141, .24);
+    background: #eaf3ff;
+    color: #0b4f86;
+    border-radius: 999px;
+    min-height: 30px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .chat-unread-indicator[hidden] { display: none !important; }
 
   .chat { padding: 12px 14px; display:flex; flex-direction:column; gap:10px; max-height: 360px; overflow:auto; }
   .msg {
@@ -733,6 +746,11 @@
   body.app-layout.dark-mode .msg.is-system {
     background: #1a2d44;
     border-color: #476181;
+  }
+  body.app-layout.dark-mode .chat-unread-indicator {
+    background: #173051;
+    color: #dbe8fc;
+    border-color: #3d6795;
   }
   .msg-top { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom: 6px; }
   .msg-author { font-weight: 800; font-size: 13px; }

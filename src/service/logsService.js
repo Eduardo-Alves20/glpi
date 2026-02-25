@@ -7,6 +7,7 @@ function obterIp(req) {
 function obterReqInfo(req) {
   if (!req) return null;
   return {
+    requestId: String(req.requestId || ""),
     metodo: String(req.method || "").toUpperCase(),
     rota: String(req.originalUrl || req.url || ""),
     ip: obterIp(req),
@@ -57,4 +58,3 @@ export async function registrarEventoSistema({
     console.error("[logs] falha ao registrar evento:", err);
   }
 }
-

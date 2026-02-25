@@ -54,6 +54,7 @@
             <th style="width: 140px;">Prioridade</th>
             <th style="width: 160px;">Responsavel</th>
             <th style="width: 140px;">Status</th>
+            <th style="width: 160px;">SLA</th>
             <th style="width: 190px;">Quando</th>
             <th style="width: 110px;">Acoes</th>
           </tr>
@@ -62,7 +63,7 @@
         <tbody>
           <% if (!chamados || chamados.length === 0) { %>
             <tr>
-              <td colspan="8" class="empty-row">Nenhum chamado encontrado.</td>
+              <td colspan="9" class="empty-row">Nenhum chamado encontrado.</td>
             </tr>
           <% } else { %>
             <% chamados.forEach((c) => { %>
@@ -101,6 +102,14 @@
                   <p class="table-content">
                     <span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>" title="<%= c.statusLabel %>">
                       <%= c.statusLabel %>
+                    </span>
+                  </p>
+                </td>
+
+                <td>
+                  <p class="table-content">
+                    <span class="pill pill-sla pill-sla-<%= String(c.slaClasse || 'sem_sla').toLowerCase() %>" title="<%= c.slaTooltip || '' %>">
+                      <%= c.slaLabel || "SLA n/a" %>
                     </span>
                   </p>
                 </td>

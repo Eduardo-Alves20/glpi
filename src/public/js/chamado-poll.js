@@ -89,6 +89,37 @@ function renderAnexosHtml(anexos = []) {
   `;
 }
 
+function chatEstaPertoDoFim(chatEl) {
+  if (!chatEl) return true;
+  const toleranciaPx = 36;
+  const restante = chatEl.scrollHeight - (chatEl.scrollTop + chatEl.clientHeight);
+  return restante <= toleranciaPx;
+}
+
+function garantirIndicadorNaoLidas(chatEl) {
+  if (!chatEl || !chatEl.parentElement) return null;
+
+  let indicador = chatEl.parentElement.querySelector("[data-chat-unread-indicator]");
+  if (indicador) return indicador;
+
+  indicador = document.createElement("button");
+  indicador.type = "button";
+  indicador.className = "chat-unread-indicator";
+  indicador.setAttribute("data-chat-unread-indicator", "1");
+  indicador.hidden = true;
+  indicador.textContent = "Novas mensagens";
+
+  indicador.addEventListener("click", () => {
+    chatEl.scrollTop = chatEl.scrollHeight;
+    indicador.hidden = true;
+    indicador.dataset.count = "0";
+    indicador.textContent = "Novas mensagens";
+  });
+
+  chatEl.parentElement.appendChild(indicador);
+  return indicador;
+}
+
 export function startChamadoPoll({
   chamadoId,
   viewerId,
@@ -129,6 +160,10 @@ export function startChamadoPoll({
       const novas = Array.isArray(data.novasInteracoes) ? data.novasInteracoes : [];
       if (!chat || !novas.length) return;
 
+      const estavaNoFim = chatEstaPertoDoFim(chat);
+      const indicadorNaoLidas = garantirIndicadorNaoLidas(chat);
+      let novasDeOutrasPessoas = 0;
+
       for (const h of novas) {
         const autor = h?.meta?.autor?.nome || h?.meta?.autor?.login || h?.por || "sistema";
         const tipo = h?.tipo || "evento";
@@ -148,8 +183,26 @@ export function startChamadoPoll({
           ${renderAnexosHtml(anexos)}
         `;
         chat.appendChild(item);
+
+        const ehOutraPessoa = classificarLadoMensagem(h, viewer, viewerLoginSan) === "is-other";
+        if (ehOutraPessoa) novasDeOutrasPessoas += 1;
       }
-      chat.scrollTop = chat.scrollHeight;
+      if (estavaNoFim) {
+        chat.scrollTop = chat.scrollHeight;
+        if (indicadorNaoLidas) {
+          indicadorNaoLidas.hidden = true;
+          indicadorNaoLidas.dataset.count = "0";
+          indicadorNaoLidas.textContent = "Novas mensagens";
+        }
+      } else if (novasDeOutrasPessoas > 0 && indicadorNaoLidas) {
+        const atual = Number(indicadorNaoLidas.dataset.count || 0);
+        const total = Math.max(0, atual) + novasDeOutrasPessoas;
+        indicadorNaoLidas.dataset.count = String(total);
+        indicadorNaoLidas.textContent = total === 1
+          ? "1 mensagem nao lida"
+          : `${total} mensagens nao lidas`;
+        indicadorNaoLidas.hidden = false;
+      }
 
       const temDeOutraPessoa = novas.some((h) => {
         const autorId = getAutorId(h);
@@ -173,5 +226,14 @@ export function startChamadoPoll({
   };
 
   poll();
+  const chat = document.querySelector("[data-chat-wrap]");
+  const indicadorNaoLidas = garantirIndicadorNaoLidas(chat);
+  chat?.addEventListener("scroll", () => {
+    if (!indicadorNaoLidas) return;
+    if (!chatEstaPertoDoFim(chat)) return;
+    indicadorNaoLidas.hidden = true;
+    indicadorNaoLidas.dataset.count = "0";
+    indicadorNaoLidas.textContent = "Novas mensagens";
+  });
   setInterval(poll, Math.max(600, Number(intervalMs) || 1000));
 }

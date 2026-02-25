@@ -51,13 +51,14 @@
             <th style="width:140px;">Categoria</th>
             <th style="width:140px;">Prioridade</th>
             <th style="width:140px;">Status</th>
+            <th style="width:160px;">SLA</th>
             <th style="width:190px;">Atualizado</th>
             <th style="width:120px;">Acoes</th>
           </tr>
         </thead>
         <tbody>
           <% if (!chamados || chamados.length === 0) { %>
-            <tr><td colspan="9" class="empty-row">Nenhum chamado encontrado no seu historico.</td></tr>
+            <tr><td colspan="10" class="empty-row">Nenhum chamado encontrado no seu historico.</td></tr>
           <% } else { %>
             <% chamados.forEach((c) => { %>
               <tr data-row-href="/tecnico/chamados/<%= c.id %>">
@@ -68,6 +69,7 @@
                 <td><p class="table-content"><span class="pill pill-muted" title="<%= c.categoriaLabel %>"><%= c.categoriaLabel %></span></p></td>
                 <td><p class="table-content"><span class="pill pill-prio pill-prio-<%= String(c.prioridade || '').toLowerCase() %>" title="<%= c.prioridadeLabel %>"><%= c.prioridadeLabel %></span></p></td>
                 <td><p class="table-content"><span class="pill pill-status pill-status-<%= String(c.status || '').toLowerCase() %>" title="<%= c.statusLabel %>"><%= c.statusLabel %></span></p></td>
+                <td><p class="table-content"><span class="pill pill-sla pill-sla-<%= String(c.slaClasse || 'sem_sla').toLowerCase() %>" title="<%= c.slaTooltip || '' %>"><%= c.slaLabel || 'SLA n/a' %></span></p></td>
                 <td><p class="table-content"><%= c.quando %></p></td>
                 <td><a class="btn-primary" href="/tecnico/chamados/<%= c.id %>">Abrir</a></td>
               </tr>

@@ -23,6 +23,7 @@ import {
   obterDashboardTecnicosAdmin,
   opcoesAdminTecnicos,
 } from "../../repos/admin/adminTecnicosDashboardRepo.js";
+import { avaliarSlaChamado } from "../../service/chamadosSlaService.js";
 
 async function carregarClassificacoesChamados() {
   try {
@@ -41,6 +42,8 @@ async function carregarClassificacoesChamados() {
 }
 
 function mapearChamadoLista(c, usuarioSessao, classificacoes) {
+  const sla = avaliarSlaChamado(c);
+
   return {
     id: String(c._id),
     numero: c.numero,
@@ -64,6 +67,9 @@ function mapearChamadoLista(c, usuarioSessao, classificacoes) {
       c.responsavelLogin &&
       String(c.responsavelLogin).toLowerCase() === String(usuarioSessao?.usuario || "").toLowerCase(),
     ),
+    slaClasse: String(sla?.classe || "sem_sla"),
+    slaLabel: String(sla?.label || "SLA n/a"),
+    slaTooltip: String(sla?.tooltip || ""),
   };
 }
 

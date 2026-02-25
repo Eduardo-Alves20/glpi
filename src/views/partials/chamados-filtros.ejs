@@ -84,6 +84,15 @@
 
     <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
     <a class="button tertiary chamados-clear-button" href="<%= limparHref %>">Limpar filtros</a>
+
+    <div class="chamados-saved-filters" data-saved-filters>
+      <select data-action="saved-select" aria-label="Filtros salvos">
+        <option value="">Filtros salvos</option>
+      </select>
+      <button type="button" class="button secondary" data-action="saved-apply">Aplicar salvo</button>
+      <button type="button" class="button secondary" data-action="saved-save">Salvar atual</button>
+      <button type="button" class="button tertiary" data-action="saved-delete">Remover salvo</button>
+    </div>
   </div>
 
   <div id="<%= baseId %>-advanced-modal" class="chamados-advanced-modal" data-role="advanced-modal" hidden>

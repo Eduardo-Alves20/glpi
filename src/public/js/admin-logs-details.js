@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     alvoTipo: document.getElementById("ld-alvo-tipo"),
     alvoId: document.getElementById("ld-alvo-id"),
     rota: document.getElementById("ld-rota"),
+    requestId: document.getElementById("ld-request-id"),
     metodo: document.getElementById("ld-metodo"),
     ip: document.getElementById("ld-ip"),
     ua: document.getElementById("ld-ua"),
@@ -94,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fill("alvoTipo", detail?.alvo?.tipo);
     fill("alvoId", detail?.alvo?.id);
     fill("rota", detail?.req?.rota);
+    fill("requestId", detail?.req?.requestId);
     fill("metodo", detail?.req?.metodo);
     fill("ip", detail?.req?.ip);
     fill("ua", detail?.req?.userAgent);

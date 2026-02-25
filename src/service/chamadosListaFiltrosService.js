@@ -176,6 +176,7 @@ function incluiBusca(chamado, termoBusca) {
   const campos = [
     chamado?.numero,
     chamado?.titulo,
+    chamado?.descricao,
     chamado?.status,
     chamado?.categoria,
     chamado?.prioridade,

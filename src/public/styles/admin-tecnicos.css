@@ -1,27 +1,43 @@
+body.app-layout .app-main > .tecnicos-admin-page.usuarios-page {
+  max-width: 100%;
+  padding: 14px 24px 32px;
+}
+
+.tecnicos-admin-page .container {
+  max-width: 1820px;
+  margin: 0 auto;
+  padding-inline: 8px;
+}
+
 .tecnicos-admin-page .form-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 22px;
+}
+
+.tecnicos-admin-page .page-header {
+  margin-bottom: 2px;
 }
 
 .tecnicos-admin-page .usuarios-filters-card {
   background: #ffffff;
   border: 1px solid #e6edf5;
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: 0 5px 16px rgba(15, 31, 55, 0.06);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 12px 28px rgba(15, 31, 55, 0.08);
 }
 
 .tecnicos-admin-page .usuarios-filters-grid {
   display: grid;
-  gap: 10px;
+  gap: 14px;
   align-items: end;
 }
 
 .tecnicos-admin-page .usuarios-filter-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .tecnicos-admin-page .usuarios-filter-field label {
@@ -32,6 +48,7 @@
 
 .tecnicos-admin-page .usuarios-filter-field input,
 .tecnicos-admin-page .usuarios-filter-field select {
+  width: 100%;
   height: 38px;
   border-radius: 10px;
   border: 1px solid #ccd9ea;
@@ -49,25 +66,29 @@
 }
 
 .tecnicos-admin-page .usuarios-filters-actions {
-  margin-top: 10px;
+  margin-top: 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .tecnicos-admin-page .tecnicos-kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .tecnicos-admin-page .tecnicos-kpi {
   background: #ffffff;
   border: 1px solid #e6edf5;
-  border-radius: 12px;
-  padding: 12px 14px;
-  box-shadow: 0 5px 16px rgba(15, 31, 55, 0.06);
+  border-radius: 16px;
+  padding: 18px 20px;
+  min-height: 124px;
+  box-shadow: 0 12px 28px rgba(15, 31, 55, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .tecnicos-admin-page .tecnicos-kpi__label {
@@ -79,63 +100,138 @@
 }
 
 .tecnicos-admin-page .tecnicos-kpi__value {
-  margin-top: 8px;
-  font-size: 26px;
-  line-height: 1;
+  margin-top: 12px;
+  font-size: 34px;
+  line-height: 1.05;
   font-weight: 800;
   color: #0a3f73;
 }
 
 .tecnicos-admin-page .tecnicos-insights {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .tecnicos-admin-page .tecnicos-insight-card {
   background: #ffffff;
   border: 1px solid #e6edf5;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  min-height: 138px;
+  box-shadow: 0 12px 28px rgba(15, 31, 55, 0.08);
 }
 
 .tecnicos-admin-page .tecnicos-insight-card h2 {
-  margin: 0 0 6px;
-  font-size: 15px;
+  margin: 0 0 8px;
+  font-size: 20px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   color: #123;
 }
 
 .tecnicos-admin-page .tecnicos-insight-card p {
   margin: 0;
   color: #495f7a;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .tecnicos-admin-page .tecnicos-insight-list {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 20px;
   color: #495f7a;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .tecnicos-admin-page .tecnicos-insight-list li + li {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .tecnicos-admin-page .tecnicos-filters-grid {
-  grid-template-columns: minmax(260px, 1.6fr) repeat(5, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tecnicos-admin-page .usuarios-filter-field--search {
+  grid-column: span 2;
 }
 
 .tecnicos-admin-page .table-wrapper {
   border: 1px solid #e6edf5;
   background: #ffffff;
-  border-radius: 12px;
-  overflow: auto;
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 4px 8px 8px;
+  box-shadow: 0 12px 28px rgba(15, 31, 55, 0.08);
+}
+
+.tecnicos-admin-page .table-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+
+.tecnicos-admin-page .table-wrapper::-webkit-scrollbar-track {
+  background: #e8eef7;
+  border-radius: 999px;
+}
+
+.tecnicos-admin-page .table-wrapper::-webkit-scrollbar-thumb {
+  background: #a9bdd8;
+  border-radius: 999px;
+}
+
+.tecnicos-admin-page .table {
+  width: 100%;
+  table-layout: fixed;
 }
 
 .tecnicos-admin-page .table thead th,
 .tecnicos-admin-page .table tbody td {
-  font-size: 13px;
+  font-size: 12px;
+  padding: 13px 10px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.tecnicos-admin-page .table thead th {
+  text-align: center;
+}
+
+.tecnicos-admin-page .table thead th:first-child,
+.tecnicos-admin-page .table tbody td:first-child {
+  text-align: left;
+}
+
+.tecnicos-admin-page .table thead th:nth-child(1),
+.tecnicos-admin-page .table tbody td:nth-child(1) { width: 14%; }
+.tecnicos-admin-page .table thead th:nth-child(2),
+.tecnicos-admin-page .table tbody td:nth-child(2) { width: 7%; }
+.tecnicos-admin-page .table thead th:nth-child(3),
+.tecnicos-admin-page .table tbody td:nth-child(3) { width: 6%; }
+.tecnicos-admin-page .table thead th:nth-child(4),
+.tecnicos-admin-page .table tbody td:nth-child(4) { width: 7%; }
+.tecnicos-admin-page .table thead th:nth-child(5),
+.tecnicos-admin-page .table tbody td:nth-child(5) { width: 8%; }
+.tecnicos-admin-page .table thead th:nth-child(6),
+.tecnicos-admin-page .table tbody td:nth-child(6) { width: 6%; }
+.tecnicos-admin-page .table thead th:nth-child(7),
+.tecnicos-admin-page .table tbody td:nth-child(7) { width: 7%; }
+.tecnicos-admin-page .table thead th:nth-child(8),
+.tecnicos-admin-page .table tbody td:nth-child(8) { width: 7%; }
+.tecnicos-admin-page .table thead th:nth-child(9),
+.tecnicos-admin-page .table tbody td:nth-child(9) { width: 8%; }
+.tecnicos-admin-page .table thead th:nth-child(10),
+.tecnicos-admin-page .table tbody td:nth-child(10) { width: 12%; }
+.tecnicos-admin-page .table thead th:nth-child(11),
+.tecnicos-admin-page .table tbody td:nth-child(11) { width: 9%; }
+.tecnicos-admin-page .table thead th:nth-child(12),
+.tecnicos-admin-page .table tbody td:nth-child(12) { width: 9%; }
+
+.tecnicos-admin-page .table tbody td:not(:first-child) {
+  text-align: center;
 }
 
 .tecnicos-admin-page .tecnico-cell {
@@ -158,7 +254,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 5px 10px;
+  min-width: 72px;
+  padding: 5px 8px;
   font-size: 11px;
   font-weight: 700;
   border: 1px solid transparent;
@@ -178,15 +275,17 @@
 }
 
 .tecnicos-admin-page .tecnicos-view-link {
-  min-width: 106px;
+  width: 100%;
+  min-width: 0;
   justify-content: center;
+  white-space: normal;
 }
 
 .tecnicos-admin-page .tecnico-health {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 96px;
+  min-width: 84px;
   padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -227,12 +326,44 @@
 
 .tecnicos-admin-page .empty-state {
   border: 1px dashed #c9d6e5;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 24px;
   color: #5a6b7a;
 }
 
+@media (max-width: 1450px) {
+  .tecnicos-admin-page .tecnicos-filters-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tecnicos-admin-page .usuarios-filter-field--search {
+    grid-column: span 3;
+  }
+
+  .tecnicos-admin-page .table-wrapper {
+    overflow: auto;
+    padding: 0;
+  }
+
+  .tecnicos-admin-page .table {
+    min-width: 1160px;
+    table-layout: auto;
+  }
+}
+
 @media (max-width: 1200px) {
+  body.app-layout .app-main > .tecnicos-admin-page.usuarios-page {
+    padding: 10px 14px 24px;
+  }
+
+  .tecnicos-admin-page .tecnicos-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tecnicos-admin-page .tecnicos-insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tecnicos-admin-page .tecnicos-filters-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -243,6 +374,28 @@
 }
 
 @media (max-width: 900px) {
+  body.app-layout .app-main > .tecnicos-admin-page.usuarios-page {
+    padding: 8px 10px 18px;
+  }
+
+  .tecnicos-admin-page .table-wrapper {
+    overflow: auto;
+    padding: 0;
+  }
+
+  .tecnicos-admin-page .table {
+    min-width: 1080px;
+    table-layout: auto;
+  }
+
+  .tecnicos-admin-page .tecnicos-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tecnicos-admin-page .tecnicos-insights {
+    grid-template-columns: 1fr;
+  }
+
   .tecnicos-admin-page .tecnicos-filters-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -253,6 +406,20 @@
 }
 
 @media (max-width: 640px) {
+  body.app-layout .app-main > .tecnicos-admin-page.usuarios-page {
+    padding: 6px 6px 14px;
+  }
+
+  .tecnicos-admin-page .tecnicos-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .tecnicos-admin-page .usuarios-filters-actions .button,
+  .tecnicos-admin-page .usuarios-filters-actions .btn-primary {
+    flex: 1;
+    justify-content: center;
+  }
+
   .tecnicos-admin-page .tecnicos-filters-grid {
     grid-template-columns: 1fr;
   }

@@ -19,6 +19,9 @@ import {
   rotuloPrioridadeChamado,
   rotuloStatusChamado,
 } from "../../service/chamadosListaFiltrosService.js";
+import { avaliarSlaChamado } from "../../service/chamadosSlaService.js";
+import { criarNotificacao } from "../../repos/notificacoesRepo.js";
+import { tentarTriagemAutomaticaChamado } from "../../service/triagemAutomaticaService.js";
 
 function parseReferenciasBaseConhecimento(raw = "") {
   const texto = String(raw || "").trim();
@@ -113,6 +116,20 @@ export async function chamadoNovoPost(req, res) {
       ...valores,
     });
 
+    let triagem = { atribuido: false, motivo: "nao_executado" };
+    try {
+      triagem = await tentarTriagemAutomaticaChamado({
+        chamado: chamadoCriado,
+        porLogin: usuarioSessao.usuario || "triagem.auto",
+      });
+      if (triagem?.atribuido && triagem?.chamado?._id) {
+        chamadoCriado = triagem.chamado;
+      }
+    } catch (erroTriagem) {
+      triagem = { atribuido: false, motivo: "erro_triagem" };
+      console.error("[triagem] falha ao aplicar triagem automatica:", erroTriagem);
+    }
+
     const recipients = await listarUsuariosPorPerfis(["tecnico", "admin"]);
     const destinatarios = (recipients || [])
       .map((u) => ({
@@ -122,7 +139,34 @@ export async function chamadoNovoPost(req, res) {
       }))
       .filter((d) => d.id !== String(usuarioSessao.id));
 
-    if (destinatarios.length) {
+    if (triagem?.atribuido && triagem?.responsavel?.id) {
+      try {
+        await criarNotificacao({
+          destinatarioTipo: triagem.responsavel.perfil === "admin" ? "admin" : "tecnico",
+          destinatarioId: String(triagem.responsavel.id),
+          chamadoId: String(chamadoCriado._id),
+          tipo: "atribuido",
+          titulo: `Chamado #${chamadoCriado.numero}: ${chamadoCriado.titulo}`,
+          mensagem: "Triagem automatica definiu voce como responsavel inicial.",
+          url: `/tecnico/chamados/${String(chamadoCriado._id)}`,
+          meta: {
+            autor: {
+              tipo: "usuario",
+              id: String(usuarioSessao.id),
+              nome: usuarioSessao.nome,
+              login: usuarioSessao.usuario,
+            },
+            triagem: {
+              score: Number(triagem?.score || 0),
+              cargaAtiva: Number(triagem?.cargaAtiva || 0),
+              experienciaCategoria: Number(triagem?.experienciaCategoria || 0),
+            },
+          },
+        });
+      } catch (errNotifAtrib) {
+        console.error("[triagem] falha ao notificar responsavel atribuido automaticamente:", errNotifAtrib);
+      }
+    } else if (destinatarios.length) {
       await notificarNovoChamadoFila({
         chamadoId: String(chamadoCriado._id),
         tituloChamado: chamadoCriado.titulo,
@@ -154,6 +198,13 @@ export async function chamadoNovoPost(req, res) {
         prioridade: chamadoCriado.prioridade,
         qtdAnexos: anexos.length,
         qtdReferenciasBase: referenciasBaseConhecimento.length,
+        triagemAutomatica: {
+          atribuido: Boolean(triagem?.atribuido),
+          motivo: String(triagem?.motivo || ""),
+          responsavelId: String(triagem?.responsavel?.id || ""),
+          responsavelLogin: String(triagem?.responsavel?.usuario || ""),
+          responsavelPerfil: String(triagem?.responsavel?.perfil || ""),
+        },
       },
     });
 
@@ -207,24 +258,30 @@ export async function meusChamadosGet(req, res) {
       usuarioLogin: usuarioSessao.usuario,
     });
 
-    const chamados = (resultado.itens || []).map((c) => ({
-      id: String(c._id),
-      numero: c.numero,
-      titulo: c.titulo,
-      status: c.status || "-",
-      statusLabel: rotuloStatusChamado(c.status),
-      prioridade: c.prioridade || "-",
-      prioridadeLabel: rotuloPrioridadeChamado(c.prioridade, classificacoes.prioridadesLabels),
-      categoria: c.categoria || "-",
-      categoriaLabel: rotuloCategoriaChamado(c.categoria, classificacoes.categoriasLabels),
-      quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "-",
-      responsavel: c.responsavelLogin
-        ? `${c.responsavelNome || ""} (${c.responsavelLogin})`
-        : "-",
-      solicitante: c?.criadoPor?.login
-        ? `${c.criadoPor.nome || ""} (${c.criadoPor.login})`
-        : "-",
-    }));
+    const chamados = (resultado.itens || []).map((c) => {
+      const sla = avaliarSlaChamado(c);
+      return {
+        id: String(c._id),
+        numero: c.numero,
+        titulo: c.titulo,
+        status: c.status || "-",
+        statusLabel: rotuloStatusChamado(c.status),
+        prioridade: c.prioridade || "-",
+        prioridadeLabel: rotuloPrioridadeChamado(c.prioridade, classificacoes.prioridadesLabels),
+        categoria: c.categoria || "-",
+        categoriaLabel: rotuloCategoriaChamado(c.categoria, classificacoes.categoriasLabels),
+        quando: c.createdAt ? new Date(c.createdAt).toLocaleString("pt-BR") : "-",
+        responsavel: c.responsavelLogin
+          ? `${c.responsavelNome || ""} (${c.responsavelLogin})`
+          : "-",
+        solicitante: c?.criadoPor?.login
+          ? `${c.criadoPor.nome || ""} (${c.criadoPor.login})`
+          : "-",
+        slaClasse: String(sla?.classe || "sem_sla"),
+        slaLabel: String(sla?.label || "SLA n/a"),
+        slaTooltip: String(sla?.tooltip || ""),
+      };
+    });
 
     return res.render("chamados/meus", {
       layout: "layout-app",

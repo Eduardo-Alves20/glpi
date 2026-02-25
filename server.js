@@ -15,6 +15,7 @@ import { anexarWebSocketNotificacoes } from "./src/app/notificacoesWebSocket.js"
 
 import { criarAuditoriaRepo } from "./src/repos/auditoriaRepo.js";
 import { criarAuditoriaSeguranca } from "./src/compartilhado/middlewares/auditoria.js";
+import { anexarRequestId } from "./src/compartilhado/middlewares/requestId.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,6 +34,7 @@ app.set("trust proxy", 1);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "200kb" }));
+app.use(anexarRequestId);
 
 // --------- Views + Layouts
 app.use(expressLayouts);
@@ -109,7 +111,8 @@ app.use((req, res) => {
 
 // --------- Error handler
 app.use((err, req, res, next) => {
-  console.error("[erro]", err);
+  const reqId = String(req?.requestId || "");
+  console.error(`[erro] reqId=${reqId || "-"} `, err);
   return res.status(500).render("erros/erro", {
     layout: "layout-public",
     titulo: "Erro interno",

@@ -233,6 +233,56 @@ export async function acharChamadoPorId(chamadoId) {
   return db.collection(COL_CHAMADOS).findOne({ _id });
 }
 
+export async function atribuirResponsavelTriagemAutomatica(
+  chamadoId,
+  {
+    responsavelId,
+    responsavelNome = "",
+    responsavelLogin = "",
+    responsavelPerfil = "tecnico",
+  } = {},
+  { porLogin = "triagem.auto" } = {},
+) {
+  const db = pegarDb();
+  const _id = toObjectId(chamadoId, "chamadoId");
+  const respOid = toObjectId(responsavelId, "responsavelId");
+  const now = new Date();
+
+  const out = await db.collection(COL_CHAMADOS).findOneAndUpdate(
+    {
+      _id,
+      status: "aberto",
+      $or: [{ responsavelId: null }, { responsavelId: { $exists: false } }],
+    },
+    {
+      $set: {
+        responsavelId: respOid,
+        responsavelNome: String(responsavelNome || "").trim(),
+        responsavelLogin: String(responsavelLogin || "").trim(),
+        updatedAt: now,
+      },
+      $push: {
+        historico: {
+          tipo: "atribuicao",
+          em: now,
+          por: String(porLogin || "triagem.auto"),
+          mensagem: "Triagem automatica definiu responsavel inicial",
+          meta: {
+            responsavelId: String(respOid),
+            responsavelNome: String(responsavelNome || "").trim(),
+            responsavelLogin: String(responsavelLogin || "").trim(),
+            responsavelPerfil: String(responsavelPerfil || "tecnico").trim().toLowerCase(),
+          },
+        },
+      },
+    },
+    { returnDocument: "after", returnOriginal: false },
+  );
+
+  const doc = out?.value ?? out ?? null;
+  return doc && doc._id ? doc : null;
+}
+
 export async function excluirChamadoPorIdAdmin(chamadoId) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");
@@ -311,6 +361,7 @@ export async function listarChamados({
     .project({
       numero: 1,
       titulo: 1,
+      descricao: 1,
       status: 1,
       createdAt: 1,
       updatedAt: 1,
@@ -353,6 +404,7 @@ export async function listarMeusAtendimentos(tecnicoId, { limit = 50 } = {}) {
     .project({
       numero: 1,
       titulo: 1,
+      descricao: 1,
       status: 1,
       createdAt: 1,
       updatedAt: 1,
@@ -425,6 +477,7 @@ export async function listarHistoricoTecnicoChamados(
     .project({
       numero: 1,
       titulo: 1,
+      descricao: 1,
       status: 1,
       createdAt: 1,
       updatedAt: 1,
@@ -530,6 +583,28 @@ export async function garantirIndicesChamados() {
     .createIndex({ "criadoPor.usuarioId": 1, createdAt: -1 });
   await db.collection(COL_CHAMADOS).createIndex({ status: 1, createdAt: -1 });
   await db.collection(COL_CHAMADOS).createIndex({ responsavelId: 1, createdAt: -1 });
+  await db.collection(COL_CHAMADOS).createIndex(
+    {
+      titulo: "text",
+      descricao: "text",
+      "criadoPor.nome": "text",
+      "criadoPor.login": "text",
+      responsavelNome: "text",
+      responsavelLogin: "text",
+    },
+    {
+      name: "idx_chamados_texto_busca",
+      default_language: "portuguese",
+      weights: {
+        titulo: 10,
+        descricao: 4,
+        "criadoPor.nome": 2,
+        "criadoPor.login": 2,
+        responsavelNome: 2,
+        responsavelLogin: 2,
+      },
+    },
+  );
   await db
     .collection(COL_CHAMADOS)
     .createIndex({ responsavelId: 1, status: 1, updatedAt: -1 });

@@ -265,6 +265,44 @@ img.small-icon {
   color: #27496b;
 }
 
+.pill-sla {
+  min-width: 130px;
+  max-width: 170px;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.pill-sla-em_dia {
+  background: rgba(12, 207, 45, 0.12);
+  color: #0a7a1c;
+  border-color: rgba(12, 207, 45, 0.25);
+}
+
+.pill-sla-vencendo {
+  background: rgba(243, 113, 26, 0.14);
+  color: #8a3f00;
+  border-color: rgba(243, 113, 26, 0.28);
+}
+
+.pill-sla-atrasado {
+  background: rgba(230, 50, 65, 0.14);
+  color: #8b1420;
+  border-color: rgba(230, 50, 65, 0.28);
+}
+
+.pill-sla-encerrado {
+  background: rgba(108, 117, 125, 0.14);
+  color: #3d444b;
+  border-color: rgba(108, 117, 125, 0.25);
+}
+
+.pill-sla-sem_sla {
+  background: #f3f6f9;
+  color: #415563;
+  border-color: #e2e8ef;
+}
+
 .chamados-page .chamados-filters-card {
   padding: 16px;
 }
@@ -368,6 +406,18 @@ img.small-icon {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.chamados-page .chamados-saved-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chamados-page .chamados-saved-filters select {
+  min-width: 180px;
+  max-width: 260px;
 }
 
 .chamados-page .chamados-filter-actions .button,
@@ -604,6 +654,31 @@ body.app-layout.dark-mode .chamados-page .pill-prio-critica {
   border-color: rgba(251, 113, 133, 0.42);
 }
 
+body.app-layout.dark-mode .chamados-page .pill-sla-em_dia {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border-color: rgba(74, 222, 128, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-sla-vencendo {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border-color: rgba(251, 146, 60, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-sla-atrasado {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fda4af;
+  border-color: rgba(251, 113, 133, 0.42);
+}
+
+body.app-layout.dark-mode .chamados-page .pill-sla-encerrado,
+body.app-layout.dark-mode .chamados-page .pill-sla-sem_sla {
+  background: #1a2a40;
+  color: #dbe9ff;
+  border-color: #3a5475;
+}
+
 body.app-layout.dark-mode .btn-danger {
   background: rgba(190, 24, 93, 0.22);
   border-color: rgba(244, 114, 182, 0.42);
@@ -663,6 +738,15 @@ body.app-layout.dark-mode .btn-danger:hover {
   .chamados-page .chamados-filter-actions .btn-primary {
     flex: 1;
     justify-content: center;
+  }
+
+  .chamados-page .chamados-saved-filters {
+    width: 100%;
+  }
+
+  .chamados-page .chamados-saved-filters select {
+    max-width: none;
+    width: 100%;
   }
 
   .chamados-page .chamados-advanced-dialog {

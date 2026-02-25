@@ -53,7 +53,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: glpi_app
     depends_on:
       mongo:
