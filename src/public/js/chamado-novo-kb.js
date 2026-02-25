@@ -1,6 +1,8 @@
 (function startChamadoNovoKb() {
   const tituloEl = document.getElementById("titulo");
   const descricaoEl = document.getElementById("descricao");
+  const categoriaEl = document.getElementById("categoria");
+  const prioridadeEl = document.getElementById("prioridade");
   const stateEl = document.getElementById("kbSuggestState");
   const listEl = document.getElementById("kbSuggestList");
   const refsInput = document.getElementById("kbRefsInput");
@@ -45,17 +47,17 @@
   async function confirmarResolucao() {
     if (typeof window.Swal === "undefined") {
       return window.confirm(
-        "Perfeito. Se ja resolveu, vamos voltar para seus chamados sem abrir um novo registro.",
+        "Vamos registrar esse atendimento como resolvido pela base de conhecimento para auditoria. Deseja continuar?",
       );
     }
 
     const dark = isDarkThemeActive();
     const result = await window.Swal.fire({
       icon: "question",
-      title: "Ja resolveu?",
-      text: "Se ja resolveu, vamos voltar para seus chamados sem abrir um novo registro.",
+      title: "Registrar como resolvido?",
+      text: "Vamos criar um chamado de registro e fecha-lo automaticamente com a referencia da base.",
       showCancelButton: true,
-      confirmButtonText: "Sim, resolveu",
+      confirmButtonText: "Registrar agora",
       cancelButtonText: "Continuar aqui",
       reverseButtons: true,
       confirmButtonColor: "#3b82f6",
@@ -83,6 +85,33 @@
         }),
       });
     } catch {}
+  }
+
+  async function registrarResolucaoComChamado(slug = "") {
+    const payload = {
+      slug: String(slug || "").trim().toLowerCase(),
+      titulo: String(tituloEl.value || "").trim(),
+      descricao: String(descricaoEl.value || "").trim(),
+      categoria: String(categoriaEl?.value || "").trim(),
+      prioridade: String(prioridadeEl?.value || "").trim(),
+      referencias: Array.from(refs),
+    };
+
+    const resp = await fetch("/api/base-conhecimento/resolveu", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data?.ok) {
+      throw new Error(data?.error || "Nao foi possivel registrar a resolucao.");
+    }
+
+    return data;
   }
 
   function marcarRef(slug = "") {
@@ -156,14 +185,35 @@
 
     listEl.querySelectorAll("[data-kb-resolve]").forEach((btn) => {
       btn.addEventListener("click", async () => {
+        btn.disabled = true;
         const slug = String(btn.getAttribute("data-kb-resolve") || "").trim().toLowerCase();
         if (slug) marcarRef(slug);
 
-        const confirmou = await confirmarResolucao();
-        if (!confirmou) return;
+        try {
+          const confirmou = await confirmarResolucao();
+          if (!confirmou) return;
 
-        await registrarEvento({ acao: "resolveu_sem_chamado", slug });
-        window.location.assign("/chamados/meus");
+          await registrarEvento({ acao: "resolveu_com_registro", slug, contexto: "chamado_novo_kb" });
+          const data = await registrarResolucaoComChamado(slug);
+          window.location.assign(String(data?.redirectUrl || "/chamados/meus"));
+        } catch (err) {
+          if (typeof window.Swal !== "undefined") {
+            const dark = isDarkThemeActive();
+            await window.Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: String(err?.message || "Nao foi possivel registrar a resolucao agora."),
+              confirmButtonText: "Ok",
+              confirmButtonColor: "#3b82f6",
+              background: dark ? "#111c2d" : undefined,
+              color: dark ? "#e2ebf8" : undefined,
+            });
+          } else {
+            window.alert(String(err?.message || "Nao foi possivel registrar a resolucao agora."));
+          }
+        } finally {
+          btn.disabled = false;
+        }
       });
     });
   }

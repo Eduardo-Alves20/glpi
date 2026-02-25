@@ -9,6 +9,7 @@ import { apiAdminHomeGet } from "../../controllers/api/apiAdminController.js";
 import {
   apiBaseConhecimentoSugestoesGet,
   apiBaseConhecimentoEventoPost,
+  apiBaseConhecimentoResolverPost,
 } from "../../controllers/api/apiBaseConhecimentoController.js";
 
 // +++ NOVO (notificações)
@@ -52,6 +53,7 @@ export function criarApiRotas({ auditoria } = {}) {
   router.post("/notificacoes/marcar-todas-lidas", notif.marcarTodas);
   router.get("/base-conhecimento/sugestoes", apiBaseConhecimentoSugestoesGet);
   router.post("/base-conhecimento/evento", apiBaseConhecimentoEventoPost);
+  router.post("/base-conhecimento/resolveu", apiBaseConhecimentoResolverPost);
 
   return router;
 }

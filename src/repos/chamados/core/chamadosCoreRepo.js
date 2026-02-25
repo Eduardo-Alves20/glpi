@@ -139,6 +139,94 @@ export async function criarChamado({
   return { ...doc, _id: r.insertedId };
 }
 
+export async function criarChamadoResolvidoBaseConhecimento({
+  usuarioId,
+  usuarioNome,
+  usuarioLogin,
+  titulo,
+  descricao,
+  categoria = "outros",
+  prioridade = "baixa",
+  slug = "",
+  referencias = [],
+  artigoTitulo = "",
+} = {}) {
+  const now = new Date();
+  const slugSan = String(slug || "").trim().toLowerCase().slice(0, 120);
+  const refs = Array.from(new Set(
+    [
+      ...((Array.isArray(referencias) ? referencias : [])
+        .map((item) => String(item || "").trim().toLowerCase())
+        .filter(Boolean)
+        .map((item) => item.slice(0, 120))),
+      ...(slugSan ? [slugSan] : []),
+    ],
+  )).slice(0, 12);
+
+  const tituloFallback = `Resolvido via base: ${String(artigoTitulo || slugSan || "guia").trim()}`.slice(0, 120);
+  const tituloSan = String(titulo || "").trim().length >= 6
+    ? String(titulo || "").trim().slice(0, 120)
+    : tituloFallback;
+
+  const descricaoBase = String(descricao || "").trim();
+  const descricaoFallback = [
+    "Solicitacao resolvida pelo proprio usuario com apoio da base de conhecimento.",
+    slugSan ? `Artigo utilizado: ${slugSan}.` : "Artigo utilizado: nao informado.",
+    "Chamado criado apenas para registro e auditoria de desempenho do suporte.",
+  ].join(" ");
+  const descricaoSan = descricaoBase.length >= 20
+    ? descricaoBase.slice(0, 5000)
+    : descricaoFallback;
+
+  const chamadoCriado = await criarChamado({
+    usuarioId,
+    usuarioNome,
+    usuarioLogin,
+    titulo: tituloSan,
+    descricao: descricaoSan,
+    categoria,
+    prioridade,
+    baseConhecimento: {
+      referencias: refs,
+    },
+  });
+
+  const motivoFechamento = "Resolvido pela base de conhecimento";
+  const mensagemHistorico = `Chamado registrado e fechado automaticamente apos confirmacao de resolucao pela base de conhecimento${slugSan ? ` (${slugSan})` : ""}.`;
+  const resultado = await pegarDb().collection(COL_CHAMADOS).findOneAndUpdate(
+    { _id: chamadoCriado._id },
+    {
+      $set: {
+        status: "fechado",
+        fechadoEm: now,
+        fechadoAutomatico: true,
+        fechadoMotivo: motivoFechamento,
+        updatedAt: now,
+        "baseConhecimento.artigoPrincipal": slugSan || "",
+        "baseConhecimento.resolvidoSemAtendimento": true,
+        "baseConhecimento.resolvidoEm": now,
+      },
+      $push: {
+        historico: {
+          tipo: "status",
+          em: now,
+          por: String(usuarioLogin || "usuario"),
+          mensagem: mensagemHistorico,
+          meta: {
+            baseConhecimento: {
+              referencias: refs,
+              artigoTitulo: String(artigoTitulo || "").trim().slice(0, 200),
+            },
+          },
+        },
+      },
+    },
+    { returnDocument: "after", returnOriginal: false },
+  );
+
+  return (resultado?.value ?? resultado ?? chamadoCriado);
+}
+
 export async function acharChamadoPorId(chamadoId) {
   const db = pegarDb();
   const _id = toObjectId(chamadoId, "chamadoId");

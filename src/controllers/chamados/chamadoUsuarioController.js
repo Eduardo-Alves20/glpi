@@ -19,6 +19,39 @@ import {
   chaveDestinoNotificacao,
 } from "../../service/notificacoesSeguidoresChamadoService.js";
 
+function resolverTecnicoParaAvaliacao(chamado = {}) {
+  const baseResolvidoSemAtendimento = Boolean(chamado?.baseConhecimento?.resolvidoSemAtendimento);
+  if (baseResolvidoSemAtendimento) {
+    return { id: "", nome: "", login: "", origem: "base_conhecimento" };
+  }
+
+  const idResponsavel = String(chamado?.responsavelId || "").trim();
+  const nomeResponsavel = String(chamado?.responsavelNome || "").trim();
+  const loginResponsavel = String(chamado?.responsavelLogin || "").trim();
+  if (idResponsavel) {
+    return {
+      id: idResponsavel,
+      nome: nomeResponsavel,
+      login: loginResponsavel,
+      origem: "responsavel",
+    };
+  }
+
+  const idSolucao = String(chamado?.solucaoPor?.tecnicoId || "").trim();
+  const nomeSolucao = String(chamado?.solucaoPor?.nome || "").trim();
+  const loginSolucao = String(chamado?.solucaoPor?.login || "").trim();
+  if (idSolucao) {
+    return {
+      id: idSolucao,
+      nome: nomeSolucao,
+      login: loginSolucao,
+      origem: "solucao",
+    };
+  }
+
+  return { id: "", nome: "", login: "", origem: "" };
+}
+
 async function destinatariosTecnicosDoChamado(chamado = {}) {
   const mapa = new Map();
 
@@ -67,6 +100,11 @@ export async function usuarioChamadoShowGet(req, res) {
 
   const avaliacaoChamado = await acharAvaliacaoPorChamado(String(chamado?._id || ""));
   const podeAvaliarChamado = String(chamado?.criadoPor?.usuarioId || "") === String(usuarioSessao?.id || "");
+  const tecnicoAvaliacao = resolverTecnicoParaAvaliacao(chamado);
+  const podeAvaliarAtendimento = Boolean(tecnicoAvaliacao.id);
+  const mensagemBloqueioAvaliacao = chamado?.status === "fechado" && !podeAvaliarAtendimento
+    ? "Este chamado foi encerrado sem atendimento tecnico direto. Avaliacao nao se aplica neste caso."
+    : "";
 
   return res.render("chamados/show", {
     layout: "layout-app",
@@ -78,6 +116,8 @@ export async function usuarioChamadoShowGet(req, res) {
     chamado,
     avaliacaoChamado,
     podeAvaliarChamado,
+    podeAvaliarAtendimento,
+    mensagemBloqueioAvaliacao,
   });
 }
 
@@ -335,6 +375,12 @@ export async function usuarioChamadoAvaliacaoPost(req, res) {
     if (String(chamado?.status || "") !== "fechado") {
       throw new Error("A avaliacao so pode ser enviada com chamado fechado.");
     }
+
+    const tecnicoAvaliacao = resolverTecnicoParaAvaliacao(chamado);
+    if (!tecnicoAvaliacao.id) {
+      throw new Error("Este chamado foi encerrado sem atendimento tecnico direto e nao pode ser avaliado.");
+    }
+
     const avaliacaoExistente = await acharAvaliacaoPorChamado(chamadoId);
     if (avaliacaoExistente) {
       throw new Error("Este chamado ja foi avaliado e nao pode ser alterado.");
@@ -345,7 +391,12 @@ export async function usuarioChamadoAvaliacaoPost(req, res) {
     const sugestao = String(req.body?.sugestao || "").trim();
 
     const avaliacao = await registrarOuAtualizarAvaliacao({
-      chamado,
+      chamado: {
+        ...chamado,
+        responsavelId: tecnicoAvaliacao.id,
+        responsavelNome: tecnicoAvaliacao.nome || chamado?.responsavelNome || chamado?.solucaoPor?.nome || "",
+        responsavelLogin: tecnicoAvaliacao.login || chamado?.responsavelLogin || chamado?.solucaoPor?.login || "",
+      },
       avaliador: {
         id: String(usuarioSessao?.id || ""),
         nome: usuarioSessao?.nome,
@@ -357,7 +408,7 @@ export async function usuarioChamadoAvaliacaoPost(req, res) {
       sugestao,
     });
 
-    const tecnicoId = String(chamado?.responsavelId || "").trim();
+    const tecnicoId = String(tecnicoAvaliacao.id || "").trim();
     if (tecnicoId && tecnicoId !== String(usuarioSessao?.id || "")) {
       try {
         const tecnicoUser = await acharPorId(tecnicoId);

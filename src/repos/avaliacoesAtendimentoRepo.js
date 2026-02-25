@@ -54,7 +54,7 @@ function documentoAvaliacao({
   const chamadoId = texto(chamado?._id, { max: 120 });
   if (!chamadoId) throw new Error("Chamado invalido para avaliacao.");
 
-  const tecnicoId = texto(chamado?.responsavelId, { max: 120 });
+  const tecnicoId = texto(chamado?.responsavelId || chamado?.solucaoPor?.tecnicoId, { max: 120 });
   if (!tecnicoId) {
     throw new Error("Nao ha tecnico responsavel para vincular esta avaliacao.");
   }
@@ -72,8 +72,8 @@ function documentoAvaliacao({
     },
     tecnico: {
       id: tecnicoId,
-      nome: texto(chamado?.responsavelNome, { max: 140, fallback: "Tecnico" }),
-      login: texto(chamado?.responsavelLogin, { max: 120 }),
+      nome: texto(chamado?.responsavelNome || chamado?.solucaoPor?.nome, { max: 140, fallback: "Tecnico" }),
+      login: texto(chamado?.responsavelLogin || chamado?.solucaoPor?.login, { max: 120 }),
     },
     avaliador: {
       id: avaliadorId,

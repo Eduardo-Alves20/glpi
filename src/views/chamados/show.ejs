@@ -315,7 +315,7 @@
             O admin visualiza os detalhes completos para auditoria.
           </p>
 
-          <% if (!avaliacao) { %>
+          <% if (!avaliacao && podeAvaliarAtendimento) { %>
             <form method="POST" action="/chamados/<%= chamado._id %>/avaliacao" class="avaliacao-form" autocomplete="off">
               <fieldset class="avaliacao-stars-fieldset">
                 <legend>Nota (1 a 5)</legend>
@@ -356,6 +356,10 @@
                 <button class="button" type="submit">Enviar avaliacao</button>
               </div>
             </form>
+          <% } else if (!avaliacao && !podeAvaliarAtendimento) { %>
+            <div class="avaliacao-readonly">
+              <p class="muted"><%= mensagemBloqueioAvaliacao || "Avaliacao indisponivel para este chamado." %></p>
+            </div>
           <% } else { %>
             <div class="avaliacao-readonly">
               <div class="avaliacao-readonly__head">
