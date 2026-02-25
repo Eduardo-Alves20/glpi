@@ -1,5 +1,6 @@
 import {
   buscarSugestoesBaseConhecimento,
+  obterOrientacaoBuscaBaseConhecimento,
   obterArtigoBaseConhecimento,
 } from "../../service/baseConhecimentoService.js";
 import { registrarEventoSistema } from "../../service/logsService.js";
@@ -17,12 +18,14 @@ export async function apiBaseConhecimentoSugestoesGet(req, res) {
     const q = String(req.query?.q || "").trim();
     const limit = limitar(req.query?.limit, 1, 10, 5);
     const itens = await buscarSugestoesBaseConhecimento({ q, limit });
+    const orientacao = obterOrientacaoBuscaBaseConhecimento({ q, itens });
 
     return res.json({
       ok: true,
       query: q,
       total: itens.length,
       itens,
+      orientacao,
     });
   } catch (err) {
     console.error("Erro ao buscar sugestoes da base de conhecimento:", err);

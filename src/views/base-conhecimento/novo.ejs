@@ -55,6 +55,28 @@
         <label for="tags">Tags (separadas por virgula)</label>
         <input id="tags" name="tags" value="<%= valores?.tags || '' %>" maxlength="800" placeholder="pdf, assinador, certificado, login..." />
       </div>
+
+      <div class="base-filtro base-filtro--full">
+        <label for="sintomas">Sintomas/termos gatilho (virgula)</label>
+        <input
+          id="sintomas"
+          name="sintomas"
+          value="<%= valores?.sintomas || '' %>"
+          maxlength="1000"
+          placeholder="senha invalida, nao autentica, login falhou, acesso negado..."
+        />
+      </div>
+
+      <div class="base-filtro base-filtro--full">
+        <label for="perguntas">Perguntas frequentes relacionadas (uma por linha)</label>
+        <textarea
+          id="perguntas"
+          name="perguntas"
+          rows="4"
+          maxlength="5000"
+          placeholder="Minha senha esta invalida no Zimbra&#10;Nao consigo autenticar no VPN&#10;Esqueci a senha da nuvem"
+        ><%= valores?.perguntas || '' %></textarea>
+      </div>
     </div>
 
     <div class="base-filtros-actions">

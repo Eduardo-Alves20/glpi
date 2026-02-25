@@ -29,6 +29,50 @@ const TOKENS_BAIXO_SINAL = new Set([
   "pagina",
 ]);
 
+const TOKENS_INTENCAO_AUTH = new Set([
+  "senha",
+  "login",
+  "credencial",
+  "credenciais",
+  "autentica",
+  "autenticacao",
+  "autenticar",
+  "invalida",
+  "invalido",
+  "incorreta",
+  "incorreto",
+  "bloqueada",
+  "bloqueado",
+  "esqueci",
+  "expirada",
+  "expirado",
+]);
+
+const TOKENS_SISTEMA = new Set([
+  "zimbra",
+  "vpn",
+  "nuvem",
+  "nuvemcge",
+  "impressora",
+  "wifi",
+  "sei",
+  "redmine",
+  "atena",
+  "qlik",
+  "sislog",
+  "helpdesk",
+]);
+
+const TOKENS_AUTH_GENERICO_DOC = [
+  "senha",
+  "login",
+  "acesso",
+  "credencial",
+  "autentic",
+  "helpdesk",
+  "suporte",
+];
+
 let cache = {
   loadedAt: 0,
   sourceDir: "",
@@ -203,6 +247,8 @@ function mapearDocFaq({ arquivo, baseDir, markdown }) {
     trecho,
     origem: "faq",
     tags: [],
+    sintomas: [],
+    perguntas: [],
     autor: null,
     createdAt: null,
     updatedAt: null,
@@ -210,6 +256,9 @@ function mapearDocFaq({ arquivo, baseDir, markdown }) {
     normalizadoTitulo: normalizarTexto(titulo),
     normalizadoNomeArquivo: normalizarTexto(nomeArquivo),
     normalizadoConteudo: normalizarTexto(`${titulo} ${conteudoPlano}`),
+    normalizadoTags: "",
+    normalizadoSintomas: "",
+    normalizadoPerguntas: "",
   };
 }
 
@@ -217,7 +266,17 @@ function tokensFortes(tokens = []) {
   return tokens.filter((t) => t.length >= 4 && !TOKENS_BAIXO_SINAL.has(t));
 }
 
-function analisarMatchDoc(doc, consulta = "", tokens = []) {
+function diagnosticarConsulta(consulta = "", tokens = []) {
+  const authIntent = tokens.some((t) => TOKENS_INTENCAO_AUTH.has(t));
+  const sistemas = tokens.filter((t) => TOKENS_SISTEMA.has(t));
+  return {
+    authIntent,
+    sistemas,
+    ambiguoAuth: authIntent && sistemas.length === 0,
+  };
+}
+
+function analisarMatchDoc(doc, consulta = "", tokens = [], diagnostico = null) {
   const frase = normalizarTexto(consulta);
   if (!frase || !tokens.length) {
     return {
@@ -249,8 +308,11 @@ function analisarMatchDoc(doc, consulta = "", tokens = []) {
   tokens.forEach((token) => {
     let tokenEncontrado = false;
 
-    if (doc.normalizadoTitulo.includes(token)) score += 10;
-    if (doc.normalizadoNomeArquivo.includes(token)) score += 8;
+    if (doc.normalizadoTitulo.includes(token)) score += 12;
+    if (doc.normalizadoNomeArquivo.includes(token)) score += 10;
+    if (doc.normalizadoTags?.includes(token)) score += 12;
+    if (doc.normalizadoSintomas?.includes(token)) score += 16;
+    if (doc.normalizadoPerguntas?.includes(token)) score += 14;
     if (doc.normalizadoTitulo.includes(token) || doc.normalizadoNomeArquivo.includes(token)) {
       tokenEncontrado = true;
       if (setFortes.has(token) && doc.normalizadoTitulo.includes(token)) {
@@ -273,6 +335,35 @@ function analisarMatchDoc(doc, consulta = "", tokens = []) {
 
   const coberturaFortes = fortes.length ? (hitsFortes / fortes.length) : 0;
   const coberturaTotal = tokens.length ? (hitsTotal / tokens.length) : 0;
+  const authIntent = Boolean(diagnostico?.authIntent);
+  const ambiguoAuth = Boolean(diagnostico?.ambiguoAuth);
+  const sistemasConsulta = Array.isArray(diagnostico?.sistemas) ? diagnostico.sistemas : [];
+  const hasAuthMatch = Array.from(TOKENS_INTENCAO_AUTH).some((tk) =>
+    doc.normalizadoTitulo.includes(tk)
+    || doc.normalizadoConteudo.includes(tk)
+    || doc.normalizadoSintomas?.includes(tk)
+    || doc.normalizadoPerguntas?.includes(tk));
+  const hasSistemaMatch = !sistemasConsulta.length
+    ? false
+    : sistemasConsulta.some((tk) =>
+      doc.normalizadoTitulo.includes(tk)
+      || doc.normalizadoNomeArquivo.includes(tk)
+      || doc.normalizadoTags?.includes(tk)
+      || doc.normalizadoSintomas?.includes(tk)
+      || doc.normalizadoPerguntas?.includes(tk));
+  const docAuthGenerico = TOKENS_AUTH_GENERICO_DOC.some((tk) =>
+    doc.normalizadoTitulo.includes(tk)
+    || doc.normalizadoNomeArquivo.includes(tk)
+    || doc.normalizadoTags?.includes(tk)
+    || doc.normalizadoPerguntas?.includes(tk)
+    || doc.normalizadoSintomas?.includes(tk));
+
+  if (authIntent && hasAuthMatch) score += 4;
+  if (sistemasConsulta.length) {
+    if (hasSistemaMatch) score += 16;
+    else score -= 8;
+  }
+
   const elegivel =
     fraseNoTitulo
     || fraseNoNome
@@ -284,6 +375,12 @@ function analisarMatchDoc(doc, consulta = "", tokens = []) {
     || (coberturaFortes >= 0.6 && fortes.length >= 1)
     || (coberturaTotal >= 0.75 && tokens.length >= 3 && score >= 14);
 
+  const elegivelFinal = ambiguoAuth
+    ? (elegivel && docAuthGenerico && hasAuthMatch && (hitsFortes >= 1 || hitsTotal >= 2))
+    : (sistemasConsulta.length
+      ? (elegivel && (hasSistemaMatch || (docAuthGenerico && hasAuthMatch)))
+      : elegivel);
+
   return {
     score,
     fraseNoTitulo,
@@ -291,9 +388,12 @@ function analisarMatchDoc(doc, consulta = "", tokens = []) {
     hitsTotal,
     hitsFortes,
     forteNoTituloCount,
+    hasAuthMatch,
+    hasSistemaMatch,
+    docAuthGenerico,
     coberturaFortes,
     coberturaTotal,
-    elegivel,
+    elegivel: elegivelFinal,
   };
 }
 
@@ -307,11 +407,17 @@ function mapearTopicoInterno(topico = {}) {
   const tags = Array.isArray(topico?.tags)
     ? topico.tags.map((t) => limparEspacos(t)).filter(Boolean).slice(0, 20)
     : [];
+  const sintomas = Array.isArray(topico?.sintomas)
+    ? topico.sintomas.map((t) => limparEspacos(t)).filter(Boolean).slice(0, 30)
+    : [];
+  const perguntas = Array.isArray(topico?.perguntas)
+    ? topico.perguntas.map((p) => limparEspacos(p)).filter(Boolean).slice(0, 50)
+    : [];
   const passos = Array.isArray(topico?.passos)
     ? topico.passos.map((p) => limparEspacos(p)).filter(Boolean).slice(0, 8)
     : [];
 
-  const conteudoPlano = `${titulo} ${resumo} ${conteudo} ${tags.join(" ")}`.slice(0, MAX_CONTENT_LENGTH);
+  const conteudoPlano = `${titulo} ${resumo} ${conteudo} ${tags.join(" ")} ${sintomas.join(" ")} ${perguntas.join(" ")}`.slice(0, MAX_CONTENT_LENGTH);
   const trecho = conteudoPlano.slice(0, 2400);
   const categoria = limparEspacos(topico?.categoria || "Geral").slice(0, 60) || "Geral";
   const nomeArquivo = slug;
@@ -327,6 +433,8 @@ function mapearTopicoInterno(topico = {}) {
     trecho,
     origem: "interna",
     tags,
+    sintomas,
+    perguntas,
     autor: topico?.autor || null,
     createdAt: topico?.createdAt || null,
     updatedAt: topico?.updatedAt || null,
@@ -334,6 +442,9 @@ function mapearTopicoInterno(topico = {}) {
     normalizadoTitulo: normalizarTexto(titulo),
     normalizadoNomeArquivo: normalizarTexto(nomeArquivo),
     normalizadoConteudo: normalizarTexto(`${titulo} ${conteudoPlano}`),
+    normalizadoTags: normalizarTexto(tags.join(" ")),
+    normalizadoSintomas: normalizarTexto(sintomas.join(" ")),
+    normalizadoPerguntas: normalizarTexto(perguntas.join(" ")),
   };
 }
 
@@ -392,9 +503,10 @@ export async function buscarSugestoesBaseConhecimento({ q = "", limit = 5 } = {}
   const base = await carregarBaseConhecimento(false);
   const tokens = tokenizarBusca(consulta);
   if (!tokens.length) return [];
+  const diagnostico = diagnosticarConsulta(consulta, tokens);
 
   const ranqueados = (base.docs || [])
-    .map((doc) => ({ doc, match: analisarMatchDoc(doc, consulta, tokens) }))
+    .map((doc) => ({ doc, match: analisarMatchDoc(doc, consulta, tokens, diagnostico) }))
     .filter((item) => item.match && item.match.score > 0)
     .sort((a, b) => b.match.score - a.match.score);
 
@@ -406,10 +518,11 @@ export async function buscarSugestoesBaseConhecimento({ q = "", limit = 5 } = {}
     ? ranqueados
       .filter((item) =>
         item.match.score >= 10
+        && (!diagnostico.ambiguoAuth || item.match.docAuthGenerico)
         && (
           item.match.hitsFortes >= 1
           || item.match.forteNoTituloCount >= 1
-          || item.match.hitsTotal >= 2
+          || (item.match.hitsTotal >= 2 && !diagnostico.ambiguoAuth)
         ))
       .slice(0, lim)
     : [];
@@ -439,12 +552,13 @@ export async function listarBaseConhecimento({
   const pg = Math.max(1, Number(page) || 1);
   const base = await carregarBaseConhecimento(false);
   const tokens = tokenizarBusca(consulta);
+  const diagnostico = diagnosticarConsulta(consulta, tokens);
 
   let lista = [...(base.docs || [])];
   if (consulta && tokens.length) {
     const ranqueados = lista
       .map((doc) => {
-        const match = analisarMatchDoc(doc, consulta, tokens);
+        const match = analisarMatchDoc(doc, consulta, tokens, diagnostico);
         return {
           ...doc,
           _score: Number(match?.score || 0),
@@ -452,6 +566,7 @@ export async function listarBaseConhecimento({
           _hitsFortes: Number(match?.hitsFortes || 0),
           _forteNoTitulo: Number(match?.forteNoTituloCount || 0),
           _hitsTotal: Number(match?.hitsTotal || 0),
+          _docAuthGenerico: Boolean(match?.docAuthGenerico),
         };
       })
       .filter((doc) => doc._score > 0)
@@ -463,10 +578,11 @@ export async function listarBaseConhecimento({
     } else {
       lista = ranqueados.filter((doc) =>
         doc._score >= 10
+        && (!diagnostico.ambiguoAuth || doc._docAuthGenerico)
         && (
           doc._hitsFortes >= 1
           || doc._forteNoTitulo >= 1
-          || doc._hitsTotal >= 2
+          || (doc._hitsTotal >= 2 && !diagnostico.ambiguoAuth)
         ));
     }
   }
@@ -491,6 +607,23 @@ export async function listarBaseConhecimento({
     },
     totalBase: base.docs.length,
   };
+}
+
+export function obterOrientacaoBuscaBaseConhecimento({ q = "", itens = [] } = {}) {
+  const consulta = limparEspacos(q).slice(0, MAX_QUERY_LENGTH);
+  const tokens = tokenizarBusca(consulta);
+  const diagnostico = diagnosticarConsulta(consulta, tokens);
+  const total = Array.isArray(itens) ? itens.length : 0;
+
+  if (total > 0) return "";
+
+  if (diagnostico.ambiguoAuth) {
+    return "Identificamos falha de autenticacao. Informe o sistema (ex.: Zimbra, VPN, Nuvem, SEI) para direcionar melhor a solucao.";
+  }
+  if (tokens.length < 3) {
+    return "Descreva mais detalhes: sistema, mensagem exata de erro e quando acontece.";
+  }
+  return "Sem sugestao precisa com esse texto. Tente incluir sistema afetado e erro exato.";
 }
 
 export async function obterArtigoBaseConhecimento(slug = "") {

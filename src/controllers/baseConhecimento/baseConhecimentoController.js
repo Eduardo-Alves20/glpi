@@ -94,6 +94,8 @@ export async function baseConhecimentoNovoGet(req, res) {
       categoria: "",
       resumo: "",
       tags: "",
+      perguntas: "",
+      sintomas: "",
       conteudo: "",
     },
   });
@@ -111,6 +113,8 @@ export async function baseConhecimentoNovoPost(req, res) {
     categoria: String(req.body?.categoria || "").trim(),
     resumo: String(req.body?.resumo || "").trim(),
     tags: String(req.body?.tags || "").trim(),
+    perguntas: String(req.body?.perguntas || "").trim(),
+    sintomas: String(req.body?.sintomas || "").trim(),
     conteudo: String(req.body?.conteudo || "").trim(),
   };
 

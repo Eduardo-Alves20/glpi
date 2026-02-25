@@ -143,9 +143,11 @@
     return `<ul class="kb-card__steps">${itens}</ul>`;
   }
 
-  function renderItens(itens = []) {
+  function renderItens(itens = [], orientacao = "") {
     if (!Array.isArray(itens) || !itens.length) {
-      renderVazio("Nenhuma sugestao encontrada para esse texto. Voce pode abrir o chamado normalmente.");
+      const msg = String(orientacao || "").trim()
+        || "Nenhuma sugestao encontrada para esse texto. Voce pode abrir o chamado normalmente.";
+      renderVazio(msg);
       return;
     }
 
@@ -238,6 +240,7 @@
       });
       const data = await resp.json();
       const itens = Array.isArray(data?.itens) ? data.itens : [];
+      const orientacao = String(data?.orientacao || "").trim();
 
       if (itens.length > 0) {
         const topSlug = String(itens[0]?.slug || "").trim().toLowerCase();
@@ -246,7 +249,7 @@
         }
       }
 
-      renderItens(itens);
+      renderItens(itens, orientacao);
     } catch {
       renderVazio("Falha ao buscar sugestoes agora. Voce pode abrir o chamado normalmente.");
     }

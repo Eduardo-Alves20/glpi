@@ -13,7 +13,14 @@ async function garantirIndices() {
     indicesPromise = Promise.all([
       col().createIndex({ slug: 1 }, { unique: true }),
       col().createIndex({ ativo: 1, updatedAt: -1 }),
-      col().createIndex({ titulo: "text", resumo: "text", conteudo: "text", tags: "text" }),
+      col().createIndex({
+        titulo: "text",
+        resumo: "text",
+        conteudo: "text",
+        tags: "text",
+        sintomas: "text",
+        perguntas: "text",
+      }),
       col().createIndex({ "autor.id": 1, createdAt: -1 }),
     ]).catch((err) => {
       indicesPromise = null;
@@ -59,6 +66,17 @@ function parseTags(raw = "") {
   ));
 }
 
+function parseLinhas(raw = "", { maxItens = 30, maxTamanho = 180 } = {}) {
+  return Array.from(new Set(
+    String(raw || "")
+      .split(/\r?\n/g)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => l.replace(/\s+/g, " ").slice(0, maxTamanho))
+      .slice(0, maxItens),
+  ));
+}
+
 function extrairPassosDeConteudo(conteudo = "") {
   const linhas = String(conteudo || "").split(/\r?\n/g);
   const passos = [];
@@ -94,6 +112,8 @@ export async function criarTopicoBaseConhecimento({
   resumo = "",
   conteudo = "",
   tags = "",
+  perguntas = "",
+  sintomas = "",
   autor = {},
 } = {}) {
   await garantirIndices();
@@ -103,6 +123,8 @@ export async function criarTopicoBaseConhecimento({
   const resumoSan = limparTexto(resumo, { min: 20, max: 400 });
   const conteudoSan = limparTextoLivre(conteudo, { min: 30, max: 12000 });
   const tagsSan = parseTags(tags);
+  const perguntasSan = parseLinhas(perguntas, { maxItens: 40, maxTamanho: 220 });
+  const sintomasSan = parseTags(sintomas);
   const passos = extrairPassosDeConteudo(conteudoSan);
   const slug = await gerarSlugUnico(tituloSan);
   const now = new Date();
@@ -117,6 +139,8 @@ export async function criarTopicoBaseConhecimento({
     conteudo: conteudoSan,
     passos,
     tags: tagsSan,
+    perguntas: perguntasSan,
+    sintomas: sintomasSan,
     autor: {
       id: String(autor?.id || "").trim().slice(0, 120),
       nome: String(autor?.nome || "").trim().slice(0, 140),
@@ -145,6 +169,8 @@ export async function listarTopicosBaseConhecimentoAtivos({ limit = 2000 } = {})
       conteudo: 1,
       passos: 1,
       tags: 1,
+      perguntas: 1,
+      sintomas: 1,
       autor: 1,
       createdAt: 1,
       updatedAt: 1,
