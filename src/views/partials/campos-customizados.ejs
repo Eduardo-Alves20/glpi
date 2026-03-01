@@ -1,0 +1,115 @@
+<%
+  const campos = Array.isArray(camposCustomizados) ? camposCustomizados : [];
+  const valores = valoresCustom && typeof valoresCustom === "object" ? valoresCustom : {};
+  const estilos = classesCamposCustomizados && typeof classesCamposCustomizados === "object"
+    ? classesCamposCustomizados
+    : {};
+
+  const fieldClass = String(estilos.field || "form-field");
+  const fullClass = String(estilos.full || "");
+  const labelClass = String(estilos.label || "");
+  const inputClass = String(estilos.input || "");
+  const textareaExtraClass = String(estilos.textareaExtra || "");
+  const helpClass = String(estilos.help || "hint");
+  const idPrefix = String(estilos.idPrefix || "cf-");
+  const prefixo = String(estilos.prefixo || "cf__");
+%>
+
+<% campos.forEach((campo) => { %>
+  <%
+    const chave = String(campo?.chave || "").trim();
+    if (!chave) return;
+
+    const tipo = String(campo?.tipo || "text").toLowerCase();
+    const nomeInput = `${prefixo}${chave}`;
+    const campoId = `${idPrefix}${chave}`;
+    const valor = Object.prototype.hasOwnProperty.call(valores, chave) ? valores[chave] : "";
+    const classesField = [
+      fieldClass,
+      (tipo === "textarea" && fullClass) ? fullClass : "",
+    ].filter(Boolean).join(" ");
+    const classesInput = [inputClass, (tipo === "textarea" ? textareaExtraClass : "")]
+      .filter(Boolean)
+      .join(" ");
+  %>
+
+  <div class="<%= classesField %>">
+    <% if (labelClass) { %>
+      <label class="<%= labelClass %>" for="<%= campoId %>"><%= campo.rotulo %></label>
+    <% } else { %>
+      <label for="<%= campoId %>"><%= campo.rotulo %></label>
+    <% } %>
+
+    <% if (tipo === "textarea") { %>
+      <textarea
+        id="<%= campoId %>"
+        name="<%= nomeInput %>"
+        rows="4"
+        <%= campo.obrigatorio ? "required" : "" %>
+        <%= campo.placeholder ? `placeholder="${campo.placeholder}"` : "" %>
+        class="<%= classesInput %>"
+      ><%= valor %></textarea>
+    <% } else if (tipo === "number") { %>
+      <input
+        id="<%= campoId %>"
+        name="<%= nomeInput %>"
+        type="number"
+        value="<%= valor %>"
+        <%= campo.obrigatorio ? "required" : "" %>
+        <%= campo.placeholder ? `placeholder="${campo.placeholder}"` : "" %>
+        class="<%= inputClass %>"
+      />
+    <% } else if (tipo === "date") { %>
+      <input
+        id="<%= campoId %>"
+        name="<%= nomeInput %>"
+        type="date"
+        value="<%= valor %>"
+        <%= campo.obrigatorio ? "required" : "" %>
+        class="<%= inputClass %>"
+      />
+    <% } else if (tipo === "select") { %>
+      <select
+        id="<%= campoId %>"
+        name="<%= nomeInput %>"
+        <%= campo.obrigatorio ? "required" : "" %>
+        class="<%= inputClass %>"
+      >
+        <option value="">Selecione...</option>
+        <% (campo.opcoes || []).forEach((opt) => { %>
+          <option value="<%= opt.valor %>" <%= String(valor) === String(opt.valor) ? "selected" : "" %>><%= opt.rotulo %></option>
+        <% }) %>
+      </select>
+    <% } else if (tipo === "checkbox") { %>
+      <label style="display:inline-flex; align-items:center; gap:8px;">
+        <input
+          id="<%= campoId %>"
+          name="<%= nomeInput %>"
+          type="checkbox"
+          value="1"
+          <%= Boolean(valor) ? "checked" : "" %>
+        />
+        <span><%= campo.placeholder || "Marcar opcao" %></span>
+      </label>
+    <% } else { %>
+      <input
+        id="<%= campoId %>"
+        name="<%= nomeInput %>"
+        type="text"
+        value="<%= valor %>"
+        maxlength="255"
+        <%= campo.obrigatorio ? "required" : "" %>
+        <%= campo.placeholder ? `placeholder="${campo.placeholder}"` : "" %>
+        class="<%= inputClass %>"
+      />
+    <% } %>
+
+    <% if (campo.ajuda) { %>
+      <% if (helpClass) { %>
+        <small class="<%= helpClass %>"><%= campo.ajuda %></small>
+      <% } else { %>
+        <small><%= campo.ajuda %></small>
+      <% } %>
+    <% } %>
+  </div>
+<% }) %>

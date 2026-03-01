@@ -105,6 +105,28 @@
           <div id="kbSuggestList" class="kb-suggest__list" hidden></div>
         </section>
 
+        <% if (camposCustomizados && camposCustomizados.length) { %>
+          <div class="form__field form__field--full">
+            <h3 class="form__label" style="margin:0;">Campos adicionais</h3>
+            <small class="form__help">Preencha os campos customizados definidos pelo administrador.</small>
+          </div>
+
+          <%- include('../partials/campos-customizados', {
+            camposCustomizados,
+            valoresCustom,
+            classesCamposCustomizados: {
+              field: 'form__field',
+              full: 'form__field--full',
+              label: 'form__label',
+              input: 'form__input',
+              textareaExtra: 'form__textarea',
+              help: 'form__help',
+              idPrefix: 'cf-chamado-',
+              prefixo: 'cf__',
+            },
+          }) %>
+        <% } %>
+
         <div class="form__field form__field--full">
           <label class="form__label" for="anexos">Anexos (opcional)</label>
           <input

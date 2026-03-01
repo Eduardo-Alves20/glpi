@@ -33,6 +33,35 @@
 
     <div class="scrollable-container">
       <nav class="sidebar-options" aria-label="Navegação principal">
+        <% if (perfil === "tecnico" || perfil === "admin") { %>
+          <section class="sidebar-online-panel" data-hook="online-painel" hidden>
+            <p class="sidebar-online-title">Online agora</p>
+
+            <a
+              href="/tecnico/online?grupo=usuario"
+              class="sidebar-online-row sidebar-online-row--action"
+              title="Ver usuarios online"
+            >
+              <div class="sidebar-online-label">
+                <img src="/assets/perfil.png" alt="" class="sidebar-online-icon">
+                <span>Usuarios</span>
+              </div>
+              <strong class="sidebar-online-value" data-hook="online-usuarios">0</strong>
+            </a>
+
+            <a
+              href="/tecnico/online?grupo=tecnico"
+              class="sidebar-online-row sidebar-online-row--action"
+              title="Ver tecnicos e admins online"
+            >
+              <div class="sidebar-online-label">
+                <img src="/assets/tarefas.png" alt="" class="sidebar-online-icon">
+                <span>Tecnicos/Admins</span>
+              </div>
+              <strong class="sidebar-online-value" data-hook="online-tecnicos">0</strong>
+            </a>
+          </section>
+        <% } %>
 
         <!-- HOME (para todos logados) -->
         <div class="main-anchor-wrapper" id="nav-home">
@@ -137,6 +166,8 @@
                  href="/admin/tecnicos" title="Técnicos">Técnicos</a>
               <a class="accordion-item <%= isAtivo('/admin/categorias') ? 'active' : '' %>"
                  href="/admin/categorias" title="Categorias">Categorias</a>
+              <a class="accordion-item <%= isAtivo('/admin/campos-customizados') ? 'active' : '' %>"
+                 href="/admin/campos-customizados" title="Campos customizados">Campos customizados</a>
               <a class="accordion-item <%= isAtivo('/base-conhecimento') ? 'active' : '' %>"
                  href="/base-conhecimento" title="Base de conhecimento">Base de conhecimento</a>
               <a class="accordion-item <%= isAtivo('/admin/logs') ? 'active' : '' %>"

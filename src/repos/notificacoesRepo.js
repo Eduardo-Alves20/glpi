@@ -387,3 +387,12 @@ export async function excluirNotificacoesPorChamadoId(chamadoId) {
 
   return { ok: true, deleted: Number(res.deletedCount || 0) };
 }
+
+export async function garantirIndicesNotificacoes() {
+  const db = pegarDb();
+  await db.collection(COL).createIndex({ "destinatario.tipo": 1, "destinatario.id": 1, criadoEm: -1 });
+  await db.collection(COL).createIndex({ "destinatario.tipo": 1, "destinatario.id": 1, lidoEm: 1, criadoEm: -1 });
+  await db.collection(COL).createIndex({ "destinatario.tipo": 1, criadoEm: -1 });
+  await db.collection(COL).createIndex({ "destinatario.tipo": 1, tipo: 1, criadoEm: -1 });
+  await db.collection(COL).createIndex({ chamadoId: 1, criadoEm: -1 });
+}

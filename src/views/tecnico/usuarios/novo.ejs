@@ -108,6 +108,24 @@
             />
             <small class="hint">A confirmacao precisa ser igual a senha informada.</small>
           </div>
+
+          <% if (camposCustomizados && camposCustomizados.length) { %>
+            <div class="form-field" style="grid-column: 1 / -1; margin-top: 6px;">
+              <h2 style="margin:0; font-size:18px;">Campos adicionais</h2>
+              <small class="hint">Campos dinamicos definidos na administracao.</small>
+            </div>
+
+            <%- include('../../partials/campos-customizados', {
+              camposCustomizados,
+              valoresCustom,
+              classesCamposCustomizados: {
+                field: 'form-field',
+                help: 'hint',
+                idPrefix: 'cf-tecnico-user-',
+                prefixo: 'cf__',
+              },
+            }) %>
+          <% } %>
         </div>
 
         <div class="form-actions">

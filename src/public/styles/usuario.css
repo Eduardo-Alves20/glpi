@@ -366,9 +366,106 @@
 }
 
 .usuarios-page .usuarios-filter-field label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   color: #294a6d;
+}
+
+.usuarios-page .field-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(4, 76, 141, 0.35);
+  background: #eef5ff;
+  color: #0b4f86;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: help;
+  user-select: none;
+}
+
+.usuarios-page .field-help::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(15, 31, 55, 0.92) transparent transparent transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.16s ease, visibility 0.16s ease;
+  pointer-events: none;
+}
+
+.usuarios-page .field-help::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 31, 55, 0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(15, 31, 55, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.16s ease, visibility 0.16s ease;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.usuarios-page .field-help:hover::before,
+.usuarios-page .field-help:hover::after,
+.usuarios-page .field-help:focus-visible::before,
+.usuarios-page .field-help:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.usuarios-page .field-help:focus-visible {
+  outline: 2px solid rgba(4, 76, 141, 0.42);
+  outline-offset: 1px;
+}
+
+.usuarios-page .campos-actions-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.usuarios-page .campos-actions-inline form {
+  margin: 0;
+}
+
+.usuarios-page .campos-delete-btn {
+  border-color: rgba(191, 56, 74, 0.3);
+  color: #a51f33;
+  background: #fff;
+}
+
+.usuarios-page .campos-delete-btn:hover {
+  background: #fff2f4;
+  border-color: rgba(191, 56, 74, 0.48);
 }
 
 .usuarios-page .usuarios-filter-field input,

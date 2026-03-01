@@ -30,6 +30,12 @@ import {
   categoriasEditarPost,
   categoriasExcluirPost,
 } from "../../controllers/admin/categoriasController.js";
+import {
+  camposCustomizadosCreatePost,
+  camposCustomizadosExcluirPost,
+  camposCustomizadosIndexGet,
+  camposCustomizadosStatusPost,
+} from "../../controllers/admin/camposCustomizadosController.js";
 
 export function criarAdminRotas({ auditoria } = {}) {
   const router = Router();
@@ -58,6 +64,7 @@ export function criarAdminRotas({ auditoria } = {}) {
   router.get("/admin/categorias", categoriasIndexGet);
   router.get("/admin/categorias/novo", categoriasNovoGet);
   router.get("/admin/categorias/:id/editar", categoriasEditarGet);
+  router.get("/admin/campos-customizados", camposCustomizadosIndexGet);
 
   router.post("/admin/usuarios", usuariosCreatePost);
   router.post("/admin/usuarios/:id/editar", usuariosEditarPost);
@@ -65,6 +72,9 @@ export function criarAdminRotas({ auditoria } = {}) {
   router.post("/admin/categorias", categoriasCreatePost);
   router.post("/admin/categorias/:id/editar", categoriasEditarPost);
   router.post("/admin/categorias/:id/excluir", categoriasExcluirPost);
+  router.post("/admin/campos-customizados", camposCustomizadosCreatePost);
+  router.post("/admin/campos-customizados/:id/ativo", camposCustomizadosStatusPost);
+  router.post("/admin/campos-customizados/:id/excluir", camposCustomizadosExcluirPost);
 
   return router;
 }

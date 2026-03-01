@@ -7,6 +7,10 @@ import { apiTecnicoInboxGet } from "../../controllers/api/apiTecnicoController.j
 import { apiUsuarioInboxGet } from "../../controllers/api/apiUsuarioController.js";
 import { apiAdminHomeGet } from "../../controllers/api/apiAdminController.js";
 import {
+  apiPresencaOnlineGet,
+  apiPresencaOnlineDetalhesGet,
+} from "../../controllers/api/presencaController.js";
+import {
   apiBaseConhecimentoSugestoesGet,
   apiBaseConhecimentoEventoPost,
   apiBaseConhecimentoResolverPost,
@@ -44,6 +48,17 @@ export function criarApiRotas({ auditoria } = {}) {
     "/admin/home",
     exigirPerfis(["admin"], { onNegado: auditoria?.registrarTentativaAcessoNegado }),
     apiAdminHomeGet
+  );
+
+  router.get(
+    "/presenca/online",
+    exigirPerfis(["tecnico", "admin"], { onNegado: auditoria?.registrarTentativaAcessoNegado }),
+    apiPresencaOnlineGet,
+  );
+  router.get(
+    "/presenca/online/detalhes",
+    exigirPerfis(["tecnico", "admin"], { onNegado: auditoria?.registrarTentativaAcessoNegado }),
+    apiPresencaOnlineDetalhesGet,
   );
 
   // ===== Notificações (Opção 2) =====

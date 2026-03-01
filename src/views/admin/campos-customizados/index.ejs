@@ -1,0 +1,273 @@
+<section class="usuarios-page">
+  <div class="container">
+    <div class="form-wrapper">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Campos customizados</h1>
+          <p class="page-subtitle">Crie campos extras para formularios de usuarios e chamados.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button secondary" href="/admin">Voltar</a>
+        </div>
+      </div>
+
+      <% if (flash) { %>
+        <div class="alert <%= flash.tipo === 'success' ? 'alert-success' : (flash.tipo === 'error' ? 'alert-error' : 'alert-info') %>">
+          <strong><%= flash.mensagem %></strong>
+        </div>
+      <% } %>
+
+      <% if (erros && erros.length) { %>
+        <div class="alert alert-error">
+          <strong>Verifique os campos:</strong>
+          <ul>
+            <% erros.forEach((e) => { %>
+              <li><%= e %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form class="table-card usuarios-filters-card" method="POST" action="/admin/campos-customizados" autocomplete="off">
+        <div class="usuarios-filters-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+          <div class="usuarios-filter-field">
+            <label for="cc-entidade">
+              Entidade
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Define onde o campo aparece: cadastro de usuario ou abertura de chamado."
+                aria-label="Ajuda sobre entidade"
+              >?</span>
+            </label>
+            <select id="cc-entidade" name="entidade" required>
+              <% (opcoes?.entidades || []).forEach((entidade) => { %>
+                <option value="<%= entidade %>" <%= valores?.entidade === entidade ? "selected" : "" %>><%= entidade %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="cc-chave">
+              Chave tecnica
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Identificador interno do campo. Use letras, numeros e underscore. Exemplo: localizacao_setor."
+                aria-label="Ajuda sobre chave tecnica"
+              >?</span>
+            </label>
+            <input id="cc-chave" name="chave" required maxlength="40" placeholder="cpf, localizacao, celular" value="<%= valores?.chave || '' %>" />
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="cc-rotulo">
+              Rotulo
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Nome exibido para o usuario no formulario."
+                aria-label="Ajuda sobre rotulo"
+              >?</span>
+            </label>
+            <input id="cc-rotulo" name="rotulo" required maxlength="80" placeholder="CPF" value="<%= valores?.rotulo || '' %>" />
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="cc-tipo">
+              Tipo
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Formato do valor: texto, numero, select, data etc."
+                aria-label="Ajuda sobre tipo"
+              >?</span>
+            </label>
+            <select id="cc-tipo" name="tipo" required>
+              <% (opcoes?.tipos || []).forEach((tipo) => { %>
+                <option value="<%= tipo %>" <%= valores?.tipo === tipo ? "selected" : "" %>><%= tipo %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="cc-ordem">
+              Ordem
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Controla a posicao do campo no formulario. Menor numero aparece antes."
+                aria-label="Ajuda sobre ordem"
+              >?</span>
+            </label>
+            <input id="cc-ordem" name="ordem" type="number" min="0" max="9999" value="<%= valores?.ordem || 100 %>" />
+          </div>
+
+          <div class="usuarios-filter-field">
+            <label for="cc-placeholder">
+              Placeholder
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Texto de exemplo dentro do campo antes de preencher."
+                aria-label="Ajuda sobre placeholder"
+              >?</span>
+            </label>
+            <input id="cc-placeholder" name="placeholder" maxlength="120" value="<%= valores?.placeholder || '' %>" />
+          </div>
+
+          <div class="usuarios-filter-field" style="grid-column: span 2;">
+            <label for="cc-ajuda">
+              Ajuda
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Texto auxiliar exibido abaixo do campo para orientar o preenchimento."
+                aria-label="Ajuda sobre texto de ajuda"
+              >?</span>
+            </label>
+            <input id="cc-ajuda" name="ajuda" maxlength="220" value="<%= valores?.ajuda || '' %>" />
+          </div>
+
+          <div class="usuarios-filter-field" style="grid-column: span 4;">
+            <label for="cc-opcoes">
+              Opcoes (para tipo select)
+              <span
+                class="field-help"
+                tabindex="0"
+                data-tooltip="Lista de opcoes para campos do tipo select, uma por linha no formato valor:rotulo."
+                aria-label="Ajuda sobre opcoes"
+              >?</span>
+            </label>
+            <textarea id="cc-opcoes" name="opcoes" rows="3" placeholder="alta:Alta&#10;media:Media&#10;baixa:Baixa"><%= valores?.opcoes || '' %></textarea>
+            <small class="hint">Use uma opcao por linha no formato <code>valor:rotulo</code>. Exemplo: <code>rj:Rio de Janeiro</code>.</small>
+          </div>
+        </div>
+
+        <div class="usuarios-filters-actions">
+          <label style="display:inline-flex; align-items:center; gap:8px;">
+            <input type="checkbox" name="obrigatorio" value="1" <%= valores?.obrigatorio ? "checked" : "" %> />
+            Obrigatorio
+            <span
+              class="field-help"
+              tabindex="0"
+              data-tooltip="Se marcado, o usuario sera obrigado a preencher esse campo."
+              aria-label="Ajuda sobre obrigatorio"
+            >?</span>
+          </label>
+          <label style="display:inline-flex; align-items:center; gap:8px;">
+            <input type="checkbox" name="ativo" value="1" <%= valores?.ativo !== false ? "checked" : "" %> />
+            Ativo
+            <span
+              class="field-help"
+              tabindex="0"
+              data-tooltip="Campo ativo aparece nos formularios. Inativo fica oculto."
+              aria-label="Ajuda sobre ativo"
+            >?</span>
+          </label>
+          <button class="button button-filter-apply" type="submit">Criar campo</button>
+        </div>
+      </form>
+
+      <article class="table-card">
+        <div class="page-header" style="margin-bottom:8px;">
+          <h2 class="page-title" style="font-size:22px;">Campos de usuario</h2>
+        </div>
+        <% if (!(camposPorEntidade?.usuario || []).length) { %>
+          <div class="empty-state">
+            <p><strong>Nenhum campo cadastrado.</strong></p>
+          </div>
+        <% } else { %>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Rotulo</th>
+                  <th>Chave</th>
+                  <th>Tipo</th>
+                  <th>Obrigatorio</th>
+                  <th>Ativo</th>
+                  <th>Ordem</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (camposPorEntidade?.usuario || []).forEach((item) => { %>
+                  <tr>
+                    <td><strong><%= item.rotulo %></strong></td>
+                    <td><code><%= item.chave %></code></td>
+                    <td><%= item.tipo %></td>
+                    <td><%= item.obrigatorio ? "Sim" : "Nao" %></td>
+                    <td><%= item.ativo ? "Ativo" : "Inativo" %></td>
+                    <td><%= item.ordem %></td>
+                    <td>
+                      <div class="campos-actions-inline">
+                        <form method="POST" action="/admin/campos-customizados/<%= item.id %>/ativo" style="margin:0;">
+                          <input type="hidden" name="ativo" value="<%= item.ativo ? '0' : '1' %>" />
+                          <button class="button secondary" type="submit"><%= item.ativo ? "Desativar" : "Ativar" %></button>
+                        </form>
+                        <form method="POST" action="/admin/campos-customizados/<%= item.id %>/excluir" style="margin:0;" onsubmit="return confirm('Excluir o campo &quot;<%= item.rotulo %>&quot;? Essa acao nao pode ser desfeita.');">
+                          <button class="button campos-delete-btn" type="submit">Excluir</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </article>
+
+      <article class="table-card">
+        <div class="page-header" style="margin-bottom:8px;">
+          <h2 class="page-title" style="font-size:22px;">Campos de chamado</h2>
+        </div>
+        <% if (!(camposPorEntidade?.chamado || []).length) { %>
+          <div class="empty-state">
+            <p><strong>Nenhum campo cadastrado.</strong></p>
+          </div>
+        <% } else { %>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Rotulo</th>
+                  <th>Chave</th>
+                  <th>Tipo</th>
+                  <th>Obrigatorio</th>
+                  <th>Ativo</th>
+                  <th>Ordem</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% (camposPorEntidade?.chamado || []).forEach((item) => { %>
+                  <tr>
+                    <td><strong><%= item.rotulo %></strong></td>
+                    <td><code><%= item.chave %></code></td>
+                    <td><%= item.tipo %></td>
+                    <td><%= item.obrigatorio ? "Sim" : "Nao" %></td>
+                    <td><%= item.ativo ? "Ativo" : "Inativo" %></td>
+                    <td><%= item.ordem %></td>
+                    <td>
+                      <div class="campos-actions-inline">
+                        <form method="POST" action="/admin/campos-customizados/<%= item.id %>/ativo" style="margin:0;">
+                          <input type="hidden" name="ativo" value="<%= item.ativo ? '0' : '1' %>" />
+                          <button class="button secondary" type="submit"><%= item.ativo ? "Desativar" : "Ativar" %></button>
+                        </form>
+                        <form method="POST" action="/admin/campos-customizados/<%= item.id %>/excluir" style="margin:0;" onsubmit="return confirm('Excluir o campo &quot;<%= item.rotulo %>&quot;? Essa acao nao pode ser desfeita.');">
+                          <button class="button campos-delete-btn" type="submit">Excluir</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </article>
+    </div>
+  </div>
+</section>

@@ -209,6 +209,160 @@ body.app-layout{
   background: rgba(255,255,255,0.20);
 }
 
+/* Online agora (tecnico/admin) */
+.sidebar-online-panel{
+  margin: 8px 4px 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.20);
+}
+
+.sidebar-online-title{
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: 0.02em;
+}
+
+.sidebar-online-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.sidebar-online-row--action{
+  display: flex;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  padding: 4px 6px;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+}
+
+.sidebar-online-row--action:hover{
+  background: rgba(255,255,255,0.10);
+}
+
+.sidebar-online-row--action[aria-expanded="true"]{
+  background: rgba(255,255,255,0.16);
+}
+
+.sidebar-online-row + .sidebar-online-row{
+  margin-top: 6px;
+}
+
+.sidebar-online-label{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: rgba(255,255,255,0.90);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebar-online-icon{
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  opacity: 0.95;
+}
+
+.sidebar-online-value{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.20);
+  border: 1px solid rgba(255,255,255,0.24);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sidebar-online-list{
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255,255,255,0.28);
+}
+
+.sidebar-online-list-title{
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: 0.02em;
+}
+
+.sidebar-online-list-items{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 210px;
+  overflow: auto;
+}
+
+.sidebar-online-item{
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+}
+
+.sidebar-online-item-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-online-item-name{
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  word-break: break-word;
+}
+
+.sidebar-online-item-perfil{
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.95);
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+.sidebar-online-item-sub{
+  margin-top: 3px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.82);
+  word-break: break-word;
+}
+
+.sidebar-online-item-empty{
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  font-size: 11px;
+  color: rgba(255,255,255,0.82);
+}
+
 /* =========================
    Footer (perfil + sair)
    ========================= */
@@ -313,6 +467,42 @@ body.sidebar-collapsed .sidebar{
 }
 
 body.sidebar-collapsed .accordion-content{
+  display: none !important;
+}
+
+body.sidebar-collapsed .sidebar-online-panel{
+  margin: 8px 0 10px;
+  padding: 8px 6px;
+}
+
+body.sidebar-collapsed .sidebar-online-title{
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar-online-row{
+  justify-content: center;
+  gap: 6px;
+  min-height: 24px;
+}
+
+body.sidebar-collapsed .sidebar-online-row + .sidebar-online-row{
+  margin-top: 8px;
+}
+
+body.sidebar-collapsed .sidebar-online-label{
+  gap: 0;
+}
+
+body.sidebar-collapsed .sidebar-online-label span{
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar-online-icon{
+  width: 16px;
+  height: 16px;
+}
+
+body.sidebar-collapsed .sidebar-online-list{
   display: none !important;
 }
 

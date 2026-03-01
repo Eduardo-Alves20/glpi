@@ -14,6 +14,7 @@ import {
   tecnicoAssumirPost,
   tecnicoMeusChamadosGet,
   tecnicoHistoricoChamadosGet,
+  tecnicoOnlineGet,
 } from "../../controllers/tecnico/tecnicoController.js";
 
 import {
@@ -66,6 +67,7 @@ export function criarTecnicoRotas({ auditoria } = {}) {
   router.get("/tecnico/usuarios/:id/editar", tecnicoUsuariosEditarGet);
   router.get("/tecnico/usuarios/sugerir-login", tecnicoUsuariosSugerirLoginGet);
   router.get("/tecnico/logs", tecnicoLogsGet);
+  router.get("/tecnico/online", tecnicoOnlineGet);
 
   // detalhe do chamado (ABRIR)
   router.get("/tecnico/chamados/:id", tecnicoChamadoShowGet);

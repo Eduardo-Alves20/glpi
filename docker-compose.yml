@@ -53,6 +53,11 @@ services:
       MONGO_URI: "mongodb://mongo:27017/glpi_dev?replicaSet=rs0"
       MONGO_DB: "glpi_dev"
       SESSION_SECRET: "asdkj1o3u091dkalsdn1092sd11asdfkad"
+      MONGO_MAX_POOL_SIZE: "80"
+      MONGO_MIN_POOL_SIZE: "10"
+      USER_ACTIVE_CACHE_TTL_MS: "15000"
+      SESSION_ROLLING: "false"
+      SESSION_TOUCH_AFTER_SECONDS: "300"
     ports:
       - "3000:3000"
     restart: unless-stopped

@@ -1,0 +1,131 @@
+<div class="content-with-pagination-wrapper chamados-page">
+  <div class="content-with-pagination">
+
+    <%- include('../partials/breadcrumb', {
+      crumbs: [
+        { label: 'Home', href: '/app' },
+        { label: 'Tecnico' },
+        { label: 'Pessoas online' }
+      ]
+    }) %>
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Pessoas online</h1>
+        <p class="page-subtitle">Visao em tempo real de usuarios e equipe tecnica conectados.</p>
+
+        <% if (typeof erroGeral !== 'undefined' && erroGeral) { %>
+          <div class="alert-error"><%= erroGeral %></div>
+        <% } %>
+      </div>
+    </div>
+
+    <form method="GET" class="table-card chamados-filters-card">
+      <div class="chamados-basic-grid">
+        <div class="chamados-field chamados-field-search">
+          <label for="filtro-q">Buscar por nome/login</label>
+          <div class="chamados-search-control">
+            <input id="filtro-q" name="q" value="<%= filtros?.q || '' %>" placeholder="Ex: usuario001" />
+            <button type="submit" class="chamados-search-submit" aria-label="Aplicar busca">
+              <span aria-hidden="true">&#128269;</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="chamados-field chamados-field-limit">
+          <label for="filtro-limit">Itens por pagina</label>
+          <select id="filtro-limit" name="limit">
+            <% [10, 25, 50, 75, 100].forEach((n) => { %>
+              <option value="<%= n %>" <%= Number(filtros?.limit || 25) === n ? 'selected' : '' %>><%= n %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="chamados-field chamados-field-summary">
+          <label>Resumo</label>
+          <p class="chamados-summary-line">
+            <strong><%= Number(totalFiltrados || 0) %></strong> de <%= Number(totalBase || 0) %> online no grupo selecionado.
+          </p>
+        </div>
+
+        <div class="chamados-field">
+          <label for="filtro-grupo">Grupo</label>
+          <select id="filtro-grupo" name="grupo">
+            <option value="todos" <%= filtros?.grupo === 'todos' ? 'selected' : '' %>>Todos</option>
+            <option value="usuario" <%= filtros?.grupo === 'usuario' ? 'selected' : '' %>>Usuarios</option>
+            <option value="tecnico" <%= filtros?.grupo === 'tecnico' ? 'selected' : '' %>>Tecnicos/Admins</option>
+          </select>
+        </div>
+
+        <div class="chamados-field">
+          <label for="filtro-perfil">Perfil</label>
+          <select id="filtro-perfil" name="perfil">
+            <option value="" <%= !filtros?.perfil ? 'selected' : '' %>>Todos</option>
+            <% if (filtros?.grupo === 'tecnico') { %>
+              <option value="tecnico" <%= filtros?.perfil === 'tecnico' ? 'selected' : '' %>>Tecnico</option>
+              <option value="admin" <%= filtros?.perfil === 'admin' ? 'selected' : '' %>>Admin</option>
+            <% } else if (filtros?.grupo === 'todos') { %>
+              <option value="usuario" <%= filtros?.perfil === 'usuario' ? 'selected' : '' %>>Usuario</option>
+              <option value="tecnico" <%= filtros?.perfil === 'tecnico' ? 'selected' : '' %>>Tecnico</option>
+              <option value="admin" <%= filtros?.perfil === 'admin' ? 'selected' : '' %>>Admin</option>
+            <% } else { %>
+              <option value="usuario" <%= filtros?.perfil === 'usuario' ? 'selected' : '' %>>Usuario</option>
+            <% } %>
+          </select>
+        </div>
+      </div>
+
+      <div class="chamados-filter-actions">
+        <button class="button button-filter-apply" type="submit">Aplicar filtros</button>
+        <a class="button tertiary chamados-clear-button" href="/tecnico/online">Limpar filtros</a>
+      </div>
+    </form>
+
+    <div class="table-card chamados-table-card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th style="width:170px;">Login</th>
+            <th style="width:120px;">Perfil</th>
+            <th style="width:130px;">Sessao</th>
+            <th style="width:130px;">Inativo</th>
+            <th style="width:190px;">Ultima atividade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!itens || itens.length === 0) { %>
+            <tr>
+              <td colspan="6" class="empty-row">Nenhum usuario online para os filtros informados.</td>
+            </tr>
+          <% } else { %>
+            <% itens.forEach((item) => { %>
+              <tr>
+                <td>
+                  <p class="table-content">
+                    <%= item.nome %>
+                    <% if (item.logadoNoMomento) { %>
+                      <span class="pill pill-muted" style="margin-left:8px; min-width:auto;">voce</span>
+                    <% } %>
+                  </p>
+                </td>
+                <td><p class="table-content"><%= item.login %></p></td>
+                <td><p class="table-content"><span class="pill pill-status"><%= item.perfil %></span></p></td>
+                <td><p class="table-content"><%= item.sessao %></p></td>
+                <td><p class="table-content"><%= item.inativo %></p></td>
+                <td><p class="table-content"><%= item.ultimaAtividade %></p></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <%- include('../partials/paginacao', {
+      basePath: '/tecnico/online',
+      paginacao: paginacao,
+      query: paginacaoQuery || filtros,
+    }) %>
+
+  </div>
+</div>

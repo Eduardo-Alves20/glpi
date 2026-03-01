@@ -14,6 +14,11 @@ import { sugerirLoginsDisponiveis } from "../../compartilhado/usuario/sugestaoLo
 import { registrarEventoSistema } from "../../service/logsService.js";
 import { normalizarPaginacao } from "../../service/paginacaoService.js";
 import { pegarDb } from "../../compartilhado/db/mongo.js";
+import { listarCamposCustomizados } from "../../repos/camposCustomizadosRepo.js";
+import {
+  extrairCamposCustomizadosDeBody,
+  normalizarCustomFieldsParaPersistencia,
+} from "../../service/camposCustomizadosService.js";
 
 const COL_SESSOES = "sessoes";
 const PERFIS_PERMITIDOS_TECNICO = ["tecnico", "usuario"];
@@ -77,6 +82,15 @@ function mapearUsuarioParaTecnico(usuario = {}) {
   };
 }
 
+async function carregarCamposCustomizadosUsuario() {
+  try {
+    return await listarCamposCustomizados("usuario", { somenteAtivos: true });
+  } catch (err) {
+    console.error("Erro ao carregar campos customizados de usuario:", err);
+    return [];
+  }
+}
+
 async function invalidarSessoesDoUsuario(usuarioId) {
   const db = pegarDb();
   await db.collection(COL_SESSOES).deleteMany({
@@ -132,25 +146,32 @@ export async function tecnicoUsuariosIndexGet(req, res) {
   );
 }
 
-export function tecnicoUsuariosNovoGet(req, res) {
+export async function tecnicoUsuariosNovoGet(req, res) {
+  const camposCustomizados = await carregarCamposCustomizadosUsuario();
   return res.render(
     "tecnico/usuarios/novo",
     viewBaseNovoUsuario(req, {
       erros: [],
       valores: {},
+      camposCustomizados,
+      valoresCustom: {},
     }),
   );
 }
 
 export async function tecnicoUsuariosCreatePost(req, res) {
+  const camposCustomizados = await carregarCamposCustomizadosUsuario();
+  const parsedCustomFields = extrairCamposCustomizadosDeBody(req.body, camposCustomizados);
   const v = validarNovoUsuario(req.body, { allowedProfiles: PERFIS_PERMITIDOS_TECNICO });
 
-  if (!v.ok) {
+  if (!v.ok || !parsedCustomFields.ok) {
     return res.status(400).render(
       "tecnico/usuarios/novo",
       viewBaseNovoUsuario(req, {
-        erros: v.erros,
+        erros: [...v.erros, ...parsedCustomFields.erros],
         valores: v.valores,
+        camposCustomizados,
+        valoresCustom: parsedCustomFields.valoresFormulario,
       }),
     );
   }
@@ -167,6 +188,8 @@ export async function tecnicoUsuariosCreatePost(req, res) {
         viewBaseNovoUsuario(req, {
           erros: ["Ja existe usuario com esse login ou e-mail."],
           valores: v.valores,
+          camposCustomizados,
+          valoresCustom: parsedCustomFields.valoresFormulario,
         }),
       );
     }
@@ -179,6 +202,7 @@ export async function tecnicoUsuariosCreatePost(req, res) {
       perfil: v.valores.perfil,
       status: v.valores.status,
       senhaHash,
+      customFields: normalizarCustomFieldsParaPersistencia(parsedCustomFields.valores),
       criadoEm: new Date(),
       atualizadoEm: new Date(),
       updatedAt: new Date(),
@@ -202,6 +226,7 @@ export async function tecnicoUsuariosCreatePost(req, res) {
       meta: {
         status: doc.status,
         email: doc.email,
+        qtdCamposCustomizados: Object.keys(doc.customFields || {}).length,
       },
     });
 
@@ -217,6 +242,8 @@ export async function tecnicoUsuariosCreatePost(req, res) {
       viewBaseNovoUsuario(req, {
         erros: [e?.message || "Nao foi possivel criar o usuario."],
         valores: v.valores,
+        camposCustomizados,
+        valoresCustom: parsedCustomFields.valoresFormulario,
       }),
     );
   }

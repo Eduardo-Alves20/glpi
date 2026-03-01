@@ -6,7 +6,6 @@
   const acao = typeof acaoPrimaria !== "undefined" ? acaoPrimaria : null;
 
   const advancedValues = [
-    filtros?.status,
     filtros?.categoria,
     filtros?.prioridade,
     filtros?.dataInicio,
@@ -47,6 +46,16 @@
       <select id="<%= baseId %>-limit" name="limit">
         <% [10, 25, 50, 75, 100, 200].forEach((n) => { %>
           <option value="<%= n %>" <%= Number(filtros?.limit || 10) === n ? "selected" : "" %>><%= n %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="chamados-field chamados-field-status">
+      <label for="<%= baseId %>-status">Status</label>
+      <select id="<%= baseId %>-status" name="status">
+        <option value="">Todos</option>
+        <% (opcoes?.status || []).forEach((item) => { %>
+          <option value="<%= item.value %>" <%= filtros?.status === item.value ? "selected" : "" %>><%= item.label %></option>
         <% }) %>
       </select>
     </div>
@@ -105,16 +114,6 @@
       <div class="chamados-advanced-grid">
         <section class="chamados-advanced-card">
           <h3>Classificacao</h3>
-
-          <div class="chamados-advanced-field">
-            <label for="<%= baseId %>-status">Status</label>
-            <select id="<%= baseId %>-status" name="status" data-advanced-field>
-              <option value="">Todos</option>
-              <% (opcoes?.status || []).forEach((item) => { %>
-                <option value="<%= item.value %>" <%= filtros?.status === item.value ? "selected" : "" %>><%= item.label %></option>
-              <% }) %>
-            </select>
-          </div>
 
           <div class="chamados-advanced-field">
             <label for="<%= baseId %>-categoria">Categoria</label>

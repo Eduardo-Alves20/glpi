@@ -12,6 +12,8 @@ import {
   aoAtualizacaoNotificacoes,
   chaveDestinatarioNotificacao,
 } from "../service/notificacoesRealtimeService.js";
+import { obterResumoPresencaOnline } from "../repos/presencaOnlineRepo.js";
+import { aoAtualizacaoPresencaOnline } from "../service/presencaRealtimeService.js";
 
 const WS_PATH = "/ws/notificacoes";
 
@@ -75,6 +77,14 @@ async function montarSnapshot(destinatario, tiposIgnorados = []) {
   };
 }
 
+async function montarSnapshotPresenca() {
+  const resumo = await obterResumoPresencaOnline();
+  return {
+    type: "presence_snapshot",
+    ...resumo,
+  };
+}
+
 export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) {
   if (!server || typeof sessionMiddleware !== "function") {
     throw new Error("Config invalida do WebSocket de notificacoes.");
@@ -101,6 +111,7 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
 
       request.__wsDestinatario = destinatario;
       request.__wsTiposIgnorados = obterTiposIgnoradosNotificacoes(usuarioSessao);
+      request.__wsPerfil = String(usuarioSessao?.perfil || "").trim().toLowerCase();
 
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit("connection", ws, request);
@@ -113,10 +124,14 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
     const tiposIgnorados = request.__wsTiposIgnorados || [];
     const chaveDestino = chaveDestinatarioNotificacao(destinatario);
     const escutaAdmins = String(destinatario?.tipo || "") === "admin" && String(destinatario?.id || "") === "*";
+    const perfilSessao = String(request.__wsPerfil || "").trim().toLowerCase();
+    const podeVerPresenca = perfilSessao === "tecnico" || perfilSessao === "admin";
 
     let encerrado = false;
     let enviando = false;
     let pendente = false;
+    let enviandoPresenca = false;
+    let pendentePresenca = false;
 
     const enviarSnapshot = async () => {
       if (encerrado || !wsAberto(ws)) return;
@@ -143,6 +158,30 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
       }
     };
 
+    const enviarPresencaSnapshot = async () => {
+      if (!podeVerPresenca || encerrado || !wsAberto(ws)) return;
+      if (enviandoPresenca) {
+        pendentePresenca = true;
+        return;
+      }
+
+      enviandoPresenca = true;
+      try {
+        const payload = await montarSnapshotPresenca();
+        enviarJson(ws, payload);
+      } catch (err) {
+        console.error("[ws-presenca] falha ao montar snapshot:", err);
+      } finally {
+        enviandoPresenca = false;
+        if (pendentePresenca) {
+          pendentePresenca = false;
+          setTimeout(() => {
+            void enviarPresencaSnapshot();
+          }, 120);
+        }
+      }
+    };
+
     const unsubscribe = aoAtualizacaoNotificacoes((chave) => {
       if (!chave) return;
       if (escutaAdmins) {
@@ -152,6 +191,11 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
       }
       void enviarSnapshot();
     });
+    const unsubscribePresenca = podeVerPresenca
+      ? aoAtualizacaoPresencaOnline(() => {
+        void enviarPresencaSnapshot();
+      })
+      : () => {};
 
     const heartbeat = setInterval(() => {
       if (!wsAberto(ws)) return;
@@ -172,6 +216,11 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
 
       if (data?.type === "sync") {
         void enviarSnapshot();
+        return;
+      }
+
+      if (data?.type === "presence_sync") {
+        void enviarPresencaSnapshot();
       }
     });
 
@@ -179,6 +228,7 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
       encerrado = true;
       clearInterval(heartbeat);
       unsubscribe();
+      unsubscribePresenca();
     });
 
     ws.on("error", () => {
@@ -186,6 +236,9 @@ export function anexarWebSocketNotificacoes({ server, sessionMiddleware } = {}) 
     });
 
     void enviarSnapshot();
+    if (podeVerPresenca) {
+      void enviarPresencaSnapshot();
+    }
   });
 
   return wss;

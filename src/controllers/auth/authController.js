@@ -1,6 +1,11 @@
 import { acharPorUsuarioOuEmail } from "../../repos/usuariosRepo.js";
 import { compararSenha } from "../../compartilhado/seguranca/senha.js";
 import { registrarEventoSistema } from "../../service/logsService.js";
+import {
+  tocarPresencaOnline,
+  removerPresencaOnline,
+} from "../../repos/presencaOnlineRepo.js";
+import { publicarAtualizacaoPresencaOnline } from "../../service/presencaRealtimeService.js";
 
 const NODE_ENV = process.env.NODE_ENV || "development";
 const isProd = NODE_ENV === "production";
@@ -125,6 +130,18 @@ export async function authPost(req, res) {
         mensagem: "Login realizado com sucesso.",
       };
 
+      try {
+        await tocarPresencaOnline({
+          usuarioId: String(usuario._id || ""),
+          perfil: String(usuario.perfil || ""),
+          nome: String(usuario.nome || ""),
+          login: String(usuario.usuario || ""),
+        });
+        publicarAtualizacaoPresencaOnline();
+      } catch (errPresenca) {
+        console.error("[auth.login] falha ao atualizar presenca:", errPresenca);
+      }
+
       await registrarEventoSistema({
         req,
         nivel: "info",
@@ -172,6 +189,18 @@ export async function authPost(req, res) {
         tipo: "success",
         mensagem: "Login realizado com sucesso.",
       };
+
+      try {
+        await tocarPresencaOnline({
+          usuarioId: "admin-bootstrap",
+          perfil: "admin",
+          nome: "Administrador (Bootstrap)",
+          login: "admin",
+        });
+        publicarAtualizacaoPresencaOnline();
+      } catch (errPresenca) {
+        console.error("[auth.login] falha ao atualizar presenca bootstrap:", errPresenca);
+      }
 
       await registrarEventoSistema({
         req,
@@ -225,7 +254,7 @@ export async function authPost(req, res) {
   }
 }
 
-export function logoutPost(req, res) {
+export async function logoutPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   registrarEventoSistema({
     req,
@@ -244,6 +273,18 @@ export function logoutPost(req, res) {
         }
       : null,
   });
+
+  try {
+    if (usuarioSessao?.id && usuarioSessao?.perfil) {
+      await removerPresencaOnline({
+        usuarioId: String(usuarioSessao.id || ""),
+        perfil: String(usuarioSessao.perfil || ""),
+      });
+      publicarAtualizacaoPresencaOnline();
+    }
+  } catch (err) {
+    console.error("[auth.logout] falha ao remover presenca:", err);
+  }
 
   req.session?.destroy(() => {
     res.clearCookie("glpi.sid");

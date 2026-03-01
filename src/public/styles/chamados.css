@@ -314,6 +314,14 @@ img.small-icon {
   align-items: end;
 }
 
+.chamados-page form[data-chamados-filters] .chamados-basic-grid {
+  grid-template-columns: 2.1fr minmax(150px, 210px) minmax(170px, 220px) minmax(210px, 1fr);
+}
+
+.chamados-page form[data-chamados-filters] .chamados-field-summary {
+  grid-column: 1 / -1;
+}
+
 .chamados-page .chamados-field {
   display: flex;
   flex-direction: column;

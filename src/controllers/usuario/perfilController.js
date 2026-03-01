@@ -8,6 +8,11 @@ import { registrarEventoSistema } from "../../service/logsService.js";
 
 const COL_SESSOES = "sessoes";
 
+function usuarioSessaoBootstrap(usuarioSessao) {
+  const id = String(usuarioSessao?.id || "").trim().toLowerCase();
+  return id === "admin-bootstrap" || id === "admin-local";
+}
+
 function montarValoresPerfil(usuario) {
   return {
     nome: usuario?.nome || "",
@@ -37,7 +42,31 @@ export async function perfilGet(req, res) {
   if (req.session) req.session.flash = null;
 
   const usuario = await acharUsuarioPorId(usuarioSessao.id);
-  if (!usuario) return res.redirect("/logout");
+  if (!usuario) {
+    if (usuarioSessaoBootstrap(usuarioSessao)) {
+      return res.render("usuario/perfil", {
+        layout: "layout-app",
+        titulo: "Meu perfil",
+        cssPortal: "/styles/usuario.css",
+        cssExtra: "/styles/usuario-perfil.css",
+        usuarioSessao,
+        flash: flash || {
+          tipo: "info",
+          mensagem: "Conta bootstrap de desenvolvimento. Edicao de perfil fica indisponivel.",
+        },
+        erroGeral: null,
+        abrirModalSenha: false,
+        valores: montarValoresPerfil({
+          nome: usuarioSessao.nome,
+          email: "",
+          usuario: usuarioSessao.usuario,
+          perfil: usuarioSessao.perfil,
+        }),
+      });
+    }
+
+    return req.session.destroy(() => res.redirect("/auth"));
+  }
 
   return res.render("usuario/perfil", {
     layout: "layout-app",
@@ -55,6 +84,13 @@ export async function perfilGet(req, res) {
 export async function perfilPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
+  if (usuarioSessaoBootstrap(usuarioSessao)) {
+    req.session.flash = {
+      tipo: "info",
+      mensagem: "Conta bootstrap de desenvolvimento nao permite editar perfil.",
+    };
+    return res.redirect("/usuario/perfil");
+  }
 
   const valoresInput = {
     nome: String(req.body?.nome ?? "").trim(),
@@ -125,6 +161,13 @@ export async function perfilPost(req, res) {
 export async function perfilSenhaPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
+  if (usuarioSessaoBootstrap(usuarioSessao)) {
+    req.session.flash = {
+      tipo: "info",
+      mensagem: "Conta bootstrap de desenvolvimento nao permite trocar senha.",
+    };
+    return res.redirect("/usuario/perfil");
+  }
 
   const senhaAtual = String(req.body?.senhaAtual ?? "");
   const senhaNova = String(req.body?.senhaNova ?? "");

@@ -15,6 +15,7 @@ import {
   aplicarFiltrosListaChamados,
   lerFiltrosListaChamados,
   obterOpcoesFiltrosChamados,
+  ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
   rotuloCategoriaChamado,
   rotuloPrioridadeChamado,
   rotuloStatusChamado,
@@ -22,6 +23,11 @@ import {
 import { avaliarSlaChamado } from "../../service/chamadosSlaService.js";
 import { criarNotificacao } from "../../repos/notificacoesRepo.js";
 import { tentarTriagemAutomaticaChamado } from "../../service/triagemAutomaticaService.js";
+import { listarCamposCustomizados } from "../../repos/camposCustomizadosRepo.js";
+import {
+  extrairCamposCustomizadosDeBody,
+  normalizarCustomFieldsParaPersistencia,
+} from "../../service/camposCustomizadosService.js";
 
 function parseReferenciasBaseConhecimento(raw = "") {
   const texto = String(raw || "").trim();
@@ -52,9 +58,19 @@ async function carregarClassificacoesChamados() {
   }
 }
 
+async function carregarCamposCustomizadosChamados() {
+  try {
+    return await listarCamposCustomizados("chamado", { somenteAtivos: true });
+  } catch (err) {
+    console.error("Erro ao carregar campos customizados de chamado:", err);
+    return [];
+  }
+}
+
 export async function chamadoNovoGet(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   const classificacoes = await carregarClassificacoesChamados();
+  const camposCustomizados = await carregarCamposCustomizadosChamados();
 
   return res.render("chamados/novo", {
     layout: "layout-app",
@@ -64,8 +80,10 @@ export async function chamadoNovoGet(req, res) {
     jsExtra: "/js/chamado-novo-kb.js",
     usuarioSessao,
     opcoesClassificacao: classificacoes,
+    camposCustomizados,
     erroGeral: null,
     valores: { titulo: "", descricao: "", categoria: "", prioridade: "" },
+    valoresCustom: {},
   });
 }
 
@@ -73,6 +91,8 @@ export async function chamadoNovoPost(req, res) {
   const usuarioSessao = req.session?.usuario || null;
   if (!usuarioSessao?.id) return res.redirect("/auth");
   const classificacoes = await carregarClassificacoesChamados();
+  const camposCustomizados = await carregarCamposCustomizadosChamados();
+  const parsedCustomFields = extrairCamposCustomizadosDeBody(req.body, camposCustomizados);
 
   const valores = {
     titulo: String(req.body?.titulo ?? "").trim(),
@@ -104,6 +124,9 @@ export async function chamadoNovoPost(req, res) {
     if (!classificacoes.prioridadesValores.includes(valores.prioridade)) {
       throw new Error("Selecione uma prioridade valida.");
     }
+    if (!parsedCustomFields.ok) {
+      throw new Error(parsedCustomFields.erros.join(" "));
+    }
 
     chamadoCriado = await criarChamado({
       usuarioId: usuarioSessao.id,
@@ -113,6 +136,7 @@ export async function chamadoNovoPost(req, res) {
       baseConhecimento: {
         referencias: referenciasBaseConhecimento,
       },
+      customFields: normalizarCustomFieldsParaPersistencia(parsedCustomFields.valores),
       ...valores,
     });
 
@@ -198,6 +222,7 @@ export async function chamadoNovoPost(req, res) {
         prioridade: chamadoCriado.prioridade,
         qtdAnexos: anexos.length,
         qtdReferenciasBase: referenciasBaseConhecimento.length,
+        qtdCamposCustomizados: Object.keys(parsedCustomFields.valores || {}).length,
         triagemAutomatica: {
           atribuido: Boolean(triagem?.atribuido),
           motivo: String(triagem?.motivo || ""),
@@ -224,8 +249,10 @@ export async function chamadoNovoPost(req, res) {
       jsExtra: "/js/chamado-novo-kb.js",
       usuarioSessao,
       opcoesClassificacao: classificacoes,
+      camposCustomizados,
       erroGeral: e?.message || "Nao foi possivel registrar o chamado.",
       valores,
+      valoresCustom: parsedCustomFields.valoresFormulario,
     });
   }
 }
@@ -256,6 +283,7 @@ export async function meusChamadosGet(req, res) {
     const lista = await listarChamados({ solicitanteId: usuarioSessao.id, limit: 200 });
     const resultado = aplicarFiltrosListaChamados(lista, filtros, {
       usuarioLogin: usuarioSessao.usuario,
+      ordenarItensFn: ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
     });
 
     const chamados = (resultado.itens || []).map((c) => {

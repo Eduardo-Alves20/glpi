@@ -11,11 +11,14 @@ import {
   aplicarFiltrosListaChamados,
   lerFiltrosListaChamados,
   obterOpcoesFiltrosChamados,
+  ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
   rotuloCategoriaChamado,
   rotuloPrioridadeChamado,
   rotuloStatusChamado,
 } from "../../service/chamadosListaFiltrosService.js";
 import { STATUS_ALLOWED } from "../../repos/chamados/core/chamadosCoreRepo.js";
+import { listarPresencaOnline } from "../../repos/presencaOnlineRepo.js";
+import { paginarLista } from "../../service/paginacaoService.js";
 
 import { obterHomeTecnicoData } from "../../repos/tecnico/tecnicoDashboardRepo.js";
 import {
@@ -73,23 +76,8 @@ function mapearChamadoLista(c, usuarioSessao, classificacoes) {
   };
 }
 
-const ORDEM_STATUS_CHAMADOS = {
-  aberto: 0,
-  em_atendimento: 1,
-  aguardando_usuario: 2,
-  fechado: 3,
-};
-
 function ordenarFilaChamados(lista = []) {
-  return [...lista].sort((a, b) => {
-    const ordemA = ORDEM_STATUS_CHAMADOS[String(a?.status || "")] ?? 99;
-    const ordemB = ORDEM_STATUS_CHAMADOS[String(b?.status || "")] ?? 99;
-    if (ordemA !== ordemB) return ordemA - ordemB;
-
-    const dataA = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
-    const dataB = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
-    return dataB - dataA;
-  });
+  return ordenarChamadosAbertosPrimeiroAntigosPrimeiro(lista);
 }
 
 function montarPontosMelhoriaTecnico(tecnico) {
@@ -391,6 +379,7 @@ export async function tecnicoMeusChamadosGet(req, res) {
     const lista = await listarMeusAtendimentos(usuarioSessao.id, { limit: 200 });
     const resultado = aplicarFiltrosListaChamados(lista, filtros, {
       usuarioLogin: usuarioSessao.usuario,
+      ordenarItensFn: ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
     });
 
     const chamados = (resultado.itens || []).map((c) => ({
@@ -486,6 +475,7 @@ export async function tecnicoHistoricoChamadosGet(req, res) {
 
     const resultado = aplicarFiltrosListaChamados(lista, filtros, {
       usuarioLogin: usuarioSessao.usuario,
+      ordenarItensFn: ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
     });
 
     const chamados = (resultado.itens || []).map((c) => ({
@@ -543,6 +533,146 @@ export async function tecnicoHistoricoChamadosGet(req, res) {
         tipo: "error",
         mensagem: "Nao foi possivel carregar seu historico de atendimentos.",
       },
+    });
+  }
+}
+
+function normalizarGrupoOnline(grupo = "") {
+  const g = String(grupo || "").trim().toLowerCase();
+  if (g === "todos" || g === "all") return "todos";
+  if (g === "tecnico" || g === "tecnicos") return "tecnico";
+  return "usuario";
+}
+
+function normalizarPerfilOnline(perfil = "", grupo = "usuario") {
+  const p = String(perfil || "").trim().toLowerCase();
+  if (grupo === "todos") {
+    return (p === "usuario" || p === "tecnico" || p === "admin") ? p : "";
+  }
+  if (grupo === "usuario") {
+    return p === "usuario" ? "usuario" : "";
+  }
+  if (p === "tecnico" || p === "admin") return p;
+  return "";
+}
+
+function formatarDuracaoCurta(segundos = 0) {
+  const total = Math.max(0, Number(segundos) || 0);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function formatarDataBrSafe(iso) {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString("pt-BR");
+}
+
+function lerFiltrosOnline(query = {}) {
+  const grupo = normalizarGrupoOnline(query?.grupo);
+  const perfil = normalizarPerfilOnline(query?.perfil, grupo);
+  const q = String(query?.q || "").trim();
+  const pageRaw = Number.parseInt(String(query?.page || "1"), 10);
+  const limitRaw = Number.parseInt(String(query?.limit || "25"), 10);
+  const page = Number.isFinite(pageRaw) ? Math.max(1, pageRaw) : 1;
+  const limit = Number.isFinite(limitRaw) ? Math.max(10, Math.min(limitRaw, 100)) : 25;
+
+  return {
+    grupo,
+    perfil,
+    q,
+    page,
+    limit,
+  };
+}
+
+export async function tecnicoOnlineGet(req, res) {
+  const usuarioSessao = req.session?.usuario || null;
+  if (!usuarioSessao?.id) return res.redirect("/auth");
+
+  const filtros = lerFiltrosOnline(req.query);
+  const termo = String(filtros.q || "").trim().toLowerCase();
+  const usuarioLogadoId = String(usuarioSessao.id || "").trim();
+
+  try {
+    const out = await listarPresencaOnline({
+      grupo: filtros.grupo,
+      limit: 500,
+    });
+
+    const listaBase = Array.isArray(out?.itens) ? out.itens : [];
+    const filtrados = listaBase.filter((item) => {
+      if (filtros.perfil && String(item?.perfil || "") !== filtros.perfil) return false;
+      if (!termo) return true;
+
+      const nome = String(item?.nome || "").toLowerCase();
+      const login = String(item?.login || "").toLowerCase();
+      return nome.includes(termo) || login.includes(termo);
+    });
+
+    filtrados.sort((a, b) => {
+      const inativoA = Number(a?.tempoInativoSegundos ?? 999999);
+      const inativoB = Number(b?.tempoInativoSegundos ?? 999999);
+      if (inativoA !== inativoB) return inativoA - inativoB;
+      const sessaoA = Number(a?.tempoSessaoSegundos ?? 0);
+      const sessaoB = Number(b?.tempoSessaoSegundos ?? 0);
+      return sessaoB - sessaoA;
+    });
+
+    const paginado = paginarLista(filtrados, { page: filtros.page, limit: filtros.limit });
+    const itens = (paginado.itens || []).map((item) => ({
+      nome: String(item?.nome || "").trim() || "-",
+      login: String(item?.login || "").trim() || "-",
+      perfil: String(item?.perfil || "").trim() || "-",
+      sessao: formatarDuracaoCurta(item?.tempoSessaoSegundos),
+      inativo: formatarDuracaoCurta(item?.tempoInativoSegundos),
+      ultimaAtividade: formatarDataBrSafe(item?.ultimaAtividadeEm),
+      logadoNoMomento: Boolean(usuarioLogadoId && String(item?.usuarioId || "") === usuarioLogadoId),
+    }));
+
+    return res.render("tecnico/online", {
+      layout: "layout-app",
+      titulo: "Pessoas online",
+      cssPortal: "/styles/usuario.css",
+      cssExtra: "/styles/chamados.css",
+      usuarioSessao,
+      filtros,
+      itens,
+      totalBase: listaBase.length,
+      totalFiltrados: filtrados.length,
+      paginacao: {
+        total: paginado.total,
+        page: paginado.page,
+        pages: paginado.pages,
+        limit: paginado.limit,
+      },
+      paginacaoQuery: { ...filtros },
+      erroGeral: null,
+    });
+  } catch (err) {
+    console.error("Erro ao carregar presenca online:", err);
+    return res.status(500).render("tecnico/online", {
+      layout: "layout-app",
+      titulo: "Pessoas online",
+      cssPortal: "/styles/usuario.css",
+      cssExtra: "/styles/chamados.css",
+      usuarioSessao,
+      filtros,
+      itens: [],
+      totalBase: 0,
+      totalFiltrados: 0,
+      paginacao: {
+        total: 0,
+        page: filtros.page || 1,
+        pages: 1,
+        limit: filtros.limit || 25,
+      },
+      paginacaoQuery: { ...filtros },
+      erroGeral: "Nao foi possivel carregar a lista de usuarios online.",
     });
   }
 }

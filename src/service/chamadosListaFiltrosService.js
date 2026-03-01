@@ -109,6 +109,11 @@ function toDateSafe(value) {
   return d;
 }
 
+function toDateMs(value) {
+  const d = toDateSafe(value);
+  return d ? d.getTime() : 0;
+}
+
 export function lerFiltrosListaChamados(
   query,
   {
@@ -278,6 +283,26 @@ export function aplicarFiltrosListaChamados(
     hasPrev: pagina.hasPrev,
     hasNext: pagina.hasNext,
   };
+}
+
+export function ordenarChamadosAbertosPrimeiroAntigosPrimeiro(lista = []) {
+  return [...(Array.isArray(lista) ? lista : [])].sort((a, b) => {
+    const statusA = String(a?.status || "").trim().toLowerCase();
+    const statusB = String(b?.status || "").trim().toLowerCase();
+    const ordemA = statusA === "aberto" ? 0 : 1;
+    const ordemB = statusB === "aberto" ? 0 : 1;
+    if (ordemA !== ordemB) return ordemA - ordemB;
+
+    const criadoA = toDateMs(a?.createdAt);
+    const criadoB = toDateMs(b?.createdAt);
+    if (criadoA !== criadoB) return criadoA - criadoB;
+
+    const atualizadoA = toDateMs(a?.updatedAt);
+    const atualizadoB = toDateMs(b?.updatedAt);
+    if (atualizadoA !== atualizadoB) return atualizadoA - atualizadoB;
+
+    return Number(a?.numero || 0) - Number(b?.numero || 0);
+  });
 }
 
 export function obterOpcoesFiltrosChamados({

@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { pegarDb } from "../../../compartilhado/db/mongo.js";
 import { sanitizarAnexosHistorico } from "../../../service/anexosService.js";
+import { normalizarCustomFieldsParaPersistencia } from "../../../service/camposCustomizadosService.js";
 import { validarClassificacaoAtiva } from "../classificacoesChamadosRepo.js";
 import {
   CATEGORIAS_PADRAO_VALUES,
@@ -64,6 +65,7 @@ export async function criarChamado({
   prioridade,
   anexos = [],
   baseConhecimento = null,
+  customFields = {},
 } = {}) {
   const db = pegarDb();
   const userOid = toObjectId(usuarioId, "usuarioId");
@@ -84,6 +86,7 @@ export async function criarChamado({
         .map((item) => item.slice(0, 120)),
     )).slice(0, 12)
     : [];
+  const camposCustomizadosSan = normalizarCustomFieldsParaPersistencia(customFields);
 
   const doc = {
     numero,
@@ -131,6 +134,7 @@ export async function criarChamado({
           referencias: [],
           sugeridoEm: null,
         },
+    customFields: camposCustomizadosSan,
     createdAt: now,
     updatedAt: now,
   };
@@ -583,6 +587,7 @@ export async function garantirIndicesChamados() {
     .createIndex({ "criadoPor.usuarioId": 1, createdAt: -1 });
   await db.collection(COL_CHAMADOS).createIndex({ status: 1, createdAt: -1 });
   await db.collection(COL_CHAMADOS).createIndex({ responsavelId: 1, createdAt: -1 });
+  await db.collection(COL_CHAMADOS).createIndex({ updatedAt: -1 });
   await db.collection(COL_CHAMADOS).createIndex(
     {
       titulo: "text",

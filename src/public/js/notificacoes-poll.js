@@ -53,6 +53,14 @@ function wsEndpoint() {
   return `${proto}://${window.location.host}/ws/notificacoes`;
 }
 
+function emitirEventoPresenca(payload = {}) {
+  try {
+    window.dispatchEvent(new CustomEvent("glpi:presence-snapshot", { detail: payload }));
+  } catch {
+    // noop
+  }
+}
+
 export function startNotificacoesPoll() {
   const badge = document.querySelector("#notifBadge");
   const bell = document.querySelector("#notifBell");
@@ -71,6 +79,17 @@ export function startNotificacoesPoll() {
   let naoLidasConhecidas = new Set();
   let ultimoSnapshotMs = 0;
   let httpSyncEmAndamento = false;
+
+  function enviarSyncSocket() {
+    if (!wsSuportado || !socket || socket.readyState !== window.WebSocket.OPEN) return false;
+    try {
+      socket.send(JSON.stringify({ type: "sync" }));
+      socket.send(JSON.stringify({ type: "presence_sync" }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   bell.addEventListener("click", () => {
     dropdown.hidden = !dropdown.hidden;
@@ -97,8 +116,7 @@ export function startNotificacoesPoll() {
 
     apiPatch(`/api/notificacoes/${encodeURIComponent(notifId)}/lida`)
       .then(() => {
-        if (wsSuportado && socket && socket.readyState === window.WebSocket.OPEN) {
-          socket.send(JSON.stringify({ type: "sync" }));
+        if (enviarSyncSocket()) {
           return;
         }
         sincronizarViaHttp();
@@ -223,10 +241,8 @@ export function startNotificacoesPoll() {
     syncTimer = setInterval(() => {
       const socketAberto = wsSuportado && socket && socket.readyState === window.WebSocket.OPEN;
       if (socketAberto) {
-        try {
-          socket.send(JSON.stringify({ type: "sync" }));
-        } catch {
-          // noop
+        if (enviarSyncSocket()) {
+          return;
         }
       }
       sincronizarViaHttp();
@@ -245,11 +261,7 @@ export function startNotificacoesPoll() {
 
     socket.addEventListener("open", () => {
       reconnectDelayMs = 1000;
-      try {
-        socket.send(JSON.stringify({ type: "sync" }));
-      } catch {
-        // noop
-      }
+      enviarSyncSocket();
     });
 
     socket.addEventListener("message", (ev) => {
@@ -261,6 +273,11 @@ export function startNotificacoesPoll() {
       }
       if (data?.type === "snapshot") {
         tratarSnapshot(data);
+        return;
+      }
+
+      if (data?.type === "presence_snapshot") {
+        emitirEventoPresenca(data);
       }
     });
 
@@ -280,9 +297,7 @@ export function startNotificacoesPoll() {
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
     if (wsSuportado && socket && socket.readyState === window.WebSocket.OPEN) {
-      try {
-        socket.send(JSON.stringify({ type: "sync" }));
-      } catch {
+      if (!enviarSyncSocket()) {
         sincronizarViaHttp();
       }
       return;

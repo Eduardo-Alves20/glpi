@@ -143,8 +143,14 @@ http://localhost:3000/auth
 - `MONGO_URI`: conexao Mongo
 - `MONGO_DB`: nome do banco
 - `SESSION_SECRET`: segredo da sessao (em producao, use valor forte)
+- `SESSION_TTL_HOURS`: duracao da sessao (padrao `8`)
+- `SESSION_ROLLING`: renova cookie a cada request (`false` recomendado para reduzir escrita)
+- `SESSION_TOUCH_AFTER_SECONDS`: intervalo minimo para atualizar sessao no store (padrao `300`)
 - `AMBIENTE`: texto para exibicao/diagnostico em telas/logs
 - `FAQ_WIKI_DOCS_DIR`: caminho alternativo para docs da base de conhecimento (opcional)
+- `MONGO_MAX_POOL_SIZE`: tamanho maximo do pool Mongo (padrao `60`)
+- `MONGO_MIN_POOL_SIZE`: conexoes minimas no pool Mongo (padrao `5`)
+- `USER_ACTIVE_CACHE_TTL_MS`: cache local para validacao de usuario ativo (padrao `15000`)
 
 ## Estrutura resumida
 
@@ -180,6 +186,122 @@ storage/
 - Notificacao em tempo real nao chega:
   - Verifique se o navegador consegue conectar no endpoint `/ws/notificacoes`.
 
+## Teste de carga (100 usuarios logados)
+
+Arquivos:
+- `scripts/load/k6-100-users.js`
+- `scripts/load/k6-workflow-full.js`
+- `scripts/load/credentials.sample.csv`
+- `scripts/load/run-k6.ps1`
+- `scripts/load/run-k6-workflow.ps1`
+- `scripts/load/seed-loadtest-users.mongo.js`
+- `scripts/load/cleanup-loadtest-users.mongo.js`
+- `scripts/load/generate-credentials.ps1`
+
+### Seed de usuarios (usuario, tecnico e admin)
+
+Opcao 1 (mongosh local):
+
+```powershell
+mongosh "mongodb://localhost:27017/glpi_dev" --file scripts/load/seed-loadtest-users.mongo.js
+```
+
+Opcao 2 (usando container Docker do projeto):
+
+```powershell
+Get-Content -Raw .\scripts\load\seed-loadtest-users.mongo.js | docker exec -i glpi_mongo mongosh "mongodb://localhost:27017/glpi_dev"
+```
+
+Por padrao, o seed cria:
+- 100 usuarios: `usuario001..usuario100`
+- 20 tecnicos: `tecnico001..tecnico020`
+- 5 admins: `admin001..admin005`
+- senha padrao: `senha123`
+
+Gerar `credentials.csv` automaticamente:
+
+```powershell
+.\scripts\load\generate-credentials.ps1 -Usuarios 100 -Tecnicos 20 -Admins 5 -Password "senha123"
+```
+
+Limpar usuarios do seed:
+
+```powershell
+mongosh "mongodb://localhost:27017/glpi_dev" --file scripts/load/cleanup-loadtest-users.mongo.js
+```
+
+1. Instale o k6 (uma vez):
+
+```powershell
+winget install --id GrafanaLabs.k6 --exact
+```
+
+2. Crie o arquivo de credenciais:
+
+```powershell
+Copy-Item scripts/load/credentials.sample.csv scripts/load/credentials.csv
+```
+
+3. Preencha `scripts/load/credentials.csv` com usuarios reais (`username,password`).
+
+4. Rode o teste para 100 VUs:
+
+```powershell
+.\scripts\load\run-k6.ps1 -BaseUrl "http://localhost:3000" -Vus 100 -Ramp "30s" -Hold "2m"
+```
+
+Opcional via npm:
+
+```powershell
+$env:BASE_URL="http://localhost:3000"
+$env:VUS="100"
+$env:CREDS_FILE="scripts/load/credentials.csv"
+npm run loadtest:k6
+```
+
+### Teste workflow completo (criacao + atendimento + chat + solucao + confirmacao)
+
+Esse teste usa os usuarios seed por padrao:
+- usuario: `usuario001..`
+- tecnico: `tecnico001..`
+- admin: `admin001..`
+- senha: `senha123`
+
+Rodar:
+
+```powershell
+.\scripts\load\run-k6-workflow.ps1 -BaseUrl "http://localhost:3000" -Vus 40 -Ramp "30s" -Hold "2m"
+```
+
+Esse script agora testa tambem:
+- 10 interacoes por chamado (5 tecnico + 5 usuario)
+- 5 envios de anexos variados por chamado (`pdf`, `png/jpg`, `docx`, `xlsx`)
+- avaliacao do atendimento apos fechamento
+- acesso por URL do chamado depois de fechado
+- tentativas de acesso negado por perfil (1 a cada 100 iteracoes por padrao)
+
+Com reabertura opcional:
+
+```powershell
+.\scripts\load\run-k6-workflow.ps1 -BaseUrl "http://localhost:3000" -Vus 40 -EnableReopen "1"
+```
+
+Exemplo de execucao "stress/chaos" (mantendo 1/100 para rotas proibidas):
+
+```powershell
+.\scripts\load\run-k6-workflow.ps1 `
+  -BaseUrl "http://localhost:3000" `
+  -Vus 100 `
+  -Ramp "30s" `
+  -Hold "10m" `
+  -ChatInteractions 10 `
+  -AttachmentSends 5 `
+  -EnableAvaliacao "1" `
+  -EnableClosedUrlCheck "1" `
+  -EnablePermissionNegative "1" `
+  -NegativeSampleEvery 100
+```
+
 ## Publicar no Git
 
 Depois de ajustar e validar local:
@@ -189,4 +311,3 @@ git add .
 git commit -m "docs: adiciona README com setup e visao funcional"
 git push origin main
 ```
-

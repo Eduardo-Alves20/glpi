@@ -15,6 +15,7 @@ import {
   aplicarFiltrosListaChamados,
   lerFiltrosListaChamados,
   obterOpcoesFiltrosChamados,
+  ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
   rotuloCategoriaChamado,
   rotuloPrioridadeChamado,
   rotuloStatusChamado,
@@ -150,6 +151,7 @@ export async function adminChamadosGet(req, res) {
     const lista = await listarChamados({ status: statusConsulta, limit: 200 });
     const resultado = aplicarFiltrosListaChamados(lista, filtros, {
       usuarioLogin: usuarioSessao?.usuario,
+      ordenarItensFn: ordenarChamadosAbertosPrimeiroAntigosPrimeiro,
     });
 
     const chamados = (resultado.itens || []).map((c) => mapearChamadoAdmin(c, classificacoes));
