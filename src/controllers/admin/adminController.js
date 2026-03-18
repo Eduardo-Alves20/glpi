@@ -243,6 +243,71 @@ export async function adminTecnicosGet(req, res) {
   });
 }
 
+export async function adminConfigGet(req, res) {
+  const usuarioSessao = req.session?.usuario || null;
+  const ambiente = String(process.env.NODE_ENV || "development").toLowerCase();
+  const sessionTtlHours = Number.parseInt(String(process.env.SESSION_TTL_HOURS || "8"), 10);
+
+  const resumoConfig = [
+    {
+      titulo: "Ambiente",
+      valor: ambiente === "production" ? "Producao" : "Desenvolvimento",
+      descricao: "Contexto atual de execucao da aplicacao.",
+    },
+    {
+      titulo: "Sessao",
+      valor: `${Number.isFinite(sessionTtlHours) ? sessionTtlHours : 8}h`,
+      descricao: "Tempo padrao de duracao da sessao autenticada.",
+    },
+    {
+      titulo: "Cookie",
+      valor: "glpi.sid",
+      descricao: "Identificador de sessao usado pelo modulo.",
+    },
+    {
+      titulo: "Layout",
+      valor: "Sidebar administrativa",
+      descricao: "Menu e navegacao padronizados para perfis internos.",
+    },
+  ];
+
+  const blocos = [
+    {
+      titulo: "Autenticacao",
+      itens: [
+        "Login interno do GLPI ativo e isolado por cookie proprio.",
+        "Rotas administrativas protegidas apenas para perfil admin.",
+        "Sessao persistida em MongoDB para manter continuidade do uso.",
+      ],
+    },
+    {
+      titulo: "Operacao",
+      itens: [
+        "Painel administrativo, usuarios, chamados, tecnicos e logs ja publicados.",
+        "Campos customizados e categorias centralizados no modulo admin.",
+        "Fluxo pronto para demonstracao sem cair em rota inexistente.",
+      ],
+    },
+    {
+      titulo: "Observacoes",
+      itens: [
+        "Esta tela funciona como ponto de configuracoes operacionais do modulo.",
+        "Se precisarmos, no proximo passo eu transformo isso em configuracoes editaveis.",
+        "O objetivo agora e manter o menu consistente e seguro para a apresentacao.",
+      ],
+    },
+  ];
+
+  return res.render("admin/config", {
+    layout: "layout-app",
+    titulo: "Configuracoes - Admin",
+    cssPortal: "/styles/admin.css",
+    usuarioSessao,
+    resumoConfig,
+    blocos,
+  });
+}
+
 export async function adminChamadoExcluirPost(req, res) {
   const chamadoId = String(req.params?.id || "").trim();
   if (!chamadoId) {

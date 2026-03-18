@@ -9,6 +9,7 @@ import { acharPorId } from "../../repos/usuariosRepo.js";
 import {
   adminChamadosGet,
   adminChamadoExcluirPost,
+  adminConfigGet,
   adminHomeGet,
   adminTecnicosGet,
 } from "../../controllers/admin/adminController.js";
@@ -57,6 +58,7 @@ export function criarAdminRotas({ auditoria } = {}) {
   router.get("/admin/tecnicos", adminTecnicosGet);
   router.get("/admin/logs", adminLogsGet);
   router.get("/admin/avaliacoes", adminAvaliacoesGet);
+  router.get("/admin/config", adminConfigGet);
   router.get("/admin/usuarios", usuariosIndexGet);
   router.get("/admin/usuarios/novo", usuariosNovoGet);
   router.get("/admin/usuarios/:id/editar", usuariosEditarGet);

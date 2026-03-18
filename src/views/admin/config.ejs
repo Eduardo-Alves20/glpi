@@ -1,0 +1,110 @@
+<section class="page-header">
+  <div>
+    <h1 class="page-title">Configuracoes</h1>
+    <p class="page-subtitle">
+      Resumo operacional do modulo administrativo para navegação segura durante a demonstracao.
+    </p>
+  </div>
+
+  <div class="page-actions">
+    <a class="button tertiary" href="/admin">Voltar ao dashboard</a>
+  </div>
+</section>
+
+<section class="config-summary-grid">
+  <% (resumoConfig || []).forEach((item) => { %>
+    <article class="config-summary-card">
+      <span class="config-summary-label"><%= item.titulo %></span>
+      <strong class="config-summary-value"><%= item.valor %></strong>
+      <p class="config-summary-text"><%= item.descricao %></p>
+    </article>
+  <% }) %>
+</section>
+
+<section class="config-section-grid">
+  <% (blocos || []).forEach((bloco) => { %>
+    <article class="table-card config-panel">
+      <header class="config-panel-header">
+        <h2><%= bloco.titulo %></h2>
+      </header>
+
+      <ul class="config-checklist">
+        <% (bloco.itens || []).forEach((item) => { %>
+          <li><%= item %></li>
+        <% }) %>
+      </ul>
+    </article>
+  <% }) %>
+</section>
+
+<style>
+  .config-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .config-summary-card {
+    background: #fff;
+    border: 1px solid #e7ecf3;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 8px 20px rgba(15, 31, 55, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .config-summary-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5b6c80;
+  }
+
+  .config-summary-value {
+    font-size: 22px;
+    color: #123;
+  }
+
+  .config-summary-text {
+    margin: 0;
+    color: #5b6c80;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .config-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  .config-panel {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e7ecf3;
+    box-shadow: 0 8px 20px rgba(15, 31, 55, 0.06);
+  }
+
+  .config-panel-header h2 {
+    margin: 0 0 14px;
+    font-size: 20px;
+    color: #123;
+  }
+
+  .config-checklist {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: #31475f;
+  }
+
+  .config-checklist li {
+    line-height: 1.55;
+  }
+</style>

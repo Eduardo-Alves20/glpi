@@ -65,10 +65,38 @@ body.app-layout{
   max-width: 100%;
 }
 
-.sidebar-logo{
-  max-height: 44px;
-  max-width: 100%;
-  width: auto;
+.sidebar-logo-mark{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.sidebar-logo-copy{
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 0;
+  color: #fff;
+}
+
+.sidebar-logo-copy strong{
+  font-size: 18px;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-logo-copy small{
+  font-size: 11px;
+  line-height: 1.2;
+  color: rgba(255,255,255,0.82);
 }
 
 /* Badge ambiente (opcional) */
@@ -526,13 +554,17 @@ body.sidebar-collapsed .main-anchor-symbol{
 }
 
 body.sidebar-collapsed .sidebar-logo-wrapper{
+  justify-content: center;
+}
+
+body.sidebar-collapsed .sidebar-logo-copy{
   display: none;
 }
 
 body.sidebar-collapsed .sidebar-header{
   justify-content: center;
   padding: 8px;
-  height: 18px;
+  height: 64px;
 }
 
 body.sidebar-collapsed .sidebar-collapse-icon::before{
@@ -541,13 +573,13 @@ body.sidebar-collapsed .sidebar-collapse-icon::before{
 
 /* Responsivo (mobile menu overlay) */
 @media (max-width: 900px){
-  .sidebar-logo-wrapper{
+  .sidebar-logo-copy{
     display: none;
   }
 
   .sidebar-header{
-    height: 18px;
-    padding: 0;
+    height: 64px;
+    padding: 8px 12px 0;
   }
 
   .sidebar{
